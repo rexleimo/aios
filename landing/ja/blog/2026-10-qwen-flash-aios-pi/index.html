@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ja" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一文の要件で、一つのソフトウェアを：小規模モデルが月36億トークン——AIOS が「誰でも開発できる」を現実のものにする</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">日本語</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-10-qwen-flash-aios-pi/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/blog/2026-10-qwen-flash-aios-pi/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt is-active" href="/ja/blog/2026-10-qwen-flash-aios-pi/" hreflang="ja" lang="ja" aria-current="true">日本語</a><a class="rex-lang-opt" href="/ko/blog/2026-10-qwen-flash-aios-pi/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-10-16</p><h1>一文の要件で、一つのソフトウェアを：小規模モデルが月36億トークン——AIOS が「誰でも開発できる」を現実のものにする</h1>
+    <p class="lede" style="font-size:17px">AIOS のセールスポイントは一つだけ：要件を明確に記述できる人なら、誰でもソフトウェア開発ができるようになること。それを支える実測証拠：Qwen 3.8 Flash を Pi coding agent に接続し、AIOS コントロールプレーン（要件ヒアリング、ワークフロールーティング、プロジェクト記憶、証拠ゲート、マルチエージェントディスパッチ）で包んで、1か月で36億トークン・キャッシュヒット率96%、GPT-6 Sol に匹敵する納品力。実際の使用量スクリーンショット、前後比較、要件から納品までの完全な流れ、</p>
+    <div class="meta"><a href="/ja/blog/">← 全部文章</a> · <a href="/ja">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>セールスポイントから：<strong>AIOS がやりたいことは一つだけ——要件を明確に記述できる人なら、誰でもソフトウェア開発できるようになること。</strong>「コードが書ける」はもう入場券ではない。「言い切れる」が入場券だ——そして要件を語り切ることは、人間が元から持っているスキルだ。</p>
+<p>その帰結として本題の実測がある：フラッグシップモデルは不要。そもそも高価なモデルすら要らない。過去1か月、Qwen 3.8 Flash（中程度の思考レベル）を主力コーディングモデルとして Pi coding agent で動かし、その外側に <a href="https://github.com/rexleimo/aios">AIOS</a> コントロールプレーンを1枚かぶせた。この「小馬で大車を引く」構成は、1か月で <strong>36.28億トークン</strong> を消費し、キャッシュヒット率 <strong>96%</strong>、プロモ動画のレンダリングからマルチエージェント並列リリースまで、実プロジェクトの一揃いを納品した。</p>
+<p>1か月使った実感：<strong>この構成の納品レベルは、フラッグシップ大規模モデル GPT-6 Sol に堂々と対標できる</strong>——モデルは一回り小さく、コストは一段低い。それでも基本要件は本当にワンセンテンス放り込むだけで、動く・テスト済み・証拠付きの結果が返ってくる。</p>
+<h2 id="_1">この光景、覚えはないか？</h2>
+<ul>
+<li>40分の長時間タスクが18分目で死に、新しいセッションで背景を説明し直しても、やはり的外れ；</li>
+<li>「完了」と言うので開けると、テストは走っておらず機能も存在しない；</li>
+<li>フラッグシップモデルは賢いが、その価格では24時間回し続けることはできない；</li>
+<li>小規模モデルは安くて速いが、セッションをまたぐと忘れてしまうので、重要な仕事を預けられない。</li>
+</ul>
+<p>一つでも当てはまったなら、あなたに足りないのはもっと大きなモデルではなく、コントロールプレーンだ。AIOS が小規模モデルを「任せてよい存在」に変える完全な証拠を以下に示す——スクリーンショット、リポジトリ、納品済みプロジェクト。すべて検証可能だ。</p>
+<h2 id="_2">必要なのはたった一つの新しいスキル：要件を明確に語り切ること</h2>
+<p>ソフトウェア開発の歴史的な入場券は「コードが書けること」だった。AIOS はその門番を書き換える：「書ける」から「言い切れる」へ——後者は学ぶ必要すらなく、元からあなたの母語だ。ただし前提がある：<strong>本当に明確に言い切れていること。</strong></p>
+<p>AIOS はあなたが「たまたま明確に説明した」ことに賭けない。「明確さ」そのものを製品能力にした：</p>
+<ul>
+<li><strong>要件ヒアリング（<code>/grill</code> + Ask-First）</strong>：「ダウンロードツールを作って」と言えば、すぐ書き始めることはしない。まずリポジトリと過去の決定を照会し、決定事項を一度に一つだけ質問してくる（認証方式？保存先？）。仮定を添えた質問で3回以内に収束し、曖昧な要望を検収可能な仕様へ磨き上げる；</li>
+<li><strong>ワークフローの3段ルーティング（direct / guarded / planned）</strong>：一言で済む修正はそのまま実行。多段の大きな仕事は、あなたが読める計画を1枚出してから着工——何が起きているか常に分かる；</li>
+<li><strong>完了宣言前の証拠ゲート</strong>：「完了」と言う前に、テスト・diff・スクショという硬い証拠を通過させる——ごまかせない；</li>
+<li><strong>セッションをまたぐ記憶</strong>：今日語り切らなかった要件を、明日も覚えている。「続けて」は本当に続く。</li>
+</ul>
+<p>完全な流れはこうだ：「フロント/バックエンド分離の動画解析・ダウンロードツールが欲しい」と言う → AIOS が2つの決定事項を聞き返す → planned にルーティングして着工 → 並列ディスパッチで実装 → テストとスクショを証拠に納品。あなたが全過程でやったことは二つだけ：<strong>要件を語り、質問に二つ答えたこと。</strong></p>
+<p>以下すべての数字とプロジェクトは、この流れの産物だ。</p>
+<h2 id="_3">証拠は形容詞ではない：リポジトリ内部のアーティファクト</h2>
+<p>以下の3枚はすべてリポジトリ内の実ファイル由来で、内容は自由に照合できる：</p>
+<p><img alt="ADR 意思決定記録：確定した決定はリポジトリに書き込まれ、「上流のリネームに追随しない」ですら出典を持つ" src="/../assets/qwen-flash-aios/shot-adr.png" /></p>
+<p><strong>ADR 意思決定記録</strong>。要件ヒアリングは聞いて終わりにならない。確定した決定は <code>docs/architecture/adr/</code> にリアルタイムで書き込まれる——「CONTEXT.md を維持し、上流のリネームには追随しない」という裁決すら、原文・日付・帰結分析を備えている。セッションをまたいで「方針が変わっていた」ことを防ぐのはこれだ。</p>
+<p><img alt="プロジェクト記憶のチェックポイント：マイルストーンごとにピン留め、検証行がすぐ脇に書かれている" src="/../assets/qwen-flash-aios/shot-memo.png" /></p>
+<p><strong>プロジェクト記憶（<code>.aios/memo/</code>）</strong>。マイルストーンごとに checkpoint として自動ピン留めされ、「検証：pnpm test 全緑 + typecheck/lint 全通過」がすぐ脇に記される。「続けて」が本当に続く裏側の仕組みがこれだ。</p>
+<p><img alt="実セッションのスクリーンショット：モデル自ら aios_memory_write を呼び、踩坑の教訓をプロジェクト記憶にピン留めし、memo イベント ID を受け取る" src="/../assets/qwen-flash-aios/shot-live-memory.png" /></p>
+<p><strong>リアルタイムでの書き込み（前出の記憶が生まれている瞬間）</strong>。タスクの途中で、モデルは「Dockerfile の実行段階はホワイトリスト入りスクリプトのみ COPY する」という繰り返して踏む落とし穴を判断し、自ら <code>aios_memory_write</code> を呼びプロジェクト記憶にピン留め、書き込みと同時にイベント ID を受け取った。誰も覚えろとは言っていない——<strong>それが覚えることを決めたのだ</strong>。記憶システムの本当の姿はこれだ：引表ではなく、習慣である。</p>
+<p><img alt="証拠封包：sha256 ハッシュ、accepted 状態、非回帰フラグ、すべて機械照合可能" src="/../assets/qwen-flash-aios/shot-evidence.png" /></p>
+<p><strong>証拠封包（<code>docs/evidence/</code>）</strong>。やり切ったかどうかは、言葉ではなくハッシュが判定する：baseline/candidate の contentSha256、非回帰フラグ、受入状態——すべて機械的に再計算可能。「完了前の証拠ゲート」は修辞ではなく、この JSON のことだ。</p>
+<h2 id="_4">感覚の前に、データを見よう</h2>
+<p><img alt="直近30日のモデル使用量：総トークン 3627.97M、キャッシュヒット率 96%" src="/../assets/qwen-flash-aios/token-usage-30d.png" /></p>
+<p>このスクリーンショットは使用量パネルのそのままの姿で、加工は一切ない：</p>
+<ul>
+<li><strong>総トークン数：3627.97M</strong>——1か月分、すべて日常の実開発。ベンチマークの水増しではない；</li>
+<li><strong>キャッシュヒット率 96%</strong>（3459.56M / 3604.78M の入力がヒット）——コンテキストを極限まで再利用。これこそが小規模モデルで大プロジェクトを回せる鍵；</li>
+<li>1日あたりのピーク <strong>263.43M トークン</strong>（9/16）、1.6億超えが連日——高強度・長時間セッション・途切れなし。</li>
+</ul>
+<p>この 96% はモデルが稼いだものではない。AIOS の層が稼いだものだ：プロジェクト記憶の常駐、プル型コンテキスト取得、重複注入を削り落とすトークン圧縮インターセプション層。モデルは「考える」だけ、環境が「聞き直さない」を引き受ける。</p>
+<h2 id="vs-aios">むき出しのモデル vs AIOS で包む：同じ馬、違う鎧</h2>
+<p>以下は1か月の日常使用で、同種のタスクを「むき出しの Pi + Qwen 3.8 Flash」と「Pi + Qwen 3.8 Flash + AIOS」で比較した体感データ（個人の日常観察であり、管理されたベンチマークではない。サンプルは自分の日々の仕事そのもの）：</p>
+<table>
+<thead>
+<tr>
+<th>観点</th>
+<th>むき出しのモデル運用</th>
+<th>+ AIOS コントロールプレーン</th>
+<th>変化</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>セッションをまたぐ続行</td>
+<td>毎回プロジェクト背景を再説明、前回の進捗を推測して外す</td>
+<td>記憶召回 + チェックポイント復元、「続けて」が本当に続く</td>
+<td>手戻りが大幅減</td>
+</tr>
+<tr>
+<td>長時間タスクの生存率</td>
+<td>途中で一度切れたら全文脈消失、ゼロから再実行</td>
+<td>各ステップにチェックポイント、プロセスを殺されても再開できる</td>
+<td>徹タスクが復可能に</td>
+</tr>
+<tr>
+<td>タスク完了率</td>
+<td>複雑な多段タスクが「見た目は完了」で終わりがち</td>
+<td>完了宣言前に証拠ゲートを強制（テスト・diff・スクショ）</td>
+<td><strong>相対向上 約40%</strong></td>
+</tr>
+<tr>
+<td>1タスクあたりのコスト</td>
+<td>コンテキストの重複注入でトークンを浪費</td>
+<td>キャッシュヒット96% + オンデマンドコンテキスト</td>
+<td>実効コストが明確に低下</td>
+</tr>
+<tr>
+<td>マルチエージェント協働</td>
+<td>なし</td>
+<td><code>aios work</code> 1コマンドで並列ディスパッチ・マージゲート付き</td>
+<td>ゼロからイチへ</td>
+</tr>
+</tbody>
+</table>
+<p>「約40%」は宣伝の数字だ、と認めておく。ただしアンカーは攻めている：この構成なら小規模モデルの日常納品レベルはGPT-6 Sol に直接対標できる。なぜ言い切れるのか？検証可能なメカニズムがある。<strong>小規模モデルの失敗モードは「考えられない」ことではなく、「忘れる・逸れる・検証せずに納品する」こと</strong>——この3種類の失敗はちょうどコントロールプレーンが担当する領分だ。環境側のエラー率を下げれば、モデルの元々の能力の利用率が上がる。同じモデルなのに「取り替えたように」見えるのはこのためだ。</p>
+<h2 id="_5">この構成が実際に作り上げたもの</h2>
+<p>デモではない。実際に納品され、証拠が確認できるプロジェクト群だ。最も直接的な証拠は私の <code>E:/coding</code> ディレクトリ——<strong>以下のプロジェクトはすべて Pi + Qwen 小規模モデル + AIOS という同一構成で書かれた</strong>もので、どのプロジェクトの起点もワンセンテンスの要件だった：</p>
+<table>
+<thead>
+<tr>
+<th>プロジェクト</th>
+<th>中身</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>aios-pro</strong></td>
+<td>local-first のデスクトップエージェントハーネス。実ワークスペース上のオーケストレーション層</td>
+</tr>
+<tr>
+<td><strong>inkloom.im</strong></td>
+<td>ビジュアル AI クリエイティブワークフロー基盤。再現可能な AI 画像/動画パイプライン</td>
+</tr>
+<tr>
+<td><strong>huabu</strong></td>
+<td>キャンバス制作 + 画像・動画ワークベンチ + 転描プロジェクトとアセット管理</td>
+</tr>
+<tr>
+<td><strong>rex-ai-tools</strong></td>
+<td>フロント/バックエンド分離の動画解析・ダウンロードツール</td>
+</tr>
+<tr>
+<td><strong>discourse-worker / services</strong></td>
+<td>フォーラムワーカーと ingest / user-center / webui マイクロサービス</td>
+</tr>
+<tr>
+<td><strong>rex-hugo / rex-videos</strong></td>
+<td>コンテンツサイトの公開パイプラインと AI 動画制作スキル群</td>
+</tr>
+<tr>
+<td><strong>claude-relay-service / vpn-master / hermes-setup / xsapp</strong></td>
+<td>リレー・デプロイ・インストーラ・アプリ系のエンジニアリング</td>
+</tr>
+</tbody>
+</table>
+<p>プラットフォーム級の製品（inkloom、aios-pro）から、クリエイティブワークベンチ（huabu）、コンテンツパイプラインやフォーラムマイクロサービス、デプロイ運用まで——要件整理、アーキテクチャ、コーディング、テスト、デプロイの全過程で大規模モデルに乗り換えていない。これが「ワンセンテンスで基本要件を済ませる」の現実版だ：<strong>あなたの発話が短くなったのは、環境が長いタスクを受け止めているから。</strong></p>
+<p>証拠チェーン付きのサンプル事例を3つ：</p>
+<p><strong>1. AIOS プロモ動画：カット単位並列ディスパッチ、1355フレーム完全レンダリング</strong></p>
+<p>Remotion のプロモ動画をカットごとに独立した作業項目へ分解し、複数の小規模モデルエージェントが並列で各シーンを生成。メインスレッドは共有コンポーネントを凍結し、最終的な完了判定は実際のレンダリングログが担った。45秒の完成動画、1355フレーム、レンダリング426秒完了——「大規模モデル」は1つも関わっていない。</p>
+<p><strong>2. マルチクライアントのコントロールプレーンそのもの</strong></p>
+<p>AIOS は現在10個のコーディングクライアントをサポート——Codex CLI、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、<strong>Pi</strong>、ZCode、Qoder。このクライアント横断の適配、記憶システム（memo/ContextDB）、RL 学習システム、v5.6.0 の <code>aios work</code> 並列ディスパッチは、すべて小規模モデル + コントロールプレーンの反復で生まれた。</p>
+<p><strong>3. 日常運営の自動化</strong></p>
+<p>小紅書（RED）3アカウントのコンテンツキュー + ブラウザ自動化運営。毎日2時間から15分へ短縮（<a href="xiaohongshu-automation.md">実録記事</a>参照）——実行は小規模モデル、レビューポイントは人間、環境が越境しないことを保証する。</p>
+<h2 id="pi">Pi での動かし方</h2>
+<p>3ステップ、すべてローカル実行。データは機械の外に出ない：</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. AIOS をインストール（Windows は irm 1行、README 参照）</span>
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+
+<span class="c1"># 2. プロジェクトルートで初期化。Pi を自動認識してネイティブ拡張を導入</span>
+<span class="nb">cd</span><span class="w"> </span>your-project
+aios<span class="w"> </span>init<span class="w"> </span>--all
+aios<span class="w"> </span>doctor<span class="w"> </span>--native<span class="w"> </span>--verbose
+
+<span class="c1"># 3. Qwen 3.8 Flash を Pi のモデルとして設定（OpenAI 互換エンドポイント。書式は Pi 公式ドキュメント準拠）</span>
+pi<span class="w">   </span><span class="c1"># qwen3.8-flash を選択/指定して、いつも通り仕事する</span>
+</code></pre></div>
+<p>以降の日常は変わらない：Pi に普通に話しかけ、AIOS が外側で記憶召回、ワークフローの3段階ルーティング（direct / guarded / planned）、完了前の証拠検証を引き受ける。使用習慣の変更は不要——<strong>エージェントはあなたのエージェントのまま、モデルはあなたのモデルのまま。AIOS が「環境」を埋めるだけだ。</strong></p>
+<h2 id="_6">最後に</h2>
+<p>1か月36億トークンを燃やして得た最大の教訓：「小規模モデルで十分賢いか」を尋ねるのをやめ、「あなたの環境は、モデルが既に持つ賢さに値しているか」を尋ねよ。モデル能力は掛け算の被乗数、コントロールプレーンは乗数だ——乗数を1から1.4にすれば、被乗数があの小柄な馬のまま、GPT-6 Sol のペースが出る。</p>
+<p>そしてこの層の本当の意味は、トークン節約ではない。<strong>それは「開発者」の定義を書き換える——「コードが書ける人」から「要件を言い切れる人」へ。</strong>ソフトウェア開発は誰もが持てる能力になろうとしており、AIOS は「言い切れる」を「納品できる」に両替する機械だ。</p>
+<ul>
+<li>リポジトリ：<a href="https://github.com/rexleimo/aios">github.com/rexleimo/aios</a></li>
+<li>ドキュメント（英中日韓）：<a href="/docs/ja/">cli.rexai.top</a></li>
+<li>インストール30秒。1日走れば差がわかる。</li>
+</ul>
+<p>今夜インストールして、寝ている間も走らせてみよう。朝にはタスクはまだ進んでいて、成果は証拠付きで待っている。</p>
+<p>ワンセンテンスの要件、ワンセンテンスの納品——これが小規模モデル + コントロールプレーンの完全体だ。</p>
+<hr />
+<p><em>データ基準の説明：使用量スクリーンショットは個人パネルの無加工の原本。比較表の向上幅は1か月の高強度な日常使用に基づく主観的なエンジニアリング観察で、傾向を示すものであり学術ベンチマークではない。自分のタスクで再現してほしい。</em></p></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

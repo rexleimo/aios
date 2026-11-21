@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ja" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIOS — ローカル優先 Graph Engine</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">日本語</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/docs/index/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/docs/index/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt is-active" href="/ja/docs/index/" hreflang="ja" lang="ja" aria-current="true">日本語</a><a class="rex-lang-opt" href="/ko/docs/index/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+<div class="rex-doc-layout">
+  <aside class="rex-doc-sidebar">
+    <a class="rex-doc-sidebar__home" href="/ja/docs/">すべてのドキュメント</a>
+    <div class="rex-doc-search"><input type="search" id="rex-doc-search-input" placeholder="ドキュメントを検索…" aria-label="ドキュメントを検索…" autocomplete="off"></div>
+    <div id="rex-doc-nav"><details class="rex-doc-nav-group"><summary>はじめに</summary><div class="rex-doc-nav-items"><a href="/ja/docs/getting-started/" class="rex-doc-nav-link" data-title="クイックスタート：aios をインストールして確認する">クイックスタート：AIOS をインストールして確認する</a><a href="/ja/docs/windows-guide/" class="rex-doc-nav-link" data-title="windows ガイド：powershell のセットアップと復旧">Windows ガイド：PowerShell のセットアップと復旧</a><a href="/ja/docs/troubleshooting/" class="rex-doc-nav-link" data-title="aios トラブルシューティング">AIOS トラブルシューティング</a><a href="/ja/docs/windows-ai-coding-agent-setup/" class="rex-doc-nav-link" data-title="windows での ai コーディングエージェントセットアップ：10 分でインストールと検証">Windows での AI コーディングエージェントセットアップ：10 分でインストールと検証</a></div></details><details class="rex-doc-nav-group"><summary>問題別ガイド</summary><div class="rex-doc-nav-items"><a href="/ja/docs/why-agents-forget-context/" class="rex-doc-nav-link" data-title="ai コーディングエージェントがセッション間でコンテキストを忘れる理由（とその修正方法）">AI コーディングエージェントがセッション間でコンテキストを忘れる理由（とその修正方法）</a><a href="/ja/docs/reduce-agent-token-cost/" class="rex-doc-nav-link" data-title="ai コーディングエージェントのトークンコスト削減：claude code と codex の予算管理">AI コーディングエージェントのトークンコスト削減：Claude Code と Codex の予算管理</a><a href="/ja/docs/claude-code-vs-codex-vs-gemini/" class="rex-doc-nav-link" data-title="claude code vs codex vs gemini cli：どれを選ぶべきか？">Claude Code vs Codex vs Gemini CLI：どれを選ぶべきか？</a><a href="/ja/docs/overnight-agent-runs/" class="rex-doc-nav-link" data-title="コーディングエージェントを一晩中、クラッシュもドリフトもさせずに実行する方法">コーディングエージェントを一晩中、クラッシュもドリフトもさせずに実行する方法</a><a href="/ja/docs/multi-agent-code-review/" class="rex-doc-nav-link" data-title="マルチエージェントコードレビュー：本当に役立つ並列コーディングエージェント">マルチエージェントコードレビュー：本当に役立つ並列コーディングエージェント</a><a href="/ja/docs/use-cases/" class="rex-doc-nav-link" data-title="ユースケース：aios の route を選ぶ">ユースケース：AIOS の route を選ぶ</a></div></details><details class="rex-doc-nav-group"><summary>機能</summary><div class="rex-doc-nav-items"><a href="/ja/docs/contextdb/" class="rex-doc-nav-link" data-title="contextdb：pull-based プロジェクト記憶">ContextDB：pull-based プロジェクト記憶</a><a href="/ja/docs/token-compression/" class="rex-doc-nav-link" data-title="token intelligence と圧縮の境界">Token Intelligence と圧縮の境界</a><a href="/ja/docs/workflow-policy/" class="rex-doc-nav-link" data-title="ワークフローポリシー">ワークフローポリシー</a><a href="/ja/docs/model-router/" class="rex-doc-nav-link" data-title="モデルルーター">モデルルーター</a><a href="/ja/docs/codemap/" class="rex-doc-nav-link" data-title="コードレビューグラフ (codemap)">コードレビューグラフ (Codemap)</a><a href="/ja/docs/team-ops/" class="rex-doc-nav-link" data-title="agent team：証拠付きの並列作業">Agent Team：証拠付きの並列作業</a><a href="/ja/docs/solo-harness/" class="rex-doc-nav-link" data-title="solo harness：再開可能な長時間作業">Solo Harness：再開可能な長時間作業</a><a href="/ja/docs/superpowers/" class="rex-doc-nav-link" data-title="rex ワークフロー移行">Rex ワークフロー移行</a><a href="/ja/docs/integrations/" class="rex-doc-nav-link" data-title="aios で typesafe jev を使う——導入・判断ゲートの有効化・バックグラウンド実行">AIOS で TypeSafe Jev を使う——導入・判断ゲートの有効化・バックグラウンド実行</a><a href="/ja/docs/perception/" class="rex-doc-nav-link" data-title="perception（知覚レイヤー）">Perception（知覚レイヤー）</a></div></details><details class="rex-doc-nav-group"><summary>リファレンス</summary><div class="rex-doc-nav-items"><a href="/ja/docs/architecture/" class="rex-doc-nav-link" data-title="aios アーキテクチャ">AIOS アーキテクチャ</a><a href="/ja/docs/route-concurrency-profiles/" class="rex-doc-nav-link" data-title="ルーティングと並列プロファイル">ルーティングと並列プロファイル</a><a href="/ja/docs/advanced-design-skills/" class="rex-doc-nav-link" data-title="高度デザインスキル">高度デザインスキル</a><a href="/ja/docs/hud-guide/" class="rex-doc-nav-link" data-title="hud ユーザーガイド">HUD ユーザーガイド</a><a href="/ja/docs/debug-hub/" class="rex-doc-nav-link" data-title="debug-hub">debug-hub</a><a href="/ja/docs/cli-comparison/" class="rex-doc-nav-link" data-title="cli 比較">CLI 比較</a><a href="/ja/docs/engineering-standards/" class="rex-doc-nav-link" data-title="エンジニアリング基準——aios はコードを生成するだけでなく、ソフトウェアを構築する">エンジニアリング基準——AIOS はコードを生成するだけでなく、ソフトウェアを構築する</a></div></details><details class="rex-doc-nav-group"><summary>ケーススタディ</summary><div class="rex-doc-nav-items"><a href="/ja/docs/case-library/" class="rex-doc-nav-link" data-title="ケースライブラリ：再現可能な aios workflow">ケースライブラリ：再現可能な AIOS workflow</a><a href="/ja/docs/case-auth-wall-browser/" class="rex-doc-nav-link" data-title="ケース - ブラウザ認証壁フロー">ケース - ブラウザ認証壁フロー</a><a href="/ja/docs/case-cross-cli-handoff/" class="rex-doc-nav-link" data-title="ケース - クロス cli handoff">ケース - クロス CLI handoff</a><a href="/ja/docs/case-privacy-guard/" class="rex-doc-nav-link" data-title="ケース - privacy guard 設定読み取り">ケース - Privacy Guard 設定読み取り</a></div></details><details class="rex-doc-nav-group"><summary>プロジェクト</summary><div class="rex-doc-nav-items"><a href="/ja/docs/changelog/" class="rex-doc-nav-link" data-title="変更履歴">変更履歴</a><a href="/ja/docs/friends/" class="rex-doc-nav-link" data-title="リンク集">リンク集</a><a href="/ja/docs/skill-candidates/" class="rex-doc-nav-link" data-title="skill candidates ガイド">Skill Candidates ガイド</a></div></details></div>
+    <p class="rex-doc-search-empty" id="rex-doc-search-empty" hidden>一致するドキュメントなし</p>
+    <div class="rex-doc-sidebar__status">AIOS · v8.0.0 · ローカルファースト</div>
+  </aside>
+  <article class="rex-doc-article">
+    <p class="eyebrow">文档 · 日本語</p>
+    <h1>AIOS — ローカル優先 Graph Engine</h1>
+    <p class="lede" style="font-size:17px">コーディングエージェントのためのローカル優先 Graph Engine。Codex、Claude Code、Gemini CLI など 10 のクライアントの上に、記憶・適応型ルーティング・マルチエージェント協調・検証をひとつの検証可能なグラフとして編成します。</p>
+    <div class="rex-doc-content md-body"><!-- ============================================================
+     Hero Section (v8 / ZIK3q) — title + portrait + full-width showcase
+     ============================================================ -->
+
+<div class="rex-hero">
+  <div class="rex-hero__inner">
+    <div class="rex-hero__content">
+      <div class="rex-hero__badge">
+        <svg class="rex-hero__badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+        ローカル優先 GRAPH ENGINE · v{{ aios_version }}
+      </div>
+
+      <p class="rex-hero__sub">
+        AIOS はコーディング agent のためのローカル優先 Graph Engine です。セッションをまたぐプロジェクト記憶、
+        適応型ルーティング、マルチエージェント協調、検証を、Codex、Claude Code、Gemini CLI、OpenCode、Hermes、
+        Grok、WorkBuddy、Pi、ZCode、Qoder の 10 クライアントの上でひとつの検証可能なグラフに編成します——
+        今の作業スタイルはそのままに。
+      </p>
+
+      <div class="rex-hero__cta">
+        <a href="getting-started" class="md-button md-button--primary">30 秒でインストール</a>
+        <a href="https://github.com/rexleimo/aios" class="md-button">GitHub で見る</a>
+      </div>
+
+      <div class="rex-hero__install" role="group" aria-label="一行インストール">
+        <code class="rex-hero__install-cmd" id="hero-install-cmd">curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash</code>
+        <button class="rex-hero__install-copy" type="button" data-copy-target="hero-install-cmd">Copy</button>
+      </div>
+      <script>
+        (function () {
+          var btn = document.querySelector('[data-copy-target="hero-install-cmd"]');
+          if (!btn) return;
+          btn.addEventListener('click', function () {
+            var text = document.getElementById('hero-install-cmd').textContent.trim();
+            navigator.clipboard.writeText(text).then(function () {
+              var label = btn.textContent;
+              btn.textContent = 'Copied ✓';
+              setTimeout(function () { btn.textContent = label; }, 1600);
+            });
+          });
+        })();
+      </script>
+    </div>
+
+    <figure class="rex-hero__portrait">
+      <img src="/../assets/home/hero-portrait.png" alt="AIOS エージェントワークフロー全体像" width="1254" height="1254" loading="eager" fetchpriority="high" />
+    </figure>
+  </div>
+
+  <figure class="rex-hero__showcase">
+    <img src="/../assets/home/hero2.png" alt="AIOS ローカル優先 agent harness 全体像" width="1536" height="768" loading="lazy" />
+  </figure>
+</div>
+
+<!-- ============================================================
+     Logo Wall — client names
+     ============================================================ -->
+
+<div id="clients" class="rex-clients">
+  <div class="rex-clients__header">
+    <div class="rex-clients__heading">
+      <span class="rex-clients__eyebrow">対応クライアント · 10</span>
+      <h2 class="rex-clients__title">今使っているクライアントの中で、そのまま動く</h2>
+    </div>
+    <p class="rex-clients__note">
+      すべてのクライアントで同じプロジェクト記憶・ワークフロポリシー・検証証拠。
+      機能の深さは同じではないので、自分の環境は次で確認してください <code>aios doctor --native --verbose</code>.
+    </p>
+  </div>
+  <div class="rex-clients__grid">
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">CX</span><span class="rex-client__name">Codex CLI</span><code class="rex-client__cmd">codex</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">CL</span><span class="rex-client__name">Claude Code</span><code class="rex-client__cmd">claude</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">GM</span><span class="rex-client__name">Gemini CLI</span><code class="rex-client__cmd">gemini</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">OC</span><span class="rex-client__name">OpenCode</span><code class="rex-client__cmd">opencode</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">HE</span><span class="rex-client__name">Hermes</span><code class="rex-client__cmd">hermes</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--off">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">GR</span><span class="rex-client__name">Grok Build</span><code class="rex-client__cmd">grok</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">WB</span><span class="rex-client__name">WorkBuddy</span><code class="rex-client__cmd">codebuddy</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--off">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">PI</span><span class="rex-client__name">Pi</span><code class="rex-client__cmd">pi</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">ZC</span><span class="rex-client__name">ZCode</span><code class="rex-client__cmd">zcode</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--plugin" title="プロジェクト範囲のサブエージェント面がないため、rex ロールカードは ZCode plugin agents として動作">agents+</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">QO</span><span class="rex-client__name">Qoder</span><code class="rex-client__cmd">qoder</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+  </div>
+  <div class="rex-clients__legend">
+    <span><b>skills</b> スキルパックをインストール済み</span>
+    <span><b>native</b> ネイティブ指示ファイルを書き込む</span>
+    <span><b>harness</b> solo-harness で駆動</span>
+    <span><b>agents</b> サブエージェント定義</span>
+    <span><b>agents+</b> クライアントプラグイン dir 経由でサブエージェントを提供</span>
+    <span><b>team</b> <code>aios team</code> ディスパッチ</span>
+    <a class="rex-clients__more" href="cli-comparison">クライアントを比較 <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+
+<!-- ============================================================
+     Team band — image left, text right
+     ============================================================ -->
+
+<div id="capabilities" class="rex-band rex-band--team">
+  <figure class="rex-band__media">
+    <img src="/../assets/home/team2.png" alt="AIOS マルチエージェントチーム協業" width="1536" height="1024" loading="lazy" />
+  </figure>
+  <div class="rex-band__content">
+    <span class="rex-band__eyebrow">マルチ AGENT チーム</span>
+    <h2 class="rex-band__title">一度だけ伝える。複数の agent が並列で片付ける。</h2>
+    <p class="rex-band__text">
+      あなたが一文で指示すると、AIOS が作業を複数の agent に自動で分割します。
+      独立したタスクは並列に、結合した変更は順番に——待つのは結果だけです。
+    </p>
+    <a class="rex-band__link" href="team-ops">仕組みを見る <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+
+<!-- ============================================================
+     Verification band — text left, image right
+     ============================================================ -->
+
+<div class="rex-band rex-band--verify">
+  <div class="rex-band__content">
+    <span class="rex-band__eyebrow">検証 / プライバシー</span>
+    <h2 class="rex-band__title">見せる前に、自分の仕事を検証する</h2>
+    <p class="rex-band__text">
+      AIOS はすべての変更に対して自己診断・安全ゲート・検証ループを回すので、
+      壊れた下書きではなく動く結果が目に入ります。コードとデータがマシンから
+      出ることは一切ありません。
+    </p>
+    <a class="rex-band__link" href="troubleshooting">検証の仕組みを見る <span aria-hidden="true">→</span></a>
+  </div>
+  <figure class="rex-band__media">
+    <img src="/../assets/home/doctor2.png" alt="AIOS 検証と診断" width="1536" height="1024" loading="lazy" />
+  </figure>
+</div>
+
+<!-- ============================================================
+     Run layer 2×2
+     ============================================================ -->
+
+<div id="demo" class="rex-run">
+  <div class="rex-run__header">
+    <span class="rex-run__eyebrow">動作原理</span>
+    <h2 class="rex-run__title">一文が 4 つのシステムを起動する</h2>
+    <p class="rex-run__sub">記憶・ルーティング・協調・安全——すべてが舞台裏で動いています。</p>
+  </div>
+  <div class="rex-run__grid">
+    <article class="rex-run__card">
+      <h3 class="rex-run__card-title">すべて覚えている</h3>
+      <p class="rex-run__card-text">プロジェクトの決定・制約・進捗はローカルに保存されます。次のセッションでは agent が途中から続けるので、説明のし直しは不要です。</p>
+      <code class="rex-run__card-cmd">aios init</code>
+    </article>
+    <article class="rex-run__card">
+      <h3 class="rex-run__card-title">正しい進め方を選ぶ</h3>
+      <p class="rex-run__card-text">AIOS はタスクに最もシンプルな経路を自動で選びます——すぐ回答、慎重な編集、完全な計画。進め方を考えなくて済みます。</p>
+      <code class="rex-run__card-cmd">aios work</code>
+    </article>
+    <article class="rex-run__card">
+      <h3 class="rex-run__card-title">作業を自動で分ける</h3>
+      <p class="rex-run__card-text">タスクに独立した部分があれば、AIOS はそれを複数 agent で並列実行します——望むことを一度言うだけでいい。</p>
+      <code class="rex-run__card-cmd">aios team</code>
+    </article>
+    <article class="rex-run__card">
+      <h3 class="rex-run__card-title">納品前に確認する</h3>
+      <p class="rex-run__card-text">安全ゲートと検証ループがすべての変更に通ります。手直しが必要な壊れた下書きではなく、動く結果が渡されます。</p>
+      <code class="rex-run__card-cmd">aios verify</code>
+    </article>
+  </div>
+</div>
+
+<!-- ============================================================
+     Full-width install block
+     ============================================================ -->
+
+<div class="rex-install">
+  <div class="rex-install__inner">
+    <h2 class="rex-install__title">30 秒で最初の一文タスクを</h2>
+    <p class="rex-install__text">インストールし、プロジェクトで初期化したら、agent に何をするか伝え始めるだけです。</p>
+    <div class="rex-install__cmds" role="group" aria-label="インストール手順">
+      <code class="rex-install__cmd">aios init --all</code>
+      <code class="rex-install__cmd">aios doctor --native --verbose</code>
+    </div>
+    <a href="getting-started" class="md-button md-button--primary rex-install__cta">無料で始める <span aria-hidden="true">→</span></a>
+  </div>
+</div>
+
+<!-- ============================================================
+     Blog list (3 posts)
+     ============================================================ -->
+
+<div class="rex-bloglist">
+  <div class="rex-bloglist__header">
+    <span class="rex-bloglist__eyebrow">ブログから</span>
+    <h2 class="rex-bloglist__title">最新のワークフローガイド</h2>
+    <a class="rex-bloglist__more" href="/blog/ja/">すべての記事 <span aria-hidden="true">→</span></a>
+  </div>
+  <div class="rex-bloglist__grid">
+    <article class="rex-bloglist__card">
+      <span class="rex-bloglist__tag">Graph Engine</span>
+      <h3 class="rex-bloglist__card-title"><a href="/blog/ja/2026-08-10-aios-loop-graph-engineering/">Graph Engine をローカルで</a></h3>
+      <p class="rex-bloglist__card-text">loop ツールキットとグラフノードを検証可能な agent グラフに編成します。データはマシンから出ません。</p>
+    </article>
+    <article class="rex-bloglist__card">
+      <span class="rex-bloglist__tag">チーム</span>
+      <h3 class="rex-bloglist__card-title"><a href="/blog/ja/2026-08-parallel-coding-agents/">並列コーディングエージェント</a></h3>
+      <p class="rex-bloglist__card-text">独立した作業項目が並列で走るべき瞬間と、決して並列にできない瞬間。</p>
+    </article>
+    <article class="rex-bloglist__card">
+      <span class="rex-bloglist__tag">ワークフロー</span>
+      <h3 class="rex-bloglist__card-title"><a href="/blog/ja/2026-07-v400-adaptive-workflow-policy/">4.0.0 適応型ワークフローポリシー</a></h3>
+      <p class="rex-bloglist__card-text">プロセス制御を選ぶ前に作業を分類する——noop、direct、guarded、planned。</p>
+    </article>
+  </div>
+  <div class="rex-bloglist__more-list">
+    <span class="rex-bloglist__more-label">その他のブログ</span>
+    <a class="rex-bloglist__more-link" href="/blog/ja/2026-09-v516-zcode-client/">v5.16.0: ZCode が AIOS に参加 <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/ja/rl-training-system/">AIOS RL 訓練システム <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/ja/contextdb-fts-bm25-search/">ContextDB 検索アップグレード <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/ja/windows-cli-startup-stability/">Windows CLI 起動の安定性 <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/ja/orchestrate-live/">オケストレーション Live 検証 <i aria-hidden="true">→</i></a>
+  </div>
+</div>
+
+<!-- ============================================================
+     Closing CTA
+     ============================================================ -->
+
+<div class="rex-cta">
+  <div class="rex-cta__inner">
+    <h2 class="rex-cta__title">説明をやめて、完了させる準備はできましたか？</h2>
+    <p class="rex-cta__text">必要なのは一文だけ。AIOS をインストールして、あとは agent に任せください。</p>
+    <div class="rex-cta__buttons">
+      <a href="getting-started" class="md-button md-button--primary">無料で始める</a>
+      <a href="use-cases" class="md-button">ユースケースを見る</a>
+      <a href="contextdb" class="md-button">ドキュメントを読む</a>
+    </div>
+  </div>
+</div></div>
+    <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+    <nav class="rex-doc-pager"><a href="/ja/docs/hud-guide/">← 上一篇</a><a href="/ja/docs/integrations/">下一篇 →</a></nav>
+    <a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  </article>
+</div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ko" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ContextDB: pull-based 프로젝트 기억</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">한국어</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/docs/contextdb/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/docs/contextdb/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/docs/contextdb/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt is-active" href="/ko/docs/contextdb/" hreflang="ko" lang="ko" aria-current="true">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+<div class="rex-doc-layout">
+  <aside class="rex-doc-sidebar">
+    <a class="rex-doc-sidebar__home" href="/ko/docs/">모든 문서</a>
+    <div class="rex-doc-search"><input type="search" id="rex-doc-search-input" placeholder="문서 검색…" aria-label="문서 검색…" autocomplete="off"></div>
+    <div id="rex-doc-nav"><details class="rex-doc-nav-group"><summary>시작하기</summary><div class="rex-doc-nav-items"><a href="/ko/docs/getting-started/" class="rex-doc-nav-link" data-title="빠른 시작: aios 설치와 검증">빠른 시작: AIOS 설치와 검증</a><a href="/ko/docs/windows-guide/" class="rex-doc-nav-link" data-title="windows 가이드: powershell 설정과 복구">Windows 가이드: PowerShell 설정과 복구</a><a href="/ko/docs/troubleshooting/" class="rex-doc-nav-link" data-title="aios 문제 해결">AIOS 문제 해결</a><a href="/ko/docs/windows-ai-coding-agent-setup/" class="rex-doc-nav-link" data-title="windows ai 코딩 에이전트 설정: 10분 안에 설치하고 검증하기">Windows AI 코딩 에이전트 설정: 10분 안에 설치하고 검증하기</a></div></details><details class="rex-doc-nav-group"><summary>문제별 가이드</summary><div class="rex-doc-nav-items"><a href="/ko/docs/why-agents-forget-context/" class="rex-doc-nav-link" data-title="ai 코딩 에이전트가 세션 사이에 컨텍스트를 잊어버리는 이유 (그리고 해결 방법)">AI 코딩 에이전트가 세션 사이에 컨텍스트를 잊어버리는 이유 (그리고 해결 방법)</a><a href="/ko/docs/reduce-agent-token-cost/" class="rex-doc-nav-link" data-title="ai 코딩 에이전트 토큰 비용 줄이기: claude code와 codex 예산 관리">AI 코딩 에이전트 토큰 비용 줄이기: Claude Code와 Codex 예산 관리</a><a href="/ko/docs/claude-code-vs-codex-vs-gemini/" class="rex-doc-nav-link" data-title="claude code vs codex vs gemini cli: 어떤 코딩 에이전트 cli를 선택해야 할까?">Claude Code vs Codex vs Gemini CLI: 어떤 코딩 에이전트 CLI를 선택해야 할까?</a><a href="/ko/docs/overnight-agent-runs/" class="rex-doc-nav-link" data-title="코딩 에이전트를 밤새 크래시나 이탈 없이 실행하는 방법">코딩 에이전트를 밤새 크래시나 이탈 없이 실행하는 방법</a><a href="/ko/docs/multi-agent-code-review/" class="rex-doc-nav-link" data-title="멀티 에이전트 코드 리뷰: 실제로 도움이 되는 병렬 코딩 에이전트">멀티 에이전트 코드 리뷰: 실제로 도움이 되는 병렬 코딩 에이전트</a><a href="/ko/docs/use-cases/" class="rex-doc-nav-link" data-title="사용 사례: aios route 선택">사용 사례: AIOS route 선택</a></div></details><details class="rex-doc-nav-group" open><summary>기능</summary><div class="rex-doc-nav-items"><a href="/ko/docs/contextdb/" aria-current="page" class="rex-doc-nav-link is-active" data-title="contextdb: pull-based 프로젝트 기억">ContextDB: pull-based 프로젝트 기억</a><a href="/ko/docs/token-compression/" class="rex-doc-nav-link" data-title="token intelligence와 압축 경계">Token Intelligence와 압축 경계</a><a href="/ko/docs/workflow-policy/" class="rex-doc-nav-link" data-title="워크플로 정책">워크플로 정책</a><a href="/ko/docs/model-router/" class="rex-doc-nav-link" data-title="모델 라우터">모델 라우터</a><a href="/ko/docs/codemap/" class="rex-doc-nav-link" data-title="코드 리뷰 그래프 (codemap)">코드 리뷰 그래프 (Codemap)</a><a href="/ko/docs/team-ops/" class="rex-doc-nav-link" data-title="agent team: 증거를 남기는 병렬 작업">Agent Team: 증거를 남기는 병렬 작업</a><a href="/ko/docs/solo-harness/" class="rex-doc-nav-link" data-title="solo harness: 재개 가능한 장기 작업">Solo Harness: 재개 가능한 장기 작업</a><a href="/ko/docs/superpowers/" class="rex-doc-nav-link" data-title="rex 워크플로 마이그레이션">Rex 워크플로 마이그레이션</a><a href="/ko/docs/integrations/" class="rex-doc-nav-link" data-title="aios에서 typesafe jev 쓰기——설치·판단 게이트 켜기·백그라운드 실행">AIOS에서 TypeSafe Jev 쓰기——설치·판단 게이트 켜기·백그라운드 실행</a><a href="/ko/docs/perception/" class="rex-doc-nav-link" data-title="perception(인지 레이어)">Perception(인지 레이어)</a></div></details><details class="rex-doc-nav-group"><summary>레퍼런스</summary><div class="rex-doc-nav-items"><a href="/ko/docs/architecture/" class="rex-doc-nav-link" data-title="aios 아키텍처">AIOS 아키텍처</a><a href="/ko/docs/route-concurrency-profiles/" class="rex-doc-nav-link" data-title="라우팅/병렬 프로필">라우팅/병렬 프로필</a><a href="/ko/docs/advanced-design-skills/" class="rex-doc-nav-link" data-title="고급 디자인 스킬">고급 디자인 스킬</a><a href="/ko/docs/hud-guide/" class="rex-doc-nav-link" data-title="hud 사용자 가이드">HUD 사용자 가이드</a><a href="/ko/docs/debug-hub/" class="rex-doc-nav-link" data-title="debug-hub">debug-hub</a><a href="/ko/docs/cli-comparison/" class="rex-doc-nav-link" data-title="cli 비교">CLI 비교</a><a href="/ko/docs/engineering-standards/" class="rex-doc-nav-link" data-title="엔지니어링 표준 — aios는 코드를 생성할 뿐만 아니라 소프트웨어를 구축한다">엔지니어링 표준 — AIOS는 코드를 생성할 뿐만 아니라 소프트웨어를 구축한다</a></div></details><details class="rex-doc-nav-group"><summary>사례 연구</summary><div class="rex-doc-nav-items"><a href="/ko/docs/case-library/" class="rex-doc-nav-link" data-title="사례 라이브러리: 재현 가능한 aios workflow">사례 라이브러리: 재현 가능한 AIOS workflow</a><a href="/ko/docs/case-auth-wall-browser/" class="rex-doc-nav-link" data-title="케이스 - 브라우저 인증벽 플로우">케이스 - 브라우저 인증벽 플로우</a><a href="/ko/docs/case-cross-cli-handoff/" class="rex-doc-nav-link" data-title="케이스 - 크로스 cli 핸드오프">케이스 - 크로스 CLI 핸드오프</a><a href="/ko/docs/case-privacy-guard/" class="rex-doc-nav-link" data-title="케이스 - privacy guard 설정 읽기">케이스 - Privacy Guard 설정 읽기</a></div></details><details class="rex-doc-nav-group"><summary>프로젝트</summary><div class="rex-doc-nav-items"><a href="/ko/docs/changelog/" class="rex-doc-nav-link" data-title="변경 로그">변경 로그</a><a href="/ko/docs/friends/" class="rex-doc-nav-link" data-title="추천 링크">추천 링크</a><a href="/ko/docs/skill-candidates/" class="rex-doc-nav-link" data-title="skill candidates 가이드">Skill Candidates 가이드</a></div></details></div>
+    <p class="rex-doc-search-empty" id="rex-doc-search-empty" hidden>일치하는 문서 없음</p>
+    <div class="rex-doc-sidebar__status">AIOS · v8.0.0 · 로컬 우선</div>
+  </aside>
+  <article class="rex-doc-article">
+    <p class="eyebrow">文档 · 한국어</p>
+    <h1>ContextDB: pull-based 프로젝트 기억</h1>
+    <p class="lede" style="font-size:17px">로컬 ContextDB의 경계를 정리한 문서입니다. registry, memo 저장소, 통합 프로젝트 검색, 지연 로딩, 필요할 때의 회상, 클라이언트 간 기억 공유의 경계와 프라이버시 규칙을 설명합니다. 프로젝트가 커져도 무엇을 주입하고 남길지 통제할 수 있습니다.</p>
+    <div class="rex-doc-content md-body">
+<h2 id="_1">먼저 답하면</h2>
+<p>ContextDB는 AIOS의 로컬 project memory layer입니다. session, event, checkpoint, memo, context pack reference를 project workspace에 저장하여 지원 client가 다른 session의 필요한 사실을 찾게 합니다. 현재 모델은 pull-based입니다. registry가 source를 가리키고 agent가 task에 필요한 evidence만 recall합니다.</p>
+<h2 id="_2">지금 실행</h2>
+<p>project root에서:</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>init<span class="w"> </span>--all
+aios<span class="w"> </span>doctor<span class="w"> </span>--native<span class="w"> </span>--verbose
+node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;release readiness&quot;</span><span class="w"> </span>--agent<span class="w"> </span>codex-cli<span class="w"> </span>--json
+</code></pre></div>
+<p>현재 init은 .aios/context-db/index.json을 가리키는 project marker를 추가합니다.</p>
+<h2 id="registry">로컬 registry</h2>
+<p>일반적인 workspace:</p>
+<div class="highlight"><pre><span></span><code>.aios/
+  context-db/
+    index.json                 # source registry
+    sessions/&lt;session-id&gt;/     # session event와 checkpoint
+    index/                     # derived search data
+    exports/                   # context pack과 handoff
+  memo/
+    file/events.jsonl          # canonical append-only memo
+    split/                     # 선택적 one-file-per-memo backend
+</code></pre></div>
+<p>실제 file은 client와 실행한 command에 따라 달라집니다. registry는 repository 전체의 복사본이 아니라 source pointer입니다.</p>
+<h2 id="pull-based-recall">Pull-based recall 흐름</h2>
+<div class="highlight"><pre><span></span><code>client start
+  -&gt; AGENTS.md, CLAUDE.md, GEMINI.md 또는 client guidance 읽기
+  -&gt; .aios/context-db/index.json 찾기
+  -&gt; source metadata와 task relevance 확인
+  -&gt; handoff, memo, checkpoint, context pack 검색 또는 읽기
+  -&gt; 필요한 evidence만 가지고 task 계속
+</code></pre></div>
+<p>context control 방식이며 고정 prompt size나 startup time을 보장하지 않습니다. source가 없거나 오래되었거나 다른 project에 있으면 명시적인 pointer가 필요합니다.</p>
+<h2 id="_3">기록되는 것</h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>예</th>
+<th>용도</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Session events</td>
+<td>prompt, tool result, error, 변경 path</td>
+<td>발생한 일 복원</td>
+</tr>
+<tr>
+<td>Checkpoints</td>
+<td>goal, status, next step, evidence</td>
+<td>장기 task 재개</td>
+</tr>
+<tr>
+<td>Memos</td>
+<td>project decision, constraint, reminder</td>
+<td>지속적인 사실 저장</td>
+</tr>
+<tr>
+<td>Context packs</td>
+<td>범위가 제한된 history export</td>
+<td>선택한 context handoff</td>
+</tr>
+<tr>
+<td>Unified search</td>
+<td>memory, plans, docs, code</td>
+<td>넓은 read 전 evidence 탐색</td>
+</tr>
+</tbody>
+</table>
+<p>ContextDB는 검증되지 않은 agent response를 evidence로 바꾸지 않습니다. test, diagnostic, review, privacy check는 별도 quality gate입니다.</p>
+<h2 id="memory-with-memo-memory-with-memo">Memory With Memo {#memory-with-memo}</h2>
+<h3 id="workspace-memory-aios-memo-workspace-memoryaios-memo">Workspace Memory AIOS Memo {#workspace-memoryaios-memo}</h3>
+<h3 id="workspace-memory-aios-memo-legacy-anchor-workspace-memory-aios-memo">Workspace Memory AIOS Memo (legacy anchor) {#workspace-memory-aios-memo}</h3>
+<p>memo는 durable project note입니다. 기본 canonical backend는 .aios/memo/file/events.jsonl의 append-only JSONL이며 split은 선택 사항입니다.</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>memo<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;Keep authentication tests strict&quot;</span>
+aios<span class="w"> </span>memo<span class="w"> </span>pin<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;Do not push directly to main&quot;</span>
+aios<span class="w"> </span>memo<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;authentication&quot;</span>
+aios<span class="w"> </span>memo<span class="w"> </span>recall<span class="w"> </span><span class="s2">&quot;release readiness&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+aios<span class="w"> </span>memo<span class="w"> </span>storage<span class="w"> </span>status
+</code></pre></div>
+<p>storage를 의도적으로 확인하거나 변경합니다.</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>memo<span class="w"> </span>storage<span class="w"> </span>use<span class="w"> </span>split
+aios<span class="w"> </span>memo<span class="w"> </span>storage<span class="w"> </span>use<span class="w"> </span>file
+aios<span class="w"> </span>memo<span class="w"> </span>storage<span class="w"> </span>rebuild
+aios<span class="w"> </span>memo<span class="w"> </span>storage<span class="w"> </span>doctor
+aios<span class="w"> </span>memo<span class="w"> </span>storage<span class="w"> </span>repair-locks
+</code></pre></div>
+<p>rebuild는 derived query file만 갱신하고 canonical record를 다시 쓰지 않습니다.
+<code>repair-locks</code>는 기록된 owner PID가 종료된 것으로 확인된 lock만 quarantine하며 active 또는 malformed lock은 건드리지 않습니다.</p>
+<h3 id="v5120">메모리 유지보수와 관측 가능성(v5.12.0)</h3>
+<p>데이터를 삭제하지 않고 메모리면을 점검·보수합니다:</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>memo<span class="w"> </span>hygiene<span class="w">                 </span><span class="c1"># 읽기 전용 점검: sessions, pinned, 이벤트 크기 + 정리 제안</span>
+aios<span class="w"> </span>memo<span class="w"> </span>hygiene<span class="w"> </span>--rotate-events<span class="w"> </span>--max-events<span class="w"> </span><span class="m">500</span><span class="w">   </span><span class="c1"># keep-newest 로테이션, 아카이브 행 영손실</span>
+aios<span class="w"> </span>memo<span class="w"> </span>hygiene<span class="w"> </span>--archive-stale-sessions<span class="w">           </span><span class="c1"># 오래된 세션을 context-db/archive/로 이동</span>
+aios<span class="w"> </span>memory<span class="w"> </span>report<span class="w">                </span><span class="c1"># space별 볼륨/무효화율/후보 체류/채택률</span>
+aios<span class="w"> </span>memo<span class="w"> </span>pin<span class="w"> </span>status<span class="w">              </span><span class="c1"># pinned 예산: chars/limit, remaining(초과 시 경고)</span>
+aios<span class="w"> </span>memo<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;query&quot;</span><span class="w"> </span>--level<span class="w"> </span>summary<span class="w">             </span><span class="c1"># 행당 약 100토큰 + pack 푸터</span>
+</code></pre></div>
+<p>하이진 규칙: 삭제 없음(아카이브/로테이션만, moved+kept 대조 + sha256 감사); space 레벨 <code>workspace-memory--*</code> 활성 세션은 아카이브 대상 제외; 리콜 주 저장소(<code>events.jsonl</code>)는 로테이션 대상 외. apply는 에이전트 유휴 시간에 실행.</p>
+<p>다른 도구의 메모리를 거버넌스 후보로 가져오기:</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>import<span class="w"> </span>--format<span class="w"> </span>claude<span class="w"> </span>--file<span class="w"> </span>~/MEMORY.md<span class="w"> </span>--dry-run<span class="w">    </span><span class="c1"># 먼저 미리보기</span>
+aios<span class="w"> </span>import<span class="w"> </span>--format<span class="w"> </span>roo<span class="w"> </span>--file<span class="w"> </span>.roomodes
+aios<span class="w"> </span>memo<span class="w"> </span>candidate<span class="w"> </span>list
+</code></pre></div>
+<p>가져온 사실은 반드시 <code>candidate</code>로 기록(임포터에 게시 권한 없음), <code>#import-&lt;format&gt;</code> 태그, 재실행 멱등. 자세한 내용은 <code>docs/import-migration.md</code>.</p>
+<h2 id="v1500-v1500">통합 프로젝트 검색(v1.50.0) {#통합-프로젝트-검색v1500}</h2>
+<p>넓은 grep이나 repository 전체 read 전에 사용합니다.</p>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;native client guidance&quot;</span><span class="w"> </span>--agent<span class="w"> </span>codex-cli<span class="w"> </span>--json
+node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;release blocker&quot;</span><span class="w"> </span>--source<span class="w"> </span>memory,plans
+node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;browser MCP&quot;</span><span class="w"> </span>--source<span class="w"> </span>docs,code<span class="w"> </span>--limit<span class="w"> </span><span class="m">8</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>포함 내용</th>
+<th>용도</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>memory</td>
+<td>project-shared와 허용된 private memo</td>
+<td>decision과 handoff</td>
+</tr>
+<tr>
+<td>plans</td>
+<td>docs/plans와 implementation plan</td>
+<td>intent와 checkpoint</td>
+</tr>
+<tr>
+<td>docs</td>
+<td>README, native guidance, public docs</td>
+<td>runbook</td>
+</tr>
+<tr>
+<td>code</td>
+<td>scripts, mcp-server, test, config</td>
+<td>implementation fact</td>
+</tr>
+<tr>
+<td>all</td>
+<td>모든 source</td>
+<td>첫 targeted lookup</td>
+</tr>
+</tbody>
+</table>
+<p>project-shared memo는 지원 client 사이에서 보입니다. agent-private note는 codex-cli, claude-code, gemini-cli, opencode-cli, hermes-agent, grok-build 등 matching runtime id가 필요합니다.</p>
+<h2 id="lazy-load-fast-startup-lazy-load">Lazy Load (Fast Startup) {#lazy-load}</h2>
+<p>interactive session은 기본적으로 lazy context loading을 사용합니다. compatibility workflow가 full context를 필요로 할 때:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">CTXDB_LAZY_LOAD</span><span class="o">=</span><span class="m">0</span>
+</code></pre></div>
+<p>aios init이 registry marker를 만들면 client가 registry와 facade guidance에서 context를 발견할 수 있습니다. legacy 또는 unwrapped client는 compatibility fallback을 사용할 수 있습니다. lazy loading은 context selection 동작이며 source 존재나 자동 query를 보장하지 않습니다.</p>
+<h2 id="context-pack-manual-control">Context pack과 manual control</h2>
+<p>handoff나 제한된 history slice에는 bounded context pack을 사용합니다.</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>mcp-server
+npm<span class="w"> </span>run<span class="w"> </span>contextdb<span class="w"> </span>--<span class="w"> </span>context:pack<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--session<span class="w"> </span>&lt;session-id&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--limit<span class="w"> </span><span class="m">80</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--token-budget<span class="w"> </span><span class="m">1200</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--token-strategy<span class="w"> </span>balanced
+</code></pre></div>
+<p>storage 진단이나 재현 가능한 handoff가 필요할 때:</p>
+<div class="highlight"><pre><span></span><code>npm<span class="w"> </span>run<span class="w"> </span>contextdb<span class="w"> </span>--<span class="w"> </span>init
+npm<span class="w"> </span>run<span class="w"> </span>contextdb<span class="w"> </span>--<span class="w"> </span>session:new<span class="w"> </span>--agent<span class="w"> </span>codex-cli<span class="w"> </span>--project<span class="w"> </span>my-app<span class="w"> </span>--goal<span class="w"> </span><span class="s2">&quot;fix auth bug&quot;</span>
+npm<span class="w"> </span>run<span class="w"> </span>contextdb<span class="w"> </span>--<span class="w"> </span>checkpoint<span class="w"> </span>--session<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--summary<span class="w"> </span><span class="s2">&quot;auth fix done&quot;</span><span class="w"> </span>--status<span class="w"> </span>running
+npm<span class="w"> </span>run<span class="w"> </span>contextdb<span class="w"> </span>--<span class="w"> </span>index:rebuild
+</code></pre></div>
+<p>일반 사용자는 aios init과 native doctor에서 시작하면 됩니다.</p>
+<h2 id="client-privacy">Client 간 기억과 privacy</h2>
+<p>integration이 지원되고 sync되어 있으면 여러 client가 하나의 project registry를 공유할 수 있습니다. registry가 다른 client의 private home configuration을 노출하는 것은 아닙니다. 실제 상태는 aios doctor --native --verbose로 확인하세요.</p>
+<p>project file은 로컬이지만 agent가 선택한 내용을 설정된 model provider로 보낼 수 있습니다. package install과 MCP registration에도 각자의 network boundary가 있습니다. 민감한 내용은 redaction workflow를 거쳐 공유하세요.</p>
+<h2 id="legacy-compatibility">Legacy compatibility</h2>
+<p>오래된 wrapper와 script는 .contextdb-enable을 opt-in marker로 인식할 수 있습니다. 현재 primary path는 aios init과 .aios/context-db/index.json입니다. compatibility workflow가 명시적으로 요구할 때만 legacy switch를 사용하세요.</p>
+<h2 id="faq">FAQ</h2>
+<h3 id="contextdb-cloud-database">ContextDB는 cloud database인가요?</h3>
+<p>아닙니다. registry, session, export, canonical memo는 local workspace file입니다. client provider와 optional integration에는 별도의 network boundary가 있습니다.</p>
+<h3 id="client">여러 client가 같은 기억을 공유하나요?</h3>
+<p>지원되고 sync된 경우 같은 project ContextDB를 사용할 수 있습니다. 하지만 route, skill, MCP capability가 같다는 뜻은 아닙니다.</p>
+<h3 id="new-clear">/new 또는 /clear 뒤에는 어떻게 되나요?</h3>
+<p>terminal conversation만 reset되고 project file은 남습니다. 새 session을 시작하고 registry, unified search, named context pack에서 evidence를 recall하세요.</p>
+<h3 id="_4">기억을 끄려면?</h3>
+<p>client를 중지하고 client guidance에 따라 integration marker를 조정합니다. 오래된 workflow가 .contextdb-enable을 사용했을 때만 해당 file을 삭제하세요. marker 삭제는 기존 .aios data를 지우지 않습니다.</p>
+<h3 id="_5">무엇을 삭제해도 되나요?</h3>
+<p>derived index는 재구축할 수 있습니다. sessions, exports, memo JSONL은 source data이므로 삭제 전에 backup하세요.</p>
+<h2 id="_6">다음 페이지</h2>
+<ul>
+<li><a href="/ko/docs/getting-started/">빠른 시작</a></li>
+<li><a href="/ko/docs/workflow-policy/">Workflow Policy</a></li>
+<li><a href="/ko/docs/token-compression/">Token Intelligence</a></li>
+<li><a href="/ko/docs/architecture/">아키텍처</a></li>
+<li><a href="/ko/docs/troubleshooting/">문제 해결</a></li>
+</ul></div>
+    <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+    <nav class="rex-doc-pager"><a href="/ko/docs/codemap/">← 上一篇</a><a href="/ko/docs/debug-hub/">下一篇 →</a></nav>
+    <a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  </article>
+</div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="zh" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>博客 — AIOS (中文)</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">中文</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/" hreflang="en" lang="en">English</a><a class="rex-lang-opt is-active" href="/zh/blog/" hreflang="zh" lang="zh" aria-current="true">中文</a><a class="rex-lang-opt" href="/ja/blog/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/blog/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 中文</p><h1>Agent 工程的<span>真实复盘。</span></h1>
+    <p class="lede">发布记录、架构决策与可复核的工程实验——来自正在构建 AIOS 的团队。</p></div>
+  </header>
+  <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  <section style="padding-top:16px"><div class="rex-blog-grid"><a class="rex-blog-card" href="/zh/blog/2026-03-rexcli-skills-install-experience/"><b>RexCli Skills 安装体验更新：全局/项目范围、更清晰的选择器</b><span>RexCli 本次更新不只重做了 skills 安装与卸载体验，也把仓库内 skill 主源收口到 skill-sources/，默认安装模式改成可移植 copy，并把 Node 运行基线统一到 22 LTS，升级后无需手动清理旧目录。文中还说明与旧安装模式的兼容策略。</span><em>2026-03-17</em></a><a class="rex-blog-card" href="/zh/blog/2026-03-rexcli-windows-cost-tracking/"><b>RexCli 最新更新：Windows 原生支持 + 实时成本追踪</b><span>RexCli 带来重大更新：完整的 Windows 工作流支持、实时 API 成本追踪与 OpenCode Agent 集成，让 AI 开发更高效也更透明。文章给出成本面板的实际读数、按调用量做预算的方法与 Windows 环境下的配置要点。</span><em>2026-03-16</em></a><a class="rex-blog-card" href="/zh/blog/2026-04-browser-mcp-weak-model-upgrade/"><b>Browser MCP 弱模型升级：语义快照 + 文本点击</b><span>本次迭代通过紧凑页面语义工具、文本优先点击动作与真实 CDP 兼容性修复，提升弱模型在浏览器任务中的完成率。文章给出改动前后的对比数据、仍然会失败的边界场景，以及判断是否值得切换的依据。文中给出在弱模型上复现这些改进的最小测试步骤与预期结果。</span><em>2026-04-18</em></a><a class="rex-blog-card" href="/zh/blog/2026-04-contextdb-lazy-load/"><b>ContextDB 懒加载：从 5 秒启动到 Agent 自主发现</b><span>我们废弃了启动时的完整 Pack 注入，改用小于 50ms 的 Facade 加载、后台异步 Bootstrap 与运行时触发编排，让 Agent 只在需要时才加载记忆。文章给出启动开销与召回时延的实测变化，以及迁移时的注意事项。文中附迁移检查清单，方便评估是否值得升级。</span><em>2026-04-19</em></a><a class="rex-blog-card" href="/zh/blog/2026-04-rexcli-ink-tui-refactor/"><b>RexCli TUI 重构：基于 React Ink 的现代终端交互</b><span>RexCli 把 TUI 安装程序从手动字符串渲染迁移到 React Ink 与 Ink UI 组件架构，交互体验和代码可维护性同时提升。文章说明重构前后的差异、组件划分方式，以及迁移过程中踩到的渲染与终端兼容问题。也适合准备做同类重构的终端工具参考。</span><em>2026-04-02</em></a><a class="rex-blog-card" href="/zh/blog/2026-04-solo-harness/"><b>Solo Harness：把任务丢给 Agent，去睡觉，早上查结果</b><span>AIOS 1.7 新增过夜 Agent 运行模式：带运行日志、启停控制与 git worktree 隔离，中断后可从上次检查点继续。文章给出一个真实夜间任务的执行记录与验收证据，并说明哪些任务不适合无人值守。文中说明怎样判断一次夜间运行是否成功。</span><em>2026-04-26</em></a><a class="rex-blog-card" href="/zh/blog/2026-05-aios-memo-gui/"><b>aios memo GUI：把 Agent 的记忆变成一张活的图谱</b><span>ContextDB 可视化界面来了：用交互式节点图探索会话、检查点与记忆之间的关系，直观看出某个结论来自哪次对话。文章介绍界面入口、常用操作、数据存储位置，以及它与命令行查询各自适合的场景。读完可以直接用图排查记忆依赖关系，不必再翻找原始日志。</span><em>2026-05-15</em></a><a class="rex-blog-card" href="/zh/blog/2026-05-codemap-crg/"><b>Codemap：给你的 AI Agent 一张代码地图</b><span>一行命令将 Tree-sitter 知识图谱注入所有编程 agent：opencode、codex、claude、gemini。Agent 不再盲目 grep，而是基于真实代码结构做决策，调用者、依赖、测试覆盖与影响半径都可见，安装后各客户端共享同一份地图。</span><em>2026-05-21</em></a><a class="rex-blog-card" href="/zh/blog/2026-05-debug-hub-mcp/"><b>debug-hub：当你的 Agent 能自己调试 Bug，你就能睡个好觉</b><span>如果你的 coding agent 能自己看错误日志、自己定位并修 bug，而不用每次都叫醒你呢？这就是 debug-hub：一个 MCP 原生日志服务，支持按会话、时间与关键字检索并给出修复建议，文中附完整接入步骤。文中也说明它与普通日志文件的差别。</span><em>2026-05-06</em></a><a class="rex-blog-card" href="/zh/blog/2026-05-model-router/"><b>Model Router：别再猜该用哪个 AI 模型了</b><span>一个调度层，能读懂你的任务描述并自动选择最合适的 AI 模型，再也不用死记硬背各家模型特长。文章解释路由依据、回退规则与 explain 参数的用法，也说明什么情况下应该手动覆盖自动选择。让你把精力放回问题本身，而不是反复纠结模型选型与配额。</span><em>2026-05-08</em></a><a class="rex-blog-card" href="/zh/blog/2026-05-native-token-compression/"><b>Token Intelligence 分层架构：ContextDB、RTK、Caveman 与 Headroom MCP</b><span>理解 AIOS 当前的 token intelligence：pull-based ContextDB、本地 RTK 与 Caveman 压缩，以及显式 Headroom MCP 检索。文章划清各层边界，说明哪一层负责省钱、哪一层必须保质量，并给出实测压缩比区间。</span><em>2026-05-12</em></a><a class="rex-blog-card" href="/zh/blog/2026-05-token-compression/"><b>Token 压缩：把几个月的 Agent 记忆塞进一个 Prompt</b><span>ContextDB 现在能在 token 预算内压缩 Agent 历史：保留重要的、丢弃不重要的，并在压缩后仍可召回关键决策。文章给出压缩策略、预算配置方式与召回质量的实测对比，也分析了压缩失败的典型情况。文中说明压缩之后如何验证没有丢关键信息。</span><em>2026-05-12</em></a><a class="rex-blog-card" href="/zh/blog/2026-05-v140-multi-client-expansion/"><b>v1.40：现已支持 6 个 AI 编程客户端</b><span>AIOS 从 4 个扩展到 6 个支持的客户端，新增 Antigravity CLI 与 Crush，所有客户端均获得 superpowers 工作流技能。文章列出各客户端的接入方式、能力差异与验证结果，并说明后续的演进方向。方便你判断是否值得切换客户端。</span><em>2026-05-31</em></a><a class="rex-blog-card" href="/zh/blog/2026-06-agent-governance/"><b>Agent 治理：让 Team live 运行先证明自己</b><span>AIOS 如何用 smoke 证据、provenance、token 压缩指标与 skill training gate，把更多 agents 纳入统一工作流。文章给出治理模型、指标口径与落地检查清单，适合多个团队共用一套 Agent 基础设施时参考。</span><em>2026-06-16</em></a><a class="rex-blog-card" href="/zh/blog/2026-06-hermes-agent-aios-client/"><b>Hermes Agent 正式成为 AIOS 一等公民客户端</b><span>AIOS 现在把 Hermes Agent (Nous Research) 注册为一等公民 AIOS 客户端，并通过 MCP 桥接服务器暴露 5 个核心工具，让 Hermes 用户直接享受 AIOS 的上下文记忆、Doctor 健康检查、Token 压缩、Skill 验证和 Skill 安装能力。</span><em>2026-06-30</em></a><a class="rex-blog-card" href="/zh/blog/2026-06-v150-unified-aios-search/"><b>v1.50.0：统一 AIOS 搜索覆盖记忆、文档、计划和代码</b><span>AIOS v1.50.0 为所有支持的 coding client 提供统一搜索入口，覆盖项目记忆、pinned memo、文档、计划与代码，同时保留作用域隔离。文章给出搜索语法、结果排序与权限边界，并说明它与本地 grep 的分工。避免在多个工具之间重复劳动。</span><em>2026-06-04</em></a><a class="rex-blog-card" href="/zh/blog/2026-06-v1501-token-compression-compliance/"><b>v1.50.1：全客户端 Token 压缩合规</b><span>AIOS v1.50.1 用 pre_send、post_receive、proof 矩阵与 direct host bypass 违规记录，让所有 AIOS 客户端的省 token 指标可度量。文章解释各指标含义、如何读取报表，以及常见的伪合规情形与识别方法。</span><em>2026-06-05</em></a><a class="rex-blog-card" href="/zh/blog/2026-06-v152-aios-shell-mcp/"><b>v1.52.0：通过 MCP 实现确定性的 Shell 输出压缩</b><span>AIOS v1.52.0 引入 aios_shell：一个 MCP 工具，为所有 AIOS 客户端提供确定性 shell 输出压缩，同时带来 shim 自愈与敏感命令守卫。文章给出压缩效果、兼容性范围、安全策略与升级注意事项。文中也说明哪些输出不会被压缩。</span><em>2026-06-11</em></a><a class="rex-blog-card" href="/zh/blog/2026-06-v202-ecc-uplift/"><b>v2.0.2：更安全的技能健康记录与更干净的 Crush 配置</b><span>AIOS v2.0.2 强化技能健康遥测、修复新增 CLI 入口的 help 路由，并从仓库中移除被跟踪的 Crush 配置文件。文章说明遥测字段的含义、这次清理对升级的影响，并附发布后的验证步骤。升级过程不需要改配置，本文给出三步验证清单。</span><em>2026-06-15</em></a><a class="rex-blog-card" href="/zh/blog/2026-07-choose-agent-workflow/"><b>AI Agent 工作流怎么选？AIOS 路由决策指南</b><span>用一张决策表选择 noop、direct、guarded、planned 工作流，并配套示例、执行面与验证清单。文章说明每一档的适用场景、什么条件该升级到更重的流程，以及如何避免把简单任务过度流程化。可以直接作为团队内部的工作流规范落地使用。</span><em>2026-07-14</em></a><a class="rex-blog-card" href="/zh/blog/2026-07-grok-build-aios-client/"><b>Grok Build 正式成为 AIOS 一等公民客户端</b><span>AIOS 现已将 xAI Grok Build 注册为一等公民 AIOS 客户端：skills、agents、native 同步、Codex 形态 TOML MCP、team/harness，runtime id 为 grok-build。</span><em>2026-07-09</em></a><a class="rex-blog-card" href="/zh/blog/2026-07-headroom-token-intelligence/"><b>v3.6.0：用 Headroom 与 Ponytail 构建更稳的 Token 智能工作流</b><span>AIOS 将 RTK、Caveman、Headroom MCP、ContextDB 与 Ponytail 启发的决策门禁组合起来，同时明确客户端配置的所有权边界。文章说明各组件的职责、默认值与冲突处理，避免多处配置互相覆盖。升级前建议先读完这一篇。</span><em>2026-07-10</em></a><a class="rex-blog-card" href="/zh/blog/2026-07-raw-cli-to-reliable-workflow/"><b>从零散 CLI 命令到可靠的 AI Agent 工作流</b><span>通过路由、编辑门禁、检查点与验证证据，把一组零散的 AI CLI 命令变成可复用、可恢复的工程流程。文章给出改造前后的对比、最小落地步骤与常见阻力，适合刚把 Agent 引入日常开发的小团队。读完可以照着搭出属于自己的第一条可靠工程流水线。</span><em>2026-07-14</em></a><a class="rex-blog-card" href="/zh/blog/2026-07-v320-harness-reliability-upgrade/"><b>v3.20 Harness 可靠性升级：失败分类、退避上限与 dry-run 就绪度</b><span>了解 AIOS v3.20 如何区分业务失败与基础设施失败，并用有上限的退避与 dry-run readiness 改善长任务稳定性。文章给出失败分类表、重试上限的配置方式，以及一次真实故障的完整复盘过程。对长任务稳定性要求高的团队值得一读。</span><em>2026-07-12</em></a><a class="rex-blog-card" href="/zh/blog/2026-07-v400-adaptive-workflow-policy/"><b>v4.0 自适应工作流策略：AIOS 如何选择合适的工程流程</b><span>用实际例子理解 AIOS v4.0 的 noop、direct、guarded、planned 路由、计划持久化与最终验证门禁。文章说明判定条件、计划状态的落库位置、回滚方式，以及与旧版本行为之间的具体差异。读完能判断自己的任务会被路由到哪一档。</span><em>2026-07-14</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-10-aios-loop-graph-engineering/"><b>Graph Engine 本地实现：Loop Engineering 连接成 Agent 图</b><span>Graph Engine 本地实现：AIOS 如何把 Loop Engineering 工具箱（验证器、退出条件、状态文件）与图节点、边、共享状态、失败路由组合成可验证的 Agent 图，并对比 LangGraph、CrewAI、AutoGen 等生态。</span><em>2026-08-10</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-ai-agent-security/"><b>Agent 安全是状态机问题：Codex 安全讨论遗漏的部分</b><span>Codex 安全讨论成为本周最大 AI 编程话题，但多数建议集中在提示注入。Agent 安全其实主要是状态机问题：激活状态原子性、并发 token 推进、evidence 真实性。v5.4.0 用写前事务、文件锁和类型化 schema 直接加固了这三处。</span><em>2026-08-02</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-ai-coding-cost-crisis/"><b>AI 编程账单失控：Cursor 隐藏成本、亚马逊烧掉 180 万美元，本地层能改变什么</b><span>Cursor 从用量页移除成本数据、亚马逊内部报告显示简单任务花掉 180 万美元、Codex 恢复时长限额，AI 编程账单为什么失控？文章分析可见性、阈值预警与本地记忆层能改变什么，并给出成本控制清单。适合正在给团队制定预算与告警策略的人阅读。</span><em>2026-08-02</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-parallel-coding-agents/"><b>并行 coding agent 不是免费的：Git worktree 隔离文件，隔离不了状态</b><span>本周 Hacker News 讨论&#x27;Git worktrees 不是 coding agent 的隔离边界&#x27;：worktree 隔离的是文件，不是状态。多个 agent 共享计划、激活存储、token 流和 evidence 日志时，会出现和多线程代码一样的竞态——丢失更新、双重消费、静默冲突。</span><em>2026-08-02</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v540-workflow-iteration-v21/"><b>v5.4.0：工作流迭代 v2.1 — Activation 安全与 Evidence 契约</b><span>AIOS v5.4.0 新增原子化 Activation 状态写前事务、并发 token 锁、类型化 Wayfinder/Planning Artifact schema、严格 evidence ref 校验，并完成 S1–S5 全批次 Skill 审查。</span><em>2026-08-01</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v541-windows-self-update-safety/"><b>v5.4.1：为什么 Windows 上 &#x27;aios update&#x27; 会坏，以及我们怎么修好的自更新</b><span>v5.4.1 修复了一个 Windows 专属的自更新失败：从安装目录内运行 aios update 会锁住安装器必须删除的目录，静默嵌套新版本并让后续更新以 MODULE_NOT_FOUND 崩溃。本文讲根因、三层修复与旧版本升级路径。升级前对照本文可以避免再次踩坑。</span><em>2026-08-02</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v543-crg-decision-checkpoints/"><b>v5.4.3：CRG 决策检查点、Worker Journal 改名与幂等的 aios init</b><span>v5.4.3 把 code-review-graph 决策检查点接入工作流层——agent 在改文件前先看爆炸半径；solo harness 日志目录更名为 worker-journal（旧目录自动迁移）；aios init 新增 --yes/--retry/--force 实现幂等安装。</span><em>2026-08-06</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v544-agent-smoke-reliability/"><b>v5.4.4：Agent 冒烟检测可靠性——输出契约客户端与超时自动升级</b><span>v5.4.4 修复了 Agent 卡在&#x27;command 无效 / workflow 卡死&#x27;状态的问题：live smoke 现在兼容 Codex 等输出契约客户端，硬编码的 30 秒探测超时改为可配置（默认 60 秒），探测遇到超时会按 2x/4x 自动升级重试，不再一次超时就把 Agent 永久判</span><em>2026-08-06</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v550-ask-first-requirements-alignment/"><b>v5.5.0：Ask-First 需求对齐——智能体不再交付你不需要的东西</b><span>v5.5.0 让工作流主动识别模糊请求（如优化一下前端页面），在规划前暂停并与用户对齐。澄清预算与假设兜底保证不会无限询问，智能体交付的是用户真正想要的，而不是它自己猜出来的版本。文中还说明如何调整澄清预算，在打扰次数与返工成本之间取得平衡。</span><em>2026-08-08</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v551-agent-lifecycle-promotion/"><b>v5.5.1：基于证据的 Agent 生命周期晋级</b><span>v5.5.1 移除了 Agent 晋级的硬编码瓶颈：默认覆盖全部 canonical roles，完整 managed evidence 通过后即可进入 live workflow。文章说明晋级条件、证据要求与回滚方式，适合正在扩展 Agent 团队的用户。</span><em>2026-08-08</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v560-aios-work-concurrent-dispatch/"><b>v5.6.0：一条命令并行多 Agent 编码 — aios work</b><span>v5.6.0 新增 aios work：一条命令把任意任务变成规划好的并发多 Agent 调度，规划、实现、审查与安全检查并行执行，并在 merge gate 收口。文章给出使用方式、并发上限与失败后的恢复策略。适合任务量大又必须守住质量门禁的团队。</span><em>2026-08-11</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v561-aios-work-plan-driven-dispatch/"><b>v5.6.1：计划驱动的多 Agent 调度 —— aios work 读取你的计划</b><span>v5.6.1 让 aios work 变成计划驱动：活动结构化计划中的合格任务直接变成并行工作项，带依赖、路径归属与验收标准，不再隐性分解。文章对比计划驱动与自由分解的差异，并说明依赖冲突的处理方式。让并发调度过程可解释、可回溯，也方便事后审计。</span><em>2026-08-12</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v580-governed-self-evolution/"><b>v5.8.0：AIOS 安全地自我迭代——Session Memory、证据门禁与可回滚晋级</b><span>AIOS v5.8.0 修复 memo 触发链，并加入带确定性验收、灰度晋级、审计与回滚的自我迭代管道。文章说明晋级门槛、审计记录包含哪些内容、什么情况下会自动回滚，适合对自动化改动有合规要求的团队。读完能判断这套自动化改动机制是否适合自己。</span><em>2026-08-22</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v581-stall-fix-llm-judged-grilling/"><b>v5.8.1：Agent 不再卡死——aios-shell 冻结修复与 LLM 语义判断的需求澄清</b><span>AIOS v5.8.1 修复 aios-shell MCP 在执行长命令时冻结 opencode 与 codex 的问题，并把基于正则的模糊检测改为 LLM 语义判断：grilling 在执行中发生，一次只问一个决策问题，不再反复打断。本文给出复现与验证方法。</span><em>2026-08-26</em></a><a class="rex-blog-card" href="/zh/blog/2026-08-v582-plan-sync-workbuddy/"><b>v5.8.2：计划不再抢跑，AIOS 现在原生支持 WorkBuddy</b><span>AIOS v5.8.2 修复了子代理上报成功但缺少 task id 时计划自行推进的问题，并将 WorkBuddy 接纳为完整支持的客户端——原生指令、MCP、24/24 技能，以及通过内置 codebuddy CLI 驱动 harness。</span><em>2026-08-29</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-browser-mcp-default-off/"><b>v6.1.0：浏览器 MCP 默认关闭——安装时三选一，之后随时切换</b><span>v6.1.0 不再在每台机器上自动启用浏览器 MCP。安装时你在 none / playwright / bsk 三个互斥模式中选一个，AIOS 只装配你选的那个引擎。默认是「最轻」的那个：关。</span><em>2026-09-23</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-engineering-standards-trigger-chain/"><b>v6.2.0：真正会触发的工程标准</b><span>AIOS 早就发布了工程标准技能——但它一次都没触发过。一次“被分发却无人点名”的审计、一条新的共享参照投影通道、一份文件粒度基线，让经典软件工程纪律落到了每一条产出代码的路径上。</span><em>2026-09-28</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-jev-aios-quickstart/"><b>Jev + AIOS 快速上手：不用关键词，后台自动判定（顺带澄清 JVM）</b><span>设置 TYPESAFE_API_KEY，跑 aios integration add typesafe 和 aios judgment enable typesafe，然后平时怎么聊还怎么聊，Jev（jev-latest）在后台自动判定。讲清为什么只安装永远不触发、aios_judge 与 rex </span><em>2026-09-19</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-pi-client-aios/"><b>Pi coding agent 成为 AIOS 一等公民客户端</b><span>AIOS 接入 Pi（earendil-works/pi）：skills、原生指令、harness 驱动、代码层 extension 与 RPC 控制。提示词层已通，嵌入层已至。文章说明当前已支持的能力、配置方式、最小可用示例与仍待补齐的部分。</span><em>2026-09-11</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-token-bench-first-ab-numbers/"><b>我们实测了自己的 token 压缩：AIOS Token Bench 首份 A/B 数据</b><span>AIOS 在冻结的任务集上实测自己的压缩机制。新 Pi 观察卸载机制的三对 A/B：成本均值省 21%，但 token 节省在 +21% 到 -64% 之间摆动，机制以 opt-in 发布。完整表格与诊断。</span><em>2026-09-30</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v510-release-trust-and-repo-slimming/"><b>v5.10.0 — 发布可信与仓库减负</b><span>Windows 回归全绿、发布证据门时序修复、Actions 按 SHA 钉死并加上 gitleaks 与 npm audit 门、仓库减负 461 个文件、提示词撰写规范落地：一个不发新特性、专门修复可信度问题的版本，附升级说明。升级前建议对照检查自己的流水线。</span><em>2026-09-06</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v511-prompt-contracts/"><b>v5.11.0 提示词契约加固——让模型自报状态，不再靠猜</b><span>记忆五要素抽取、验证评分回环、卡死自报、压缩分级、弱模型钉死、节点 recipe 与 planning ledger：7 组提示词契约让模型自报状态，零运行时改动，升级只需拉取仓库并刷新客户端投影。无需改动任何运行时配置，拉取后刷新投影即可生效。</span><em>2026-09-06</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v512-memory-plane-closeout/"><b>v5.12.0 记忆系统收尾——从能存到能管：卫生、报表、迁移导入、分级加载</b><span>memo 卫生命令（零删除）、aios memory report 全记忆面报表、aios import 迁移旧记忆为受治理候选、AgentView T0-T3 分级、Autodream opt-in 触发、embedding 粗排默认关。真实语料基线 top-1 98%。</span><em>2026-09-09</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v514-loopx-control-plane/"><b>v5.14.0：LoopX 控制面 + 孤儿进程终结</b><span>AIOS v5.14.0 把 provider turn 收敛为可结算契约，为无人值守加上节奏管理，超时杀掉整棵进程树，aios-shell 不再卡死。文章解释结算契约的字段设计、进程树回收的实现方式与升级注意事项。升级前建议先读完本文的注意事项一节。</span><em>2026-09-13</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v515-pi-mcp-bridge/"><b>v5.15.0：Pi 获得真正的 MCP 能力</b><span>AIOS v5.15.0 为 Pi 扩展新增只读 aios_codemap_search 工具，在 install 时把 AIOS 托管的 MCP servers 桥接进 Pi，并给 skills doctor 的旧布局告警配上了安全的清理路径。</span><em>2026-09-14</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v516-zcode-client/"><b>v5.16.0：ZCode 加入 AIOS——并且拥有真正的子代理</b><span>AIOS v5.16.0 将 ZCode 纳入一等客户端：共享根 skills、AGENTS.md 原生上下文、team 路由、strict-schema 的 MCP 桥接，并通过 inline plugin 把 rex 角色卡安装为可执行的 ZCode 子代理；同批修复了 Pi 的能力链。</span><em>2026-09-16</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v518-judgment-gate/"><b>v5.18.0：AIOS 接入 TypeSafe Jev——默认关闭，是刻意的</b><span>四步配好 TYPESAFE_API_KEY，看懂为什么装了文档 MCP 也永远不会触发判断，以及为什么新的 aios judgment 闸门在你明确开启之前一直关闭。</span><em>2026-09-18</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v519-judgment-gate-surfaces/"><b>v5.19.0：给判定闸门装上身体</b><span>opt-in 的 Jev 闸门现在接到了工作真正流经的两个面上：一个在关闭时根本不存在的 aios_judge MCP 工具，以及一个只能拦下推进的 rex 阶段闸门。</span><em>2026-09-18</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v5191-declaration-you-can-reach/"><b>v5.19.1：一个真正够得着的声明通道</b><span>工作流策略从不猜意图，所以一个够不着的声明通道会静默变成「没有声明」。这个版本让 shell 也能声明，而为它写的守卫顺带查出 82 个从未被任何门禁跑过的测试文件。</span><em>2026-09-18</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v5192-names-windows-can-hold/"><b>v5.19.2：Windows 能容纳的文件名</b><span>候选 id 合法地就是 &#x27;session:&lt;id&gt;&#x27;。在 NTFS 上把它当文件名用，它就变成备用数据流：写入看起来成功了，readdir 却永远列不出它，晋升记录就这样丢失，而导入方仍然报告零错误。</span><em>2026-09-18</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v520-qoder-client/"><b>v5.20.0：Qoder 加入 AIOS——第十个客户端，一个定义块</b><span>AIOS v5.20.0 将 Qoder 纳入第十个一等客户端：`.qoder/skills` 投影、写入 Qoder 真实读取的 settings.json 的 MCP 配置、AGENTS.md 原生上下文，以及 `-p` 无头 team 运行。</span><em>2026-09-19</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v590-memory-activation-across-clients/"><b>v5.9.0 记忆系统跨客户端激活：从正则触发到提示词驱动</b><span>了解 AIOS v5.9.0 如何把记忆激活迁移到确定性入口与提示词契约：会话启动自动注册、aios-memory MCP 三工具、五端触发契约投影，以及 Codex 启动弹窗的根因修复与验证方式。读完可以逐项自查各客户端是否已正确激活记忆。</span><em>2026-09-02</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v600-engineering-standards/"><b>v6.0.0：工程标准内建——AIOS 构建软件，而不只是生成代码</b><span>v6.0.0 把经典软件工程书单变成框架一等公民：每个代码生产步骤都先加载同一套质量基线——Clean Architecture 边界、深层模块、Clean Code 规则、测试与工具链基线——任何改动只有通过 Definition of Done 才算完成。</span><em>2026-09-21</em></a><a class="rex-blog-card" href="/zh/blog/2026-09-v601-engineering-standards-rex/"><b>v6.0.1：工程标准移入 rex-harness——基线搬去和消费者同住</b><span>v6.0.1 把工程标准技能从宿主搬进 rex-harness 子模块，改名 rex-engineering-standards（rex-harness 0.7.0）：能力链的共同质量基线现在随能力链发布，独立使用 rex-harness 的消费者也不再错过它。</span><em>2026-09-21</em></a><a class="rex-blog-card" href="/zh/blog/2026-10-grill-with-docs/"><b>v6.3.0：/grill 成为真命令，盘问会自己落盘，pi 自己挑 MCP 承载</b><span>v6.3.0 补上 aihero /grill-with-docs 模式照出的两个缺口：/grill 现在真正注册进客户端、斜杠补全能找到它；rex-requirements 盘问把确认的术语和决策直接写进 CONTEXT.md 和 ADR。同一版本还让 pi MCP 桥按已装的 pi 版本自选承载</span><em>2026-10-01</em></a><a class="rex-blog-card" href="/zh/blog/2026-10-harness2-jobbench-aios-measurement/"><b>我们用 AIOS 复现了 Google 的 Harness²：harness 工程到底值多少分</b><span>Harness² 论文说，换工位（harness）比换脑子（模型）更能提分：JobBench +4.5pp。我们用 AIOS 的 harness 工程能力在自己的机器上把这套评测完整跑通，再把 AIOS 自己的工位放上同一记分台：同一个模型、同一个任务，裸机 51.1% → **AIOS 工位 85</span><em>2026-10-20</em></a><a class="rex-blog-card" href="/zh/blog/2026-10-qwen-flash-aios-pi/"><b>一句话需求，一件软件：小模型月烧 36 亿 token——AIOS 让「人人能做开发」成真</b><span>AIOS 的卖点只有一句话：让每个人都能做软件开发，只要你描述清楚需求。支撑它的实测证据：Qwen 3.8 Flash 接进 Pi coding agent，套上 AIOS 控制平面（需求澄清、工作流路由、项目记忆、证据门禁、多 Agent 调度），一个月高强度烧掉 36 亿 token、缓存命中率</span><em>2026-10-16</em></a><a class="rex-blog-card" href="/zh/blog/2026-10-v6160-fresh-context-stops-being-a-hope/"><b>v6.16.0：新鲜上下文不再靠碰运气——AIOS 把它测量、声明、注入，并让 fork 变得无害</b><span>v6.16.0 把「fresh context, not a fork」从「我们起进程时碰巧成立」变成被测量、被声明、被注入、被测试钉住的合同。AIOS 自己起的 worker 本来就有结构性新鲜（一次性 prompt、RESERVED_FLAGS 封锁 --resume）；宿主自己的 Task/A</span><em>2026-10-30</em></a><a class="rex-blog-card" href="/zh/blog/2026-10-v640-control-plane-stops-guessing/"><b>v6.4.0：一个不再靠猜的控制平面——账本不许分叉、拒绝即功能、门禁跑在它声称的地方</b><span>v6.4.0 把三件事钉死：计划账本不再因重复登记而分叉（A21–A23）、CLI 面对写请求不再悄悄换成只读视图（A19）、声明了的检查真的在 CI 里跑（A20 + 目录预算 + 受影响测试）。同一版本落地 mattpocock/skills v1.3 三件套的双面采纳（retro / impl</span><em>2026-10-15</em></a><a class="rex-blog-card" href="/zh/blog/2026-10-v650-opencode2-contract-config-stops-lying/"><b>v6.5.0：OpenCode 2.x 插件契约，以及那份不再谎报 AIOS 位置的配置</b><span>v6.5.0 修的是一类在你的命令行上看不到报错的故障：客户端还在，集成已经死了。OpenCode 2.x 只读 default 导出且要求 { id, effect | setup }，而 AIOS 生成的是 1.x 具名导出——插件加载失败只剩一条 WARN，CRG 图谱更新和 RTK 命令重写</span><em>2026-10-17</em></a><a class="rex-blog-card" href="/zh/blog/2026-10-v660-scratch-space-leaked-into-your-project-list/"><b>v6.6.0：agent 的草稿空间漏进了你的项目列表，以及一个拒绝猜测的垃圾回收器</b><span>v6.6.0 收口一个任何测试都抓不到的体验缺陷：开发者工程目录里长出了 41 个一次性沙箱（9.9 GB），因为 `mktemp -d prefix-XXXX` 落在 shell 的当前目录，而那些 shell 当时正站在仓库的父目录上。这些东西不在任何仓库里，所以全世界的 .gitignore </span><em>2026-10-17</em></a><a class="rex-blog-card" href="/zh/blog/2026-10-v670-external-skills-get-a-front-door/"><b>v6.7.0：一条命令，所有客户端——&#x27;aios skill add&#x27; 给社区技能开了正门</b><span>v6.7.0 堵上 AIOS 技能体系的一个安静缺口：`skill-sources/` 之外的好技能没有入口。最好用的社区技能（clone-website）只活在某一个客户端的全局技能目录里，其余九个客户端根本看不见它。修法不是迁移，是开正门：`aios skill add &lt;source&gt;` 解析</span><em>2026-10-18</em></a><a class="rex-blog-card" href="/zh/blog/2026-10-v700-grill-readiness/"><b>v7.0.0：Grill 先解决关键未知，再开始实施</b><span>需求记录加入决策依赖、失败路径、可行性依据和已有用户对齐。缺少准备度或仍有阻塞时，Rex 保留当前澄清命令。</span><em>2026-10-30</em></a><a class="rex-blog-card" href="/zh/blog/2026-11-v710-console-and-mcp/"><b>v7.1.0：统一 Console 界面与 MCP 配置写入</b><span>本机 AI 工具管理器替换旧 Console；共享 MCP 写入器先计算全部编辑再写入，并区分历史落点证据与当前连接测试。</span><em>2026-11-06</em></a><a class="rex-blog-card" href="/zh/blog/advanced-design-skills-page-building/"><b>高级设计技能页面制作：把模糊提示词变成可生产 UI</b><span>一套可执行的实践：用 DESIGN.md 与 frontend-design 技能，把「改一改页面」这类模糊需求落地为稳定、高质量的 UI 与交互，包含视觉契约模板、验收清单与常见返工原因，适合前端与设计协作场景。交付前照着清单自查一遍即可。</span><em></em></a><a class="rex-blog-card" href="/zh/blog/ai-cli-comparison/"><b>2026年了，别再纠结用哪个 AI 编程工具了</b><span>Claude Code 与 Codex、Gemini 的深度对比，以及一个意想不到的第三选择：不替换你现有的 CLI，而是补上一层工作流。文章给出同一批长任务上的实测结果、选型建议与可直接使用的决策表。读完能明确自己该继续用哪个 CLI、又该补上什么。</span><em></em></a><a class="rex-blog-card" href="/zh/blog/automation-playbook-post/"><b>自动化运营实践：搭建可靠的浏览器内容工作流</b><span>一套以内容队列、人工审核、可见 CDP 浏览器、ContextDB 与结果测量为核心的可恢复内容运营流程。文章给出每日节奏、失败重试策略与人工介入点，可以直接照搬到自己的账号运营中改造使用。文中也说明哪些环节必须保留人工审核，避免账号风险。</span><em>2026-07-14</em></a><a class="rex-blog-card" href="/zh/blog/cli-comparison-post/"><b>长任务场景下，Codex、Claude、Gemini 到底怎么选？</b><span>用三个 CLI 跑同一批长任务之后的结论：没有最好的工具，只有最合适的场景，真正决定结果的是工具之外的工作流。文章给出对比方法、评分维度，以及让我改变判断的三个具体案例与最终建议。读完你大概会重新考虑选型标准，而不是继续在三个工具之间反复横跳。</span><em></em></a><a class="rex-blog-card" href="/zh/blog/contextdb-fts-bm25-search/"><b>ContextDB 检索升级：FTS5/BM25 + 增量索引同步</b><span>ContextDB 如何结合 SQLite FTS5、BM25、refs 精确过滤与可观测增量同步，提升 AI Agent 记忆检索的可靠性。文章解释排序原理、索引更新时机、常见漏召回原因，并给出检索性能的实测数据。适合正在自建记忆检索的团队参考。</span><em>2026-06-18</em></a><a class="rex-blog-card" href="/zh/blog/index/"><b>博客中心</b><span>AIOS 工程与增长博客中文版：覆盖记忆系统、单 Agent harness、Agent Team 并行协作、浏览器自动化、工作流策略与多客户端落地实践。每篇都给出可复现的命令、证据与踩坑记录，适合按主题挑选阅读，也方便对照英文版核对技术细节。</span><em></em></a><a class="rex-blog-card" href="/zh/blog/launch-post/"><b>终于等到了！我做了 AIOS，让 AI 编程工具不再互相“打架”</b><span>AIOS 的诞生故事：一个统一 Claude Code、Codex 与 Gemini 的工作流层，不替换你已有的工具，只补上记忆、路由与验证。文章说明关键设计取舍、早期失败尝试，以及最终让它成立的那个决定。文中也给出当时的失败尝试与最终奏效做法的对照。</span><em></em></a><a class="rex-blog-card" href="/zh/blog/orchestrate-live/"><b>Orchestrate Live：安全 opt-in 的 Subagent Runtime</b><span>理解 dry-run 与 live 编排的区别、受限并行 phase、JSON handoff、ownership 门禁与 provider 就绪度。文章给出切换时机、失败回退方式与常见配置错误，适合准备在真实项目里开启编排的团队。避免第一次上 live 就踩坑。</span><em>2026-06-20</em></a><a class="rex-blog-card" href="/zh/blog/rl-training-system/"><b>AIOS RL 训练系统：从合成 BUG 修复到多环境联合学习</b><span>我们如何构建一个跨 shell、浏览器与编排器任务训练共享学生策略的多环境强化学习系统，共用同一个统一控制平面。文章给出环境抽象、奖励设计与训练稳定性处理，并分享早期失败的排查经验。文章适合对多环境强化学习与统一控制平面感兴趣的工程师通读一遍。</span><em>2026-03-27</em></a><a class="rex-blog-card" href="/zh/blog/windows-cli-startup-stability/"><b>Windows CLI 启动稳定性：保护跨 CLI 可靠性链路</b><span>Windows cmd 启动修复如何保护 ContextDB 连续性、包裹策略与原生 Codex、Claude、Gemini 启动路径。文章给出根因分析、修复涉及的层次、仍然存在的平台限制，以及可自行执行的验证命令。Windows 用户升级前建议先读这一篇。</span><em>2026-03-20</em></a><a class="rex-blog-card" href="/zh/blog/xiaohongshu-automation/"><b>吐血整理！我用 AI 把小红书运营自动化后，同事以为我请了助理</b><span>从每天 2 小时到 15 分钟：我用 AI 自动化小红书运营的完整流程，包含内容队列、可见浏览器操作、人工审核点与效果测量，以及哪些步骤我仍然坚持自己检查，避免踩到平台规则红线。文章按内容队列、生成、审核、发布、复盘逐步说明，可以直接照着搭一套自己的流程。</span><em></em></a></div></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

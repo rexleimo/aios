@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ja" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v6.16.0：まともな「fresh context」——AIOS が計測し、宣言し、注入し、fork を無害化する</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">日本語</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-10-v6160-fresh-context-stops-being-a-hope/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/blog/2026-10-v6160-fresh-context-stops-being-a-hope/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt is-active" href="/ja/blog/2026-10-v6160-fresh-context-stops-being-a-hope/" hreflang="ja" lang="ja" aria-current="true">日本語</a><a class="rex-lang-opt" href="/ko/blog/2026-10-v6160-fresh-context-stops-being-a-hope/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-10-30</p><h1>v6.16.0：まともな「fresh context」——AIOS が計測し、宣言し、注入し、fork を無害化する</h1>
+    <p class="lede" style="font-size:17px">v6.16.0 は「fresh context, not a fork」を『プロセス起動の偶然に成立していた』状態から、計測され、宣言され、注入され、テストで固定された契約に変える。AIOS が起動する worker は構造的に fresh だった（一回きりの prompt、RESERVED_FLAGS が --resume をブロック）。宿主自身の Task/Agent ツールには制約もローカル証拠もゼロだった。だからまず計測した：nonce プローブ（aios agents probe --client &lt;id</p>
+    <div class="meta"><a href="/ja/blog/">← 全部文章</a> · <a href="/ja">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<blockquote>
+<p><strong>要約：</strong> 会話を継承した subagent は、あなたの<strong>誤った前提</strong>も継承する。きれいな dispatch 面が 1 つ、
+完全に無制約の dispatch 面が 1 つあった。そして現場でいちばん loud な主張（「Codex は既定で fork する」）は、
+他人の断言であってローカル証拠はゼロだった。本リリースはそれを計測し、宣言し、<strong>自分たちが生成する成果物</strong>に制約を書き込み、
+そして気にする理由そのものを消した：自己完結した brief。<code>unknown</code> は引き続き正当な答えだ。どのゲートも既定で赤にはしない。</p>
+</blockquote>
+<h2 id="_1">私たちが写すことを拒否した前提</h2>
+<p>Matt Pocock の skills 線は「fresh context」に具体的な工学的理由を与えている：親の transcript を継承した実装者は、
+親の<strong>誤った前提</strong>も一緒に継承し、自分が本当に見るべきコンテキスト handoff を得られない。いい話だ。しかし
+「Codex は既定で fork する」は外部の主張として我々の会話に入ってきた。このリポジトリの規則は
+<strong>計測していないものは計測していないと記録する</strong>。だから指示文を書く前に、プローブを作った。</p>
+<div class="highlight"><pre><span></span><code>親会話   →  AIOS-NONCE-A8AF556CF1934014 を埋め込み、子に复述を求める
+子の回答 →  复述できた        → fork
+           复述できなかった    → fresh
+           それ以外すべて      → unknown + reason
+</code></pre></div>
+<p>実際の headless codex での <code>aios agents probe --client codex --json</code> の戻り値：</p>
+<div class="highlight"><pre><span></span><code>verdict=fork  reason=child-reported-parent-nonce  confidence=indirect
+</code></pre></div>
+<p>……保存された回答の banner には session <code>01a18ae5-a4a8-7882-988d-60e1e98bdb53</code> がそのまま残っており、
+誰でも検証できる。pi は違う答えを返した：そもそも subagent ツールを持たないので
+<code>surface: none</code> / <code>contextMode: not-applicable</code>、confidence は <code>direct</code>。8 クライアントはいまだに <code>unknown</code>——
+これは<strong>意図的</strong>だ。</p>
+<h2 id="2-dispatch">2 つの dispatch 面、扱いを分ける</h2>
+<table>
+<thead>
+<tr>
+<th>dispatch 面</th>
+<th>v6.16.0 以前</th>
+<th>現在、誰が owner か</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AIOS が起動する worker</td>
+<td>構造的に fresh——ただし実装の副産物にすぎなかった</td>
+<td><code>one-shot.mjs</code> は一回きりの prompt を渡すだけ。<code>RESERVED_FLAGS</code> が <code>--resume</code> / <code>--continue</code> を拒否</td>
+</tr>
+<tr>
+<td>宿主自身の Task/Agent ツール</td>
+<td><strong>制約ゼロ</strong>：宣言なし、計測なし、カードに一言もない</td>
+<td>プローブ → 宣言 → カード条項 → Dispatch Brief</td>
+</tr>
+</tbody>
+</table>
+<p>実装中に誠実さを保つために効いた 3 つの規則：</p>
+<ul>
+<li><strong><code>unknown</code> は正当な結論。</strong> <code>fresh</code> を既定にすることも、blocker にすることも絶対にしない。</li>
+<li><strong>サイドカーであって評価軸ではない。</strong> <code>CAPABILITY_AXES</code> は固定 token 集。軸を 1 本増やせば scorecard の合計点が動き、
+  レポートの同時書き直しが必須になる。<code>subagents</code> は横にぶら下げたので、<code>client-capability-scorecard.mjs --check</code> のドリフトはゼロのまま。</li>
+<li><strong>モデルの自己申告は裏付けにはなっても、創出にはならない。</strong> pi が「subagent ツールはない」と言ったのが
+  <code>direct</code> 証拠になるのは、<strong>設定がすでに <code>surface: none</code> を宣言していたから</strong>だ。未宣言のクライアントが同じことを言っても
+  <code>unknown / no-subagent-spawned</code> のまま。散文は能力の事実を作れない。</li>
+</ul>
+<h2 id="_2">私たちが信じていた到達面——そしてそれは誤りだった</h2>
+<p>計画にはこうあった：共有 native partial に規律を書けば、全クライアントに届く。私たちはディレクトリ構造を信じず、
+<code>fs.readFileSync</code> に計測器を仕込んで 10 クライアント分の投影を実際に走らせ、<strong>到達</strong>を測った：</p>
+<div class="highlight"><pre><span></span><code>core/core-instructions.md   →  composeNativeMarkdown() が読む、10/10 クライアント
+残り 9 個の partial            →  何も読んでいない。caller ゼロ
+</code></pre></div>
+<p><code>readSharedMarkdownParts</code>——それらを引き込む唯一の関数——にはリポジトリにもインストール済みランタイムにも
+呼び出し箇所が<strong>存在しない</strong>。しかも私の最初のカウントは 2 段階で誤っていた：basename を grep して
+「7 個の孤児」と報告したが、それは docs や blog の<strong>言及</strong>を参照として数えていたためだ。真数は 9。
+<strong>「ファイルが書かれた」と「モデルが読んだ」は別の事実だ。</strong></p>
+<p>したがって到達面はちょうど 2 か所、どちらも私たちの側にある：</p>
+<ul>
+<li><strong>worker 側</strong> —— 3 つの固定条項、単一 owner（<code>emitters/shared.mjs</code>）：親会話の継承なし、brief とそれが指す ref だけで働く、
+  事実に欠けがあれば <code>blocked</code>、親に transcript を貼らせることはしない。生成カードは実測で
+  <strong>38/38 枚</strong>が 3 条項すべてを命中させ、Output Contract は<strong>ちょうど 1 部</strong>。19 個の role source に手書きコピーされた
+  陳腐化したフィールド表（<code>agentId/blockers/evidenceRefs</code>）は強制 schema と矛盾していたため、schema への 1 行のポインターに置き換えた。
+  古い表は<strong>ソースで削除せずレンダリング時に除去</strong>する——<code>REQUIRED_PROMPT_MARKERS</code> が <code>## Output contract</code> 見出しの存在を
+  要求しつづけているからだ。</li>
+<li><strong>ディスパッチ側</strong> —— <code>## Dispatch Brief</code>：純関数 1 つで構築し、レンダラー 1 つで描画し、<strong>既存の</strong> prompt 組立器に注入する。
+  2 番目の組立器は作らなかった。</li>
+</ul>
+<p>fork はここで正確性の問題ではなくなる：必要な事実がすべて brief にあるなら、親のコンテキストを継承しても
+worker が得るものはなく、token を浪費するだけだ。</p>
+<h2 id="_3">報告するゲートと、赤くなるゲート</h2>
+<p><code>aios status</code> はもはや曖昧な 1 語ではなく、分解された事実を出す：</p>
+<div class="highlight"><pre><span></span><code>subagent-context=incomplete measured=2/10 fork=1(codex) unknown=8
+</code></pre></div>
+<p><code>fork</code> は「計測済み」という中立的なカウントに吸収されず、リスク事例として単独表示され、
+全体は <code>blockers</code> の外に置かれる——このリポジトリは <code>duplicateLines</code> から
+<strong>処置計画のない既定赤のゲートは、直されるのではなく黙殺される</strong>ことを学んだからだ。
+赤くなるのは<strong>到達の主張</strong>の側：<code>native-partial-delivery.test.mjs</code> は partial ごとに
+<code>composed</code> または <code>documentation-only</code> ＋理由の明示を要求し、<code>composed</code> は挙動で証明する
+（loader に読まれ<strong>かつ</strong>最終成果物に視認できること）、<code>documentation-only</code> は読まれないことを証明する。
+両方向とも、ゲートに嘘をついて実測済み：composed と嘘をつけば赤、黙って到達して宣言を変えなければ赤。</p>
+<h2 id="_4">プローブが途中で転けたもの</h2>
+<ul>
+<li><strong><code>stripManagedTables</code> は TOML テーブル名を『表記』で比較していた。</strong> 同じパスが <code>"C:\\Users\\..."</code> と
+  <code>'C:\Users\...'</code> の 2 通りで書かれると、デコード後のキー 1 つに対して <code>[projects.*]</code> が 2 つになり、
+  codex は完全に起動しなくなった：<code>duplicate key</code>、exit 1、全コマンドが。同じ関数にもっと悪い欠陥が隠れていた——
+  「管理ブロック内」を表すフラグが 1 つだけだったため、マークのない旧式 AIOS テーブルで <code>MANAGED_END</code> まで
+  <strong>人間が書いた後続設定を飲み込んで削除</strong>する。今はテーブルの同一性＝<strong>デコード後のキー</strong>を <code>path.resolve()</code> で比べ、
+  状態フラグも 2 つに分離した。</li>
+<li><strong>宿主の banner が分類器を騙した。</strong> 実際の codex 回答が <code>answer-not-json</code> と記録された——
+ パーサが最初の <code>{</code> から最後の <code>}</code> まで切り出したところ、banner が echoedした prompt がそれを壊していた。
+  現在はbalance の取れた JSON オブジェクトだけを走査し、<code>subagentSpawned</code> を持つ 1 つのみを受け入れる。
+  さらに明示：<strong>echoed された nonce は fork の証拠ではない</strong>。</li>
+<li><strong>pi の JSON イベントストリームは prompt を echoed する</strong>（nonce も含まれる）。生の stdout を判定すると
+  永久に偽の <code>fork</code> になるため、判定は解析後の <code>assistantText</code> だけを読む。</li>
+<li><strong>証拠ファイルにサイズ上限を設けた。</strong> ある宿主ストリームは実測 208,782 文字。回答は打ち切って保存し、
+  <code>answerLength</code> / <code>answerTruncated</code> を添える。</li>
+<li><strong>Windows の shim はバージョンを返さなかった。</strong> <code>spawnSync('pi', …)</code> は npm shim を抜けてバージョンを読めない。
+  これは版ドリフト検出を<strong>永久に静かに無効化</strong>していた。現在は版取得も platform spawn spec 経由——
+  ここにある他のすべてと同じく、単一 owner だ。</li>
+</ul>
+<h2 id="_5">本リリースが正直に認める空白</h2>
+<ul>
+<li>完成定義の <strong>D3 は未達成</strong>：hermetic な空セッションに brief <strong>だけ</strong>を渡して schema 準拠の handoff を出させる実行は、
+  <strong>一度も走らせていない</strong>。既存テストが証するのは構造的な可用性であり、静的アサーションをモデル実行の代わりにはしない。</li>
+<li>10 クライアント中 8 が未計測。それぞれ 1 回の実宿主呼び出しが必要。</li>
+<li>9 個の partial には規律の文があるのに到達面がない。共有 <code>AGENTS.md</code> に書くと、subagent ツールを持たない
+  クライアントへ指令が漏れる。だからそれは独立した設計判断——本リリースが固定するのは
+  <strong>「ファイルを書くことは到達ではない」</strong>の一点だけ。</li>
+<li>インストール済みランタイムの <code>stripManagedTables</code> はまだ修正前。そこから native install を実行すると
+  duplicate key を再造りしうる（更新するまで）。</li>
+</ul>
+<h2 id="_6">試してみる</h2>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>agents<span class="w"> </span>probe<span class="w"> </span>--client<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--json<span class="w">      </span><span class="c1"># ある宿主のコンテキスト継承を計測</span>
+aios<span class="w"> </span>agents<span class="w"> </span>probe<span class="w"> </span>--client<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--dry-run<span class="w">   </span><span class="c1"># 何を実行するかだけ出力。モデル呼び出しを消費しない</span>
+aios<span class="w"> </span>status<span class="w">                                 </span><span class="c1"># subagent-context=incomplete measured=2/10 fork=1(codex) unknown=8</span>
+node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>standards<span class="w"> </span>--root<span class="w"> </span>.<span class="w"> </span>--rule<span class="w"> </span>directoryEntries
+</code></pre></div>
+<p>本リリースの担保証拠：全文レグレッション 2484 tests / 2475 pass / 0 fail / 9 skipped；
+probe + declaration + runner の 3 スイート 28/28；生成カード 38/38 がちょうど 1 部の契約；<code>check-syntax</code> 1296 ファイル / 0 失敗；
+<code>scorecard --check</code> は 13 クライアントで ok・ドリフトなし；<code>check-doc-citations</code> の invalid は 335 → 335 のまま、refs は 542 → 563。</p></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

@@ -9,6 +9,7 @@ on:
       - "VERSION"
       - "docs-site/**"
       - "blog-site/**"
+      - "landing/**"
       - "scripts/mkdocs_version.py"
       - "scripts/mkdocs_single_h1.py"
       - "scripts/mkdocs_sitemap_merge.py"
@@ -39,19 +40,21 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install docs dependencies
+      # The published surface is the zero-build static site in landing/:
+      # home + localized docs/blog (en/zh/ja/ko), links rooted at "/".
+      # MkDocs sources are the content origin; landing/scripts/build-site.py
+      # renders them into this deployable tree. Deploy at the site root so
+      # /docs/, /blog/, /zh/... are all valid absolute paths.
+      - name: Assemble site from landing/
         run: |
-          sudo apt-get update
-          # social plugin card rendering: cairo (cairosvg) + freetype + CJK fonts
-          sudo apt-get install -y libcairo2-dev libfreetype6-dev fontconfig fonts-noto-core fonts-noto-cjk
-          python -m pip install --upgrade pip
-          pip install -r docs-requirements.txt
-
-      - name: Build docs site
-        run: mkdocs build --strict -f mkdocs.yml
-
-      - name: Build blog site
-        run: mkdocs build --strict -f mkdocs.blog.yml
+          test -f landing/index.html
+          test -f landing/docs/index.html
+          test -f landing/blog/index.html
+          mkdir -p site
+          cp landing/index.html site/
+          for d in assets docs blog zh ja ko getting-started; do
+            if [ -e "landing/$d" ]; then cp -R "landing/$d" site/; fi
+          done
 
       - name: Setup Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0

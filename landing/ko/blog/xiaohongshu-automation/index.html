@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ko" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>手작업 그만! AI 자동화로 매일 2시간씩 절약한 방법</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">한국어</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/xiaohongshu-automation/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/blog/xiaohongshu-automation/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/blog/xiaohongshu-automation/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt is-active" href="/ko/blog/xiaohongshu-automation/" hreflang="ko" lang="ko" aria-current="true">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · </p><h1>手작업 그만! AI 자동화로 매일 2시간씩 절약한 방법</h1>
+    <p class="lede" style="font-size:17px">매일 2시간 걸리던 샤오홍슈 운영이 15분으로 줄었습니다. 콘텐츠 큐, 보이는 브라우저 조작, 사람의 검토 지점, 효과 측정까지 AI로 자동화한 실제 흐름을 소개합니다. 직접 확인하는 단계와 규정 위반을 피하기 위한 주의점도 담았습니다.</p>
+    <div class="meta"><a href="/ko/blog/">← 全部文章</a> · <a href="/ko">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>믿기 어려우시겠지만, 저는 혼자서 3개의 소书 계정을 관리하면서도 매일 정시에 퇴근해요.</p>
+<p>勤奋해서가 아니라, <strong>重复劳动을全都是 AI에게 맡겼기 때문이에요</strong>.</p>
+<hr />
+<h2 id="01">01. 효과 먼저, 이야기 나중에</h2>
+<p>数据 드릴게요,吹牛하지 않거든요:</p>
+<table>
+<thead>
+<tr>
+<th>지표</th>
+<th>자동화 전</th>
+<th>자동화 후</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>하루 소요 시간</td>
+<td>2시간</td>
+<td>15분</td>
+</tr>
+<tr>
+<td>게시물 수</td>
+<td>1-2편/일</td>
+<td>5-8편/일</td>
+</tr>
+<tr>
+<td>팔로워 증가</td>
+<td>50/주</td>
+<td>200+/주</td>
+</tr>
+<tr>
+<td>참여율</td>
+<td>3%</td>
+<td>12%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>그 2시간을 어떻게 절약했는지? 계속 읽어보세요.</strong></p>
+<hr />
+<h2 id="02">02. 뭘 자동화했나요?</h2>
+<h3 id="1">시나리오 1: 게시물 작성</h3>
+<p><strong>이전</strong> (30분 걸렸어요):
+1. 소书 앱 열기
+2. "게시물 작성" 탭
+3. 사진 선택 (앨범 뒤적이기)
+4. 캡션 작성 (30분 끙끙)
+5. 확인 탭하여 업로드
+6. 업로드 완료 대기
+7. 发布成功 확인</p>
+<p><strong>지금</strong> (0분, 全自动):</p>
+<p>자료를 指定 폴더에 넣고...</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 누워서 자동 게시 기다리기</span>
+codex
+</code></pre></div>
+<p>AIOS가 자동 처리: 로그인 → 사진 선택 → 캡션 작성 → 게시 → 스크린샷 확인.</p>
+<p>꿈이 아니에요. 100번 테스트해봤어요. 98% 성공률.</p>
+<h3 id="2">시나리오 2:互动 (좋아요 + 댓글 + 팔로우)</h3>
+<p><strong>이전</strong>: 매일 1시간 동안 팔로잉 목록 스크롤하며, 수동으로 좋아요 + 댓글 복사 붙여넣기. 손 아프고 마음 지치죠.</p>
+<p><strong>지금</strong>:</p>
+<p>키워드 설정해두면(예: "프로그래밍", "AI", "성장"), AIOS가 자동:
+- 대상 유저巡回
+- 지능형 좋아요
+- 개인화 댓글 생성 (那种"互粉必回"垃圾 댓글 같은 거 아니에요)
+- 자동 팔로우 / 맞팔로우</p>
+<h3 id="3">시나리오 3: 데이터 모니터링</h3>
+<p><strong>이전</strong>: 매일 소书 10번 열어 데이터 확인. 눈 다 펴요.</p>
+<p><strong>지금</strong>: 오전 9시에 자동 수집, 전날 데이터 리포트 생성해서 이메일로 보내줘요.</p>
+<p>포함 내용:曝光量, 조회수, 좋아요, 저장, 댓글, 팔로워 증가...</p>
+<hr />
+<h2 id="03-aios">03. 핵심 기술: 왜 AIOS인가?</h2>
+<p>생각해봤을 수 있어요: "타오바오 대행运营才 99/月인데, 왜 직접折腾해요?"</p>
+<p>좋은 질문이에요. 차이점을 설명할게요.</p>
+<h3 id="vs-aios">일반 스크립트 vs AIOS</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>타오바오 스크립트</th>
+<th>AIOS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>브라우저 컨트롤</td>
+<td>없거나模拟</td>
+<td>진짜 Playwright</td>
+</tr>
+<tr>
+<td>断点续跑</td>
+<td>❌ 끊기면 처음부터</td>
+<td>✅ Context DB가 진행 상황 기억</td>
+</tr>
+<tr>
+<td>반检测</td>
+<td>基本上没有</td>
+<td>랜덤 딜레이 + 행동 시뮬레이션</td>
+</tr>
+<tr>
+<td>다중 계정</td>
+<td>어려워요</td>
+<td>멀티 프로필 격리</td>
+</tr>
+<tr>
+<td>유지보수</td>
+<td>提供商会跑路</td>
+<td>오픈소스, 내가 직접改</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_1">我的使用场景</h3>
+<p>매일 오전 9시 반에 출근해서, 커피 한 잔的时间内, 5개 계정의 오늘 태스크가全部完成了.</p>
+<p>그다음 제가 할 일은:
+1. 데이터 리포트 확인
+2. 오늘 어떤 콘텐츠 낼지 고민
+3. 남은 시간에는 여자친구 만나러 / 공부 / 片休息</p>
+<p><strong>이게 자동화의 올바른 자세예요: 당신의 사고를 대체하는 게 아니라, 생각할 필요 없는 시간을 절약해주는 거예요.</strong></p>
+<hr />
+<h2 id="04">04. 자주 묻는 질문</h2>
+<p><strong>Q1: 계정 밴 당하나요?</strong></p>
+<p>A: 가능하지만 피할 수 있어요. 핵심은 진짜 인간 행동 시뮬레이션이에요:
+- 랜덤 操作间隔 (5-30초)
+- 랜덤 스크롤 궤적
+- 랜덤 클릭 위치
+- 단시간에 고빈도 操作禁止</p>
+<p>AIOS는 이미 기본으로 이 설정들이 켜져 있어요. 굳이 끄지 마세요.</p>
+<p><strong>Q2: 소书 로그인 상태를 어떻게 유지하나요?</strong></p>
+<p>A: 브라우저 프로필이 保存해요. 처음 한 번 수동 로그인하면, 그 뒤로 자동 Cookie 재사용해요. 보통 1-2주 유지되고, 만료 전에 다시 로그인하면 돼요.</p>
+<p><strong>Q3:真的能生成文案吗?</strong></p>
+<p>A: 가능해요. 하지만 완전 AI에게 다 맡기진 마세요. 최적 방법: AI가 초안 작성 → 내가 수정 → 자동 게시.</p>
+<hr />
+<h2 id="05">05. 어떻게 시작하나요?</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. 프로젝트 클론</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/rexleimo/aios.git
+
+<span class="c1"># 2. 설치</span>
+<span class="nb">cd</span><span class="w"> </span>aios
+./scripts/setup-all.sh<span class="w"> </span>--components<span class="w"> </span>all
+
+<span class="c1"># 3. 실행</span>
+codex
+</code></pre></div>
+<p>상세 설정은 여기서: <a href="https://rexai.top">rexai.top</a></p>
+<hr />
+<h2 id="06">06.我的建议</h2>
+<ol>
+<li><strong>한 계정부터 시작하세요</strong> — 처음부터 5개 계정 말고,부터流程부터 먼저 터득하세요</li>
+<li><strong>콘텐츠가 왕이에요</strong> — 자동화는 시간 절약해줌，但不能帮你生产好内容</li>
+<li><strong>数据说话</strong> — 매일 데이터 리포트 보는 게盲目操作보다 100배 중요해요</li>
+</ol>
+<hr />
+<h2 id="07">07. 마무리</h2>
+<p><strong>계정运营에서 가장 많이 걸리는 부분이 뭐예요?</strong></p>
+<p>캡션 작성?互动? 데이터 분석?</p>
+<p>댓글에 알려주세요, 다음엔 가장 필요한 부분을专项写一篇写到데요.</p>
+<hr />
+<p><strong>도움이 됐다면, 좋아요 한 번 눌러주세요.</strong></p>
+<p>더 많은 AIOS 활용법 알고 싶으시면? <a href="https://rexai.top">rexai.top</a> 팔로우, 계속 AI 자동화 실전 케이스 나눠드릴게요.</p>
+<p><strong>다음 글 예고: AIOS로 10개 소书 계정 동시에管理해도 안 밴 받는 방법</strong></p></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

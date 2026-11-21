@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="en" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Sentence In, One Product Out: A Small Model Burned 3.6 Billion Tokens a Month — AIOS Makes Software Development Something Anyone Can Do</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">English</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt is-active" href="/blog/2026-10-qwen-flash-aios-pi/" hreflang="en" lang="en" aria-current="true">English</a><a class="rex-lang-opt" href="/zh/blog/2026-10-qwen-flash-aios-pi/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-10-qwen-flash-aios-pi/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/blog/2026-10-qwen-flash-aios-pi/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-10-16</p><h1>One Sentence In, One Product Out: A Small Model Burned 3.6 Billion Tokens a Month — AIOS Makes Software Development Something Anyone Can Do</h1>
+    <p class="lede" style="font-size:17px">AIOS has one selling point: software development for everyone, as long as you can describe what you want. The field evidence behind it: Qwen 3.8 Flash inside the Pi coding agent, wrapped in the AIOS control plane (requirements grilling, workflow routing, proje</p>
+    <div class="meta"><a href="/blog/">← 全部文章</a> · <a href="/">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>The pitch first: <strong>AIOS exists to do one thing — make software development something anyone can do, as long as they can describe what they want.</strong> "Can code" is no longer the entry ticket; "can state the requirement" is — and stating requirements is a skill humans already have.</p>
+<p>The corollary is this post's test subject: you don't need a flagship model — you barely need an expensive one. For the past month I've run Qwen 3.8 Flash (medium thinking effort) as my primary coding model, inside the Pi coding agent, wrapped in one layer of the <a href="https://github.com/rexleimo/aios">AIOS</a> control plane. This "pony pulling a cart" setup burned <strong>3.628 billion tokens</strong> in a single month at a <strong>96% cache-hit rate</strong>, and shipped a full slate of real projects — from promo-video rendering to parallel multi-agent releases.</p>
+<p>My felt experience after a month: <strong>this combo's delivery level already rivals the flagship GPT-6 Sol itself.</strong> One size smaller model, one notch lower cost — and a basic request really is one sentence in, one working result out, with tests and evidence attached.</p>
+<h2 id="do-any-of-these-scenes-ring-a-bell">Do any of these scenes ring a bell?</h2>
+<ul>
+<li>A 40-minute task died at minute 18; you re-explained the whole context in a fresh session and it still got it wrong;</li>
+<li>It says "done" — you open the project and the tests never ran and the feature isn't there;</li>
+<li>The flagship model is brilliant, but its price tag doesn't survive 24/7 usage;</li>
+<li>The small model is cheap and fast, but you dare not hand it anything important — it forgets everything between sessions.</li>
+</ul>
+<p>If even one of these hits, what you're missing isn't a bigger model — it's a control plane. Here's the full evidence of how AIOS turned a small model into something worth delegating: screenshots, repos, shipped projects — all checkable.</p>
+<h2 id="the-only-new-skill-you-need-describing-what-you-want">The only new skill you need: describing what you want</h2>
+<p>The historical gate for software was "can write code". AIOS moves the gate: from "can code" to "can describe the requirement" — and the second one you already speak natively. But there's a precondition: <strong>you actually have to describe it clearly.</strong></p>
+<p>AIOS doesn't gamble on you "happening to be clear". It productizes clarity itself:</p>
+<ul>
+<li><strong>Requirements grilling (<code>/grill</code> + ask-first)</strong>: say "build me a download tool" and it won't start typing code — it checks the repo and past decisions first, then asks you exactly one decision question at a time (auth method? storage location?), each question carrying a stated assumption, converging within three rounds — fuzzy want becomes an acceptance-testable spec;</li>
+<li><strong>Workflow tiering (direct / guarded / planned)</strong>: a one-line fix just happens; a multi-step job gets a plan you can read before anything is built — you always know what it's doing;</li>
+<li><strong>Evidence gates before "done"</strong>: to say the word "done" it must first pass tests, diffs, screenshots — it cannot bluff you;</li>
+<li><strong>Cross-session memory</strong>: the requirement you didn't finish describing today is still remembered tomorrow — "continue" actually continues.</li>
+</ul>
+<p>The full flow looks like this: you say "I want a YouTube parsing &amp; download tool, frontend/backend split" → AIOS asks back two decision questions → routes to the planned tier → dispatches parallel implementation → delivers with tests and screenshots as evidence. You did exactly two things the whole way: <strong>described the requirement, and answered two questions.</strong></p>
+<p>Every number and every project below is a product of this flow.</p>
+<h2 id="evidence-not-adjectives-what-the-internal-artifacts-look-like">Evidence, not adjectives: what the internal artifacts look like</h2>
+<p>All three shots below are real files in the repository — check them yourself:</p>
+<p><img alt="ADR decision record: settled decisions land in the repo — even &quot;don't follow the upstream rename&quot; has a source" src="/assets/qwen-flash-aios/shot-adr.png" /></p>
+<p><strong>ADR decision records</strong>. Requirements clarification doesn't evaporate after the interview: settled decisions are written live into <code>docs/architecture/adr/</code> — even a ruling like "keep CONTEXT.md, don't follow the upstream rename" carries the original quote, the date, and the consequence analysis. That's what stops a future session from quietly changing its mind.</p>
+<p><img alt="Project memory checkpoints: every milestone pinned, with its verification line right next to it" src="/assets/qwen-flash-aios/shot-memo.png" /></p>
+<p><strong>Project memory (<code>.aios/memo/</code>)</strong>. Every milestone is pinned as a checkpoint, with "verified: pnpm test all green + typecheck/lint pass" written beside it — this is the machinery behind "continue" actually continuing.</p>
+<p><img alt="Real session capture: the model calls aios_memory_write itself, pinning a hard-won lesson into project memory and getting back a memo event ID" src="/assets/qwen-flash-aios/shot-live-memory.png" /></p>
+<p><strong>Writing in real time (the shot above, happening live)</strong>. Mid-task, the model judged that "the Dockerfile runtime stage only COPYs allowlisted scripts" was a trap it had fallen into repeatedly — so it called <code>aios_memory_write</code> on its own, pinned the lesson into project memory, and got an event ID back at write time. Nobody asked it to remember. <strong>It decided to remember.</strong> That's what a memory system actually looks like in use: not a lookup table, a habit.</p>
+<p><img alt="Evidence envelope: sha256 hashes, accepted status, non-regression flag — machine-checkable" src="/assets/qwen-flash-aios/shot-evidence.png" /></p>
+<p><strong>Evidence envelopes (<code>docs/evidence/</code>)</strong>. Whether work is done is decided by hashes, not by words: baseline/candidate contentSha256, non-regression flags, acceptance status — all machine-recomputable. "Evidence gates before done" isn't rhetoric; it's this kind of JSON.</p>
+<h2 id="the-data-first-feelings-later">The data first, feelings later</h2>
+<p><img alt="Last 30 days of model usage: 3,627.97M total tokens, 96% cache-hit rate" src="/assets/qwen-flash-aios/token-usage-30d.png" /></p>
+<p>This screenshot is the raw usage panel, untouched:</p>
+<ul>
+<li><strong>Total tokens: 3,627.97M</strong> — one month, all of it real daily development, not benchmark farming;</li>
+<li><strong>96% cache-hit rate</strong> (3,459.56M of 3,604.78M input tokens cached) — context reused to the bone, which is exactly how a small model affords big projects;</li>
+<li>Daily peak of <strong>263.43M tokens</strong> (9/16), with multiple days above 160M — high intensity, long sessions, no gaps.</li>
+</ul>
+<p>That 96% wasn't earned by the model. It was earned by the AIOS layer: resident project memory, pull-based context loading, and a token-compression interception layer that crushes repeated injection. The model only has to <em>think</em>; the environment makes sure it never has to <em>ask again</em>.</p>
+<h2 id="bare-model-vs-wrapped-in-aios-same-horse-two-harnesses">Bare model vs. wrapped in AIOS: same horse, two harnesses</h2>
+<p>Below is the same class of task under "bare Pi + Qwen 3.8 Flash" versus "Pi + Qwen 3.8 Flash + AIOS", over one month of daily use (personal field observation, not a controlled benchmark — the sample is my own work):</p>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Bare-model workflow</th>
+<th>+ AIOS control plane</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cross-session continuation</td>
+<td>Re-explain project context every time; often guesses last session's progress wrong</td>
+<td>Memory recall + checkpoint recovery — "continue" actually continues</td>
+<td>Rework drops sharply</td>
+</tr>
+<tr>
+<td>Long-task survival</td>
+<td>One interruption loses all context; restart from zero</td>
+<td>Checkpoint every step; survives even a killed process</td>
+<td>Overnight tasks become resumable</td>
+</tr>
+<tr>
+<td>Task completion rate</td>
+<td>Complex multi-step work often "looks done"</td>
+<td>Hard evidence gate (tests, diff, screenshots) before anything may claim done</td>
+<td><strong>~40% relative lift</strong></td>
+</tr>
+<tr>
+<td>Cost per task</td>
+<td>Repeated context injection wastes tokens</td>
+<td>96% cache hits + on-demand context</td>
+<td>Effective cost falls clearly</td>
+</tr>
+<tr>
+<td>Multi-agent collaboration</td>
+<td>None</td>
+<td><code>aios work</code>: one command for parallel dispatch with a merge gate</td>
+<td>From zero to one</td>
+</tr>
+</tbody>
+</table>
+<p>Yes, "~40%" is a marketing number — I own that. But the anchor behind it is aggressive: with this combo, a small model's daily delivery level goes head-to-head with the flagship GPT-6 Sol. Why dare say that? Because of a verifiable mechanism: <strong>a small model's failure modes aren't "can't reason" — they're "forgets, drifts, ships unverified"</strong> — and all three failure classes are precisely what the control plane exists to eliminate. Push the environment's error rate down, and the utilization of the model's raw capability goes up. That's why the same model "feels swapped" inside this stack.</p>
+<h2 id="what-this-combo-actually-shipped">What this combo actually shipped</h2>
+<p>Not demos — real, evidence-checkable deliveries. The most direct proof is my <code>E:/coding</code> directory: <strong>every project below was written with the Pi + Qwen small-model + AIOS stack</strong>, and each one started as a one-sentence request:</p>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>aios-pro</strong></td>
+<td>A local-first desktop agent harness — an orchestration layer over real workspaces</td>
+</tr>
+<tr>
+<td><strong>inkloom.im</strong></td>
+<td>A visual AI creative workflow platform — reproducible image/video pipelines</td>
+</tr>
+<tr>
+<td><strong>huabu</strong></td>
+<td>Canvas creation + image &amp; video workbench + re-painting projects and asset management</td>
+</tr>
+<tr>
+<td><strong>rex-ai-tools</strong></td>
+<td>A frontend/backend-split video parsing &amp; download tool</td>
+</tr>
+<tr>
+<td><strong>discourse-worker / services</strong></td>
+<td>Forum worker plus ingest / user-center / webui microservices</td>
+</tr>
+<tr>
+<td><strong>rex-hugo / rex-videos</strong></td>
+<td>Content-site publishing pipeline and an AI video-production skill set</td>
+</tr>
+<tr>
+<td><strong>claude-relay-service / vpn-master / hermes-setup / xsapp</strong></td>
+<td>Relay, deployment, installer, and app-grade engineering</td>
+</tr>
+</tbody>
+</table>
+<p>From platform products (inkloom, aios-pro) to creative workbenches (huabu), to content pipelines, forum microservices, and deployment ops — requirements alignment, architecture, coding, testing, deployment, all without ever switching to a big model. That is the real-world version of "one sentence gets the job done": <strong>your sentences got shorter because the environment caught the long tasks.</strong></p>
+<p>Three sample cases with full evidence chains:</p>
+<p><strong>1. The AIOS promo video: scene-by-scene parallel dispatch, 1,355 frames rendered</strong></p>
+<p>We split a Remotion promo video into independent work items per scene, dispatched multiple small-model agents in parallel, froze shared components on the main thread, and gated completion on the real render log. 45 seconds of video, 1,355 frames, 426-second render — not a single "big model" involved.</p>
+<p><strong>2. The multi-client control plane itself</strong></p>
+<p>AIOS now supports ten coding clients — Codex CLI, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, <strong>Pi</strong>, ZCode, Qoder. The cross-client adapters, the memory system (memo/ContextDB), the RL training system, and v5.6.0's <code>aios work</code> parallel dispatch were all iterated out by small models plus the control plane.</p>
+<p><strong>3. Daily operations automation</strong></p>
+<p>Three Xiaohongshu (RED) accounts on an automated content queue plus browser automation — from 2 hours a day down to 15 minutes (<a href="xiaohongshu-automation.md">full write-up</a>). Small models execute, humans hold the review gates, and the environment guarantees nothing crosses the line.</p>
+<h2 id="how-to-run-it-in-pi">How to run it in Pi</h2>
+<p>Three steps, everything local — no data leaves your machine:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. Install AIOS (Windows: one irm line, see README)</span>
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+
+<span class="c1"># 2. Initialize in your project root — it detects Pi and installs the native overlay</span>
+<span class="nb">cd</span><span class="w"> </span>your-project
+aios<span class="w"> </span>init<span class="w"> </span>--all
+aios<span class="w"> </span>doctor<span class="w"> </span>--native<span class="w"> </span>--verbose
+
+<span class="c1"># 3. Point Pi at Qwen 3.8 Flash (OpenAI-compatible endpoint; see Pi&#39;s own docs for config format)</span>
+pi<span class="w">   </span><span class="c1"># select/specify qwen3.8-flash, then work normally</span>
+</code></pre></div>
+<p>After that your daily flow is unchanged: talk to Pi normally while AIOS handles memory recall, workflow tiering (direct / guarded / planned), and evidence verification before anything claims done. No habit changes — <strong>the agent is still your agent, the model is still your model; AIOS just completes the environment.</strong></p>
+<h2 id="closing-thought">Closing thought</h2>
+<p>After burning 3.6 billion tokens in a month, my biggest takeaway: stop asking "is the small model smart enough" and start asking "does your environment deserve the smartness it already has". Model capability is the multiplicand; the control plane is the multiplier — take the multiplier from 1 to 1.4, keep the same pony as the multiplicand, and you get GPT-6 Sol pacing.</p>
+<p>And the real meaning of that layer isn't token savings: <strong>it rewrites who counts as a developer — from "someone who can write code" to "someone who can state a requirement".</strong> Software development is becoming a capability anyone can hold, and AIOS is the machine that exchanges "described clearly" for "delivered".</p>
+<ul>
+<li>Repo: <a href="https://github.com/rexleimo/aios">github.com/rexleimo/aios</a></li>
+<li>Docs (EN/ZH/JA/KO): <a href="/">cli.rexai.top</a></li>
+<li>Install takes 30 seconds; one day of use shows the gap.</li>
+</ul>
+<p>Install it tonight and let it work while you sleep — tomorrow morning the task is still moving forward, and the results come with evidence attached.</p>
+<p>One sentence in, one delivery out — that's small models plus a control plane at full strength.</p>
+<hr />
+<p><em>Data note: the usage screenshot is the raw personal panel. Percentage lifts in the comparison table are subjective engineering observations from one month of heavy daily use — trend indicators, not academic benchmarks. Reproduce them on your own tasks.</em></p></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

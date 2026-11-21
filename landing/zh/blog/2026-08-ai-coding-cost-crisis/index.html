@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="zh" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 编程账单失控：Cursor 隐藏成本、亚马逊烧掉 180 万美元，本地层能改变什么</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">中文</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-08-ai-coding-cost-crisis/" hreflang="en" lang="en">English</a><a class="rex-lang-opt is-active" href="/zh/blog/2026-08-ai-coding-cost-crisis/" hreflang="zh" lang="zh" aria-current="true">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-08-ai-coding-cost-crisis/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/blog/2026-08-ai-coding-cost-crisis/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-08-02</p><h1>AI 编程账单失控：Cursor 隐藏成本、亚马逊烧掉 180 万美元，本地层能改变什么</h1>
+    <p class="lede" style="font-size:17px">Cursor 从用量页移除成本数据、亚马逊内部报告显示简单任务花掉 180 万美元、Codex 恢复时长限额，AI 编程账单为什么失控？文章分析可见性、阈值预警与本地记忆层能改变什么，并给出成本控制清单。适合正在给团队制定预算与告警策略的人阅读。</p>
+    <div class="meta"><a href="/zh/blog/">← 全部文章</a> · <a href="/zh">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<blockquote>
+<p><strong>快速回答：</strong> AI 编程账单失控有三个原因——花费不可见（Cursor 刚刚从用量页移除了成本数据）、没有预算护栏（亚马逊内部报告显示简单编码任务花掉 180 万美元，超预算 860%）、按 token 计费惩罚每一次冗余重试。本地 agent 层能直接修复前两个问题：它在每次 dispatch 事件里记录 token/美元成本、在运行跨过成本阈值时预警、把便宜任务路由给便宜模型，并把项目记忆留在本地磁盘，让你不再为重复发送的上下文反复付费。</p>
+</blockquote>
+<h2 id="ai">AI 编程成本成为热点的这一周</h2>
+<p>最近几天，三个故事让 AI 编程花费无法再被忽视：</p>
+<ol>
+<li><strong>Cursor 从用量页和 CSV 导出中移除了成本信息。</strong> 这个改动立刻被注意到——在 Hacker News 上拿到 300+ 点赞。当厂商让计量表变得不可读时，通常是因为数字本身不好看。</li>
+<li><strong>亚马逊用 Claude 做简单编码任务花了 180 万美元，超预算 860%。</strong> Tom's Hardware 曝光的内部用量报告显示，简单、可自动化任务的 API 花费远超所有预测。没人注意到，直到账单到来。</li>
+<li><strong>Codex 恢复五小时用量限额。</strong> 限额回归，是因为用量真的很贵。</li>
+</ol>
+<p>这三件事不是孤例，而是同一失败模式在三个不同规模上的重演：<strong>AI 编程花费不可见、没有上限，并且挂在每个 token 都在计费的计量表上。</strong></p>
+<h2 id="_1">账单为什么会失控</h2>
+<h3 id="1">1. 花费在设计中就是不可见的</h3>
+<p>大多数 AI 编程工具的计费入口和功能/席位管理在同一个界面。当数字变得不舒服，阻力最小的路径就是不再展示它。但你看不见的数字就没法优化。回答不了"这周 agent 每个任务花了多少钱"的团队，已经失去了对预算的控制。</p>
+<h3 id="2-agent">2. Agent 行动、人类审批——没人盯着计量表</h3>
+<p>一个问题尝试五种方案，就要花五倍的钱。一次重构把同一个文件生成十遍，就为十次生成付费。没有遥测的自主性就是这样把 20 万美元的预算变成 180 万美元的：每一步单独看都合理，但没有一步会主动报价。</p>
+<h3 id="3-token">3. Token 计费惩罚冗余上下文</h3>
+<p>每次调用都会重新发送相关上下文。如果你的"记忆"只是一个每次调用都重新上传的巨大 prompt，你就在为同样的知识反复付费。控制成本的最大杠杆不是换更便宜的模型，而是<strong>不重复发送你已经知道的东西。</strong></p>
+<h2 id="_2">本地层能改变什么</h2>
+<p>AIOS 是一个本地优先的工作流层，运行在 Claude Code、Codex、Gemini CLI、OpenCode 和 Grok Build 之上。它不替换你的客户端，而是在周围补上缺失的可观测性和记忆。对应上面三个原因：</p>
+<h3 id="dispatch">可见性：每次 dispatch 都带价格</h3>
+<p>每次派发的运行都会把归一化的 token 和美元成本（<code>inputTokens</code>、<code>outputTokens</code>、<code>totalTokens</code>、<code>usd</code>）写进事件记录。运行结束后你能看到某个工作项精确花了多少 token、多少钱，而不是等一个把所有东西混在一起的月度汇总。</p>
+<h3 id="_3">护栏：在账单到来之前预警</h3>
+<p>dispatch 洞察层会把每次运行的 token 用量和可配置阈值比较。超过阈值时，你会收到 <code>cost.high</code> 警告和可操作的下一步（"review dispatch cost and consider smaller work-item batches"）——在运行还新鲜的时候，而不是计费周期结束之后。</p>
+<h3 id="_4">路由：便宜任务走便宜模型</h3>
+<p>模型路由器按能力、<strong>成本</strong>和实测成功率派发。一行修复不需要旗舰模型，复杂的架构问题才需要。按成本路由，区别在于你的 agent 舰队是永远用最贵的工具，还是用能干活的最便宜的工具。</p>
+<h3 id="_5">记忆：停止为同一份上下文付费</h3>
+<p>ContextDB 把项目记忆存在本地磁盘、做 token 压缩，每次调用只注入相关片段。配合社区 RTK/Caveman 压缩层，可以砍掉冗余上下文税——大多数 AI 编程预算里最大的一笔隐形开销。</p>
+<h2 id="_6">快速上手</h2>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>init<span class="w"> </span>--all
+aios<span class="w"> </span>doctor<span class="w"> </span>--native<span class="w"> </span>--verbose
+</code></pre></div>
+<p>然后参考<a href="/docs/zh/model-router/">模型路由器文档</a>为 dispatch 设置 token 预警阈值、把便宜任务路由给便宜模型，再读<a href="/docs/zh/token-compression/">Token 智能文档</a>了解压缩保留什么、丢弃什么。</p>
+<h2 id="faq">FAQ</h2>
+<h3 id="_7">我的编码客户端不是已经显示用量了吗？</h3>
+<p>大多数客户端显示的是某种汇总用量，而 Cursor 刚刚证明了这种可见性可以随时被移除。你自己工作流层写入的事件级记录是你能控制的数据——厂商 UI 改动藏不掉它。</p>
+<h3 id="_8">重点是花得更少，还是花得更聪明？</h3>
+<p>两者都要。阈值预警阻止失控运行，路由把便宜工作交给便宜模型，ContextDB 去掉冗余上下文。三者叠加，通常总 token 和总美元都会下降。</p>
+<h3 id="_9">我需要停用现在的编码工具吗？</h3>
+<p>不需要。AIOS 兼容你正在用的客户端（Claude Code、Codex、Gemini CLI、OpenCode、Grok Build），它只是在周围增加可观测性和记忆层。</p>
+<h3 id="_10">细节在哪里看？</h3>
+<p><a href="/docs/zh/changelog/">更新日志</a>按版本列出了成本相关改动，<a href="/docs/zh/architecture/">架构文档</a>解释了 dispatch 事件、evidence 和成本在系统中如何流转。</p>
+<p>计量表消失不是因为成本没问题，而是因为数字本身就是新闻——在你的数字被别人替你读出之前，确保它们自己可读。</p></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

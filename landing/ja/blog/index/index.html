@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ja" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ブログハブ</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">日本語</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/index/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/blog/index/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt is-active" href="/ja/blog/index/" hreflang="ja" lang="ja" aria-current="true">日本語</a><a class="rex-lang-opt" href="/ko/blog/index/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · </p><h1>ブログハブ</h1>
+    <p class="lede" style="font-size:17px">AIOS の技術・成長ブログ（日本語版）です。記憶システム、単一 agent の harness、Agent Team による並列協調、ブラウザ自動化、ワークフロー方針、複数クライアント運用の実践を扱い、各記事に再現できるコマンドと検証証拠を添えています。</p>
+    <div class="meta"><a href="/ja/blog/">← 全部文章</a> · <a href="/ja">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>AI coding agent をより賢く、より可靠に、より使いやすくするためのストーリー、チュートリアル、深い考察。</p>
+<p>AIOS はローカル agent ワークフローレイヤーです。新しい coding agent ではなく、既存の <code>codex</code>、<code>claude</code>、<code>gemini</code>、<code>opencode</code> に記憶、チームワーク、自己診断を追加するレイヤーです。</p>
+<h2 id="_2">ここから始める</h2>
+<p>AIOS を初めて使う方へ。これらの投稿で概要を把握できます:</p>
+<ul>
+<li><a href="2026-10-harness2-jobbench-aios-measurement.md">AIOS で Google Harness² を再現した——harness エンジニアリングの価値は何点か</a> — AIOS 席を同一得点台で実測：裸 51.1 → AIOS 85.8（+34.7pp）、論文値も自trackの再帰法も上回る</li>
+<li><a href="launch-post.md">AIOS のストーリー</a> — なぜ作られたか、どんな問題を解決するか</li>
+<li><a href="cli-comparison-post.md">CLI 比較：生 vs. AIOS</a> — レイヤーを追加すると何が変わるか</li>
+<li><a href="automation-playbook-post.md">自動化プレイブック</a> — 日次使用的パタン</li>
+<li><a href="2026-07-v400-adaptive-workflow-policy.md">v4.0 適応型ワークフローポリシー</a> — ルートと計画の選び方</li>
+<li><a href="2026-07-choose-agent-workflow.md">AI エージェントのワークフローはどう選ぶ？</a> — 判断表と具体例</li>
+<li><a href="2026-07-raw-cli-to-reliable-workflow.md">素の CLI から信頼できるワークフローへ</a> — 再現可能な境界の作り方</li>
+</ul>
+<h2 id="_3">最新の記事</h2>
+<ul>
+<li>
+<p><a href="2026-10-v670-external-skills-get-a-front-door.md">v6.7.0：一つのコマンドで全クライアントへ——「aios skill add」がコミュニティスキルの正門を開ける</a> — 最良のコミュニティスキルが一つのクライアントのグローバルスキルディレクトリにしか存在せず、他の九つからは見えなかった。<code>aios skill add &lt;source&gt;</code> がローカルディレクトリや git URL を canonical 外部レジストリにステージし、全クライアントのユーザーレベルスキルルートへ配布——冪等、fail-closed な選択、自己コピー・ガードが <code>clone-website</code> の原本を守った</p>
+</li>
+<li>
+<p><a href="2026-10-v660-scratch-space-leaked-into-your-project-list.md">v6.6.0: エージェントの作業スペースがプロジェクト一覧に漏れた</a> — <code>-p</code> なしの <code>mktemp -d</code> が <code>cwd</code> に書くため プロジェクト親にサンドボックス 41 個（9.9 GB）が生えた。<code>AGENTS.md</code> で規則を明文化し、<code>scripts/aios-tmp-gc.mjs</code> は客観的事実だけで回収、読めないものは残す</p>
+</li>
+<li>
+<p><a href="2026-10-v650-opencode2-contract-config-stops-lying.md">v6.5.0: OpenCode 2.x プラグイン契約と、AIOS の居場所を嘘つかなくなった設定</a> — OpenCode 2.x は <code>default</code> エクスポートしか読まないため AIOS プラグインは静黙停止していた。1.x/2.x デュアルエクスポート化とインストール時自己修復、<code>aios interception mcp-repair</code> で失効 MCP パスを安定ランタイムルートへ戻す</p>
+</li>
+<li>
+<p><a href="2026-10-qwen-flash-aios-pi.md">一文の要件で、一つのソフトウェアを：小規模モデルが月36億トークン——AIOS が「誰でも開発できる」を現実のものにする</a> — 必要なスキルはただ一つ、要件を明確に語り切ること。キャッシュヒット96%で1か月高強度使用、むき出しモデル vs AIOS 包む前後比較、要件から納品までの流れが生んだ E:/coding のプロジェクト一覧</p>
+</li>
+<li>
+<p><a href="2026-10-v640-control-plane-stops-guessing.md">v6.4.0：推測しないコントロールプレーン——台帳は分岐しない、拒否は機能、ゲートは宣言どおりの場所で走る</a> — 計画台帳は分岐しない（A21–A23）、plan CLI は読み取り専用ビューへの置換ではなく拒否する（A19）、宣言されたチェックは CI で走る（A20 + ディレクトリ予算 + 影響テスト）、mattpocock v1.3 トリオを両面で採用</p>
+</li>
+<li>
+<p><a href="2026-10-grill-with-docs.md">v6.3.0：/grill が本物のコマンドに、インタビューは自分で記録し、pi は自前で MCP キャリアを選ぶ</a> — ヒアリングコマンドがついに 7 クライアントに登録され、確定した用語は CONTEXT.md へ、決定は ADR へ。pi 0.99+ はバージョンで MCP キャリアを選び、起動警告を重ねない</p>
+</li>
+<li>
+<p><a href="2026-09-v601-engineering-standards-rex.md">v6.0.1：エンジニアリング基準を rex-harness へ——基準の居場所を消費者と同じに</a> — 品質基準がそれを消費する能力チェーンと一緒に出荷される</p>
+</li>
+<li><a href="2026-09-v600-engineering-standards.md">v6.0.0：エンジニアリング基準の内蔵——AIOS はコードを生成するだけでなく、ソフトウェアを構築する</a> — 古典的な書単から導出した一つの品質基準を router がコード生産 Provider の前に読み込み、すべての変更に Definition of Done</li>
+<li><a href="2026-09-v520-qoder-client.md">v5.20.0：Qoder が AIOS に合流——10 番目のクライアント、定義ブロック 1 つ</a> — 10 番目の第一級クライアント、Qoder が実際に読む settings.json への MCP、AGENTS.md コンテキスト、<code>-p</code> ヘッドレス team</li>
+<li><a href="2026-09-jev-aios-quickstart.md">Jev + AIOS クイックスタート：キーワード不要、裏側で自動判断</a> — TYPESAFE_API_KEY を設定し判断ゲートを開けたら、普段どおり話すだけで Jev が裏側で判断する</li>
+<li><a href="2026-09-engineering-standards-trigger-chain.md">v6.2.0：実際にトリガーされるエンジニアリング標準</a> — どのクライアントのディスクにもあったが誰も読むよう指示されなかった標準スキル、共有参照プロジェクション経路、そして完成を判定するファイル粒度ベースライン</li>
+<li><a href="2026-09-v5192-names-windows-can-hold.md">v5.19.2：Windows が扱える名前</a> — 候補 id をファイル名にすると NTFS では代替データストリームになり、昇格は静かに失われ、取り込み側はエラー 0 件と報告する</li>
+<li><a href="2026-09-v5191-declaration-you-can-reach.md">v5.19.1：本当に手の届く宣言チャネル</a> — shell から宣言できるようになり、そのために書いたガードが 82 個の未実行テストファイルを発見</li>
+<li><a href="2026-09-v519-judgment-gate-surfaces.md">v5.19.0：判断ゲートに身体を与える</a> — 無効時には存在しない aios_judge ツールと、保留しかできない rex ステージゲート</li>
+<li><a href="2026-09-v518-judgment-gate.md">v5.18.0：AIOS に TypeSafe Jev を——デフォルトはオフ、それは意図的</a> — 認証情報の設定、ドキュメント MCP が判断できない理由、fail closed な opt-in ゲート</li>
+<li><a href="2026-09-v516-zcode-client.md">v5.16.0：ZCode が AIOS に合流——本物のサブエージェント付き</a> — 第一級クライアント、agents plugin ブリッジ、strict-schema MCP、Pi 能力チェーン修復</li>
+<li><a href="2026-09-v515-pi-mcp-bridge.md">v5.15.0: Pi が本物の MCP 能力を獲得</a> — codemap 検索、MCP ブリッジ、doctor 整理の対</li>
+<li><a href="2026-09-v514-loopx-control-plane.md">v5.14.0: LoopX コントロールプレーン + 孤児プロセス根絶</a> — 精算ターン、無人リズム、孤児ゼロ</li>
+<li><a href="2026-09-pi-client-aios.md">Pi coding agent が AIOS ファーストクラスクライアントに</a> — skills、extension、RPC</li>
+<li><a href="2026-08-v581-stall-fix-llm-judged-grilling.md">v5.8.1: エージェントがフリーズしない — aios-shell 停止修正と LLM の意味判断による要件明確化</a></li>
+<li><a href="2026-08-v580-governed-self-evolution.md">v5.8.0: AIOS が安全に自己進化する — Session Memory、証拠ゲート、ロールバック可能な昇格</a></li>
+<li><a href="2026-08-v561-aios-work-plan-driven-dispatch.md">v5.6.1: プラン駆動のマルチエージェントディスパッチ — aios work がプランを読む</a></li>
+<li><a href="2026-08-v560-aios-work-concurrent-dispatch.md">v5.6.0: 並列マルチエージェントコーディングを1コマンドで — aios work</a></li>
+<li><a href="2026-08-10-aios-loop-graph-engineering.md">Graph Engine とローカルエージェント：AIOS が Loop Engineering を Graph Engineering へ接続する仕組み</a></li>
+<li><a href="2026-08-v551-agent-lifecycle-promotion.md">v5.5.1：証拠駆動の Agent ライフサイクル昇格</a></li>
+<li><a href="2026-08-v550-ask-first-requirements-alignment.md">v5.5.0: Ask-First 要件アライメント——エージェントが不要なものを届けなくなる</a></li>
+<li><a href="2026-08-v544-agent-smoke-reliability.md">v5.4.4：エージェントスモークテストの信頼性——出力コントラクトクライアントとタイムアウト自動エスカレーション</a></li>
+<li><a href="2026-08-v543-crg-decision-checkpoints.md">v5.4.3：CRG 決定チェックポイント、Worker Journal リネーム、冪等な aios init</a></li>
+<li><a href="2026-08-v541-windows-self-update-safety.md">v5.4.1：Windows で「aios update」が壊れていた理由と、自己更新の修正</a></li>
+<li><a href="2026-08-parallel-coding-agents.md">並列コーディングエージェントは無料ではない: Git Worktree はファイルを隔離し、状態は隔離しない</a></li>
+<li><a href="2026-08-ai-agent-security.md">Agent セキュリティは状態機械の問題: Codex セキュリティスレッドが見逃したもの</a></li>
+<li><a href="2026-08-ai-coding-cost-crisis.md">AI コーディングコストは制御不能: Cursor は数字を隠し、Amazon は 180 万ドルを溶かし、ローカルレイヤーが変えるもの</a></li>
+<li><a href="2026-08-v540-workflow-iteration-v21.md">v5.4.0：ワークフローイテレーション v2.1 — Activation の安全性、型付き Evidence 契約、全 Skill 監査</a></li>
+<li><a href="2026-07-v400-adaptive-workflow-policy.md">v4.0 適応型ワークフローポリシー</a></li>
+<li><a href="2026-07-choose-agent-workflow.md">AI エージェントのワークフローはどう選ぶ？</a></li>
+<li><a href="2026-07-raw-cli-to-reliable-workflow.md">素の CLI コマンドから信頼できる AI エージェントワークフローへ</a></li>
+<li><a href="2026-07-headroom-token-intelligence.md">v3.6.0：Headroom と Ponytail でより安全な Token インテリジェンス workflow を作る</a></li>
+<li><a href="2026-07-v320-harness-reliability-upgrade.md">v3.2.0：Harness 信頼性とスキルライフサイクル向上</a></li>
+<li><a href="2026-07-grok-build-aios-client.md">Grok Build が AIOS のファーストクラスクライアントに</a></li>
+<li><a href="2026-06-hermes-agent-aios-client.md">Hermes Agent が AIOS ファーストクラスクライアントに昇格</a></li>
+<li><a href="2026-06-v202-ecc-uplift.md">v2.0.2: より安全な Skill Health Records とよりクリーンな Crush Config</a></li>
+<li><a href="2026-06-agent-governance.md">Agent Governance: Team live 実行の前に証跡を残す</a></li>
+<li><a href="2026-06-v152-aios-shell-mcp.md">v1.52.0: 決定論的 Shell 出力圧縮 (MCP 経由)</a></li>
+<li><a href="2026-06-v1501-token-compression-compliance.md">v1.50.1: All-Client Token Compression Compliance</a></li>
+<li><a href="2026-06-v150-unified-aios-search.md">v1.50.0：記憶、ドキュメント、計画、コードを横断する統合 AIOS 検索</a></li>
+<li><a href="2026-05-codemap-crg.md">Codemap：AIエージェントにコードベースの地図を</a></li>
+<li><a href="2026-05-token-compression.md">ContextDB Token 圧縮：より小さな context pack と安全な recall</a></li>
+<li><a href="2026-05-model-router.md">Model Router：すべてのタスクに適切なモデル</a></li>
+<li><a href="2026-05-aios-memo-gui.md">aios memo GUI：Agent の記憶を生きたグラフとして可視化</a></li>
+<li><a href="2026-04-solo-harness.md">Solo Harness: 1つの Agent を夜通し動かしても制御を失わない</a></li>
+<li><a href="2026-05-debug-hub-mcp.md">debug-hub: Agent が自らデバッグする時代</a></li>
+<li><a href="2026-04-browser-mcp-weak-model-upgrade.md">Browser MCP 改善：より賢いページ読み取り</a></li>
+<li><a href="advanced-design-skills-page-building.md">高度なデザインスキルでページ制作：曖昧プロンプトを本番 UI に</a></li>
+<li><a href="2026-04-rexcli-ink-tui-refactor.md">AIOS TUI リファクタリング：React Ink によるモダンなターミナルUI</a></li>
+<li><a href="windows-cli-startup-stability.md">Windows CLI 起動安定性アップデート</a></li>
+</ul>
+<h2 id="_4">深い考察</h2>
+<ul>
+<li><a href="rl-training-system.md">AIOS RL Training System: Agent に学習させる</a></li>
+<li><a href="contextdb-fts-bm25-search.md">ContextDB 検索：履歴の中からを見つける</a></li>
+<li><a href="orchestrate-live.md">Orchestrate Live：本番で Subagent を実行する</a></li>
+</ul>
+<h2 id="faq">FAQ</h2>
+<h3 id="_5">どこから始めたらいいですか？</h3>
+<p>まず <a href="launch-post.md">AIOS のストーリー</a> を読み、次に <a href="/docs/ja/getting-started/">クイックスタート</a> ガイドを試してください。</p>
+<h3 id="_6">記憶とコンテキスト管理を大事にしたい</h3>
+<p><a href="2026-05-token-compression.md">Token 圧縮</a> から始めて、<a href="contextdb-fts-bm25-search.md">ContextDB 検索</a> を読んでください。</p>
+<h3 id="agent">agent を夜通し走らせたい</h3>
+<p><a href="2026-04-solo-harness.md">Solo Harness</a> を読んでから、<a href="/docs/ja/solo-harness/">Solo Harness ドキュメント</a> を確認してください。</p>
+<h3 id="agent_1">agent に自らデバッグさせたい</h3>
+<p><a href="2026-05-debug-hub-mcp.md">debug-hub</a> を読んでから、<a href="/docs/ja/debug-hub/">debug-hub ドキュメント</a> を確認してください。</p>
+<h3 id="aios-coding-agent">AIOS は新しい coding agent ですか？</h3>
+<p>いいえ。<code>codex</code>、<code>claude</code>、<code>gemini</code>、<code>opencode</code> をラップして記憶、チームワーク、自己診断を追加します。ワークフローは変わりません。</p></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="en" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HUD User Guide</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">English</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt is-active" href="/docs/hud-guide/" hreflang="en" lang="en" aria-current="true">English</a><a class="rex-lang-opt" href="/zh/docs/hud-guide/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/docs/hud-guide/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/docs/hud-guide/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+<div class="rex-doc-layout">
+  <aside class="rex-doc-sidebar">
+    <a class="rex-doc-sidebar__home" href="/docs/">All docs</a>
+    <div class="rex-doc-search"><input type="search" id="rex-doc-search-input" placeholder="Search docs…" aria-label="Search docs…" autocomplete="off"></div>
+    <div id="rex-doc-nav"><details class="rex-doc-nav-group"><summary>Getting Started</summary><div class="rex-doc-nav-items"><a href="/docs/getting-started/" class="rex-doc-nav-link" data-title="quick start — install aios in 30 seconds">Quick Start — Install AIOS in 30 Seconds</a><a href="/docs/windows-guide/" class="rex-doc-nav-link" data-title="windows guide: powershell setup and recovery">Windows Guide: PowerShell Setup and Recovery</a><a href="/docs/troubleshooting/" class="rex-doc-nav-link" data-title="troubleshooting aios">Troubleshooting AIOS</a><a href="/docs/windows-ai-coding-agent-setup/" class="rex-doc-nav-link" data-title="windows ai coding agent setup: install and verify">Windows AI Coding Agent Setup: Install and Verify</a></div></details><details class="rex-doc-nav-group"><summary>Problem-First Guides</summary><div class="rex-doc-nav-items"><a href="/docs/why-agents-forget-context/" class="rex-doc-nav-link" data-title="why agents forget context — and how to fix it">Why Agents Forget Context — and How to Fix It</a><a href="/docs/reduce-agent-token-cost/" class="rex-doc-nav-link" data-title="reduce ai coding agent token costs: one sentence, less waste">Reduce AI Coding Agent Token Costs: One Sentence, Less Waste</a><a href="/docs/claude-code-vs-codex-vs-gemini/" class="rex-doc-nav-link" data-title="claude code vs codex vs gemini cli: how to choose">Claude Code vs Codex vs Gemini CLI: How to Choose</a><a href="/docs/overnight-agent-runs/" class="rex-doc-nav-link" data-title="run coding agents overnight: resumable and verified">Run Coding Agents Overnight: Resumable and Verified</a><a href="/docs/multi-agent-code-review/" class="rex-doc-nav-link" data-title="multi-agent code review: one sentence, verified results">Multi-Agent Code Review: One Sentence, Verified Results</a><a href="/docs/use-cases/" class="rex-doc-nav-link" data-title="aios commands: find what you need in one sentence">AIOS Commands: Find What You Need in One Sentence</a></div></details><details class="rex-doc-nav-group"><summary>Capabilities</summary><div class="rex-doc-nav-items"><a href="/docs/contextdb/" class="rex-doc-nav-link" data-title="contextdb: pull-based project memory">ContextDB: Pull-Based Project Memory</a><a href="/docs/token-compression/" class="rex-doc-nav-link" data-title="token intelligence and compression">Token Intelligence and Compression</a><a href="/docs/workflow-policy/" class="rex-doc-nav-link" data-title="workflow policy — direct, guarded, or planned agent work">Workflow Policy — direct, guarded, or planned Agent Work</a><a href="/docs/model-router/" class="rex-doc-nav-link" data-title="model router">Model Router</a><a href="/docs/codemap/" class="rex-doc-nav-link" data-title="code review graph (codemap)">Code Review Graph (Codemap)</a><a href="/docs/team-ops/" class="rex-doc-nav-link" data-title="agent team: parallel work with evidence">Agent Team: Parallel Work with Evidence</a><a href="/docs/solo-harness/" class="rex-doc-nav-link" data-title="solo harness: resumable long-running work">Solo Harness: Resumable Long-Running Work</a><a href="/docs/superpowers/" class="rex-doc-nav-link" data-title="rex workflow migration">Rex Workflow Migration</a><a href="/docs/integrations/" class="rex-doc-nav-link" data-title="typesafe jev in aios — install, enable the judgment gate, run in background">TypeSafe Jev in AIOS — Install, Enable the Judgment Gate, Run in Background</a><a href="/docs/perception/" class="rex-doc-nav-link" data-title="perception">Perception</a></div></details><details class="rex-doc-nav-group" open><summary>Reference</summary><div class="rex-doc-nav-items"><a href="/docs/architecture/" class="rex-doc-nav-link" data-title="how aios works: memory, routing, teams, verification">How AIOS Works: Memory, Routing, Teams, Verification</a><a href="/docs/route-concurrency-profiles/" class="rex-doc-nav-link" data-title="route &amp; concurrency profiles">Route &amp; Concurrency Profiles</a><a href="/docs/advanced-design-skills/" class="rex-doc-nav-link" data-title="advanced design skills">Advanced Design Skills</a><a href="/docs/hud-guide/" aria-current="page" class="rex-doc-nav-link is-active" data-title="hud user guide">HUD User Guide</a><a href="/docs/debug-hub/" class="rex-doc-nav-link" data-title="debug-hub">debug-hub</a><a href="/docs/cli-comparison/" class="rex-doc-nav-link" data-title="raw cli vs aios: one sentence vs manual work">Raw CLI vs AIOS: One Sentence vs Manual Work</a><a href="/docs/engineering-standards/" class="rex-doc-nav-link" data-title="engineering standards — aios builds software, it does not just generate code">Engineering Standards — AIOS Builds Software, It Does Not Just Generate Code</a></div></details><details class="rex-doc-nav-group"><summary>Case Studies</summary><div class="rex-doc-nav-items"><a href="/docs/case-library/" class="rex-doc-nav-link" data-title="case library: reproducible aios workflows">Case Library: Reproducible AIOS Workflows</a><a href="/docs/case-auth-wall-browser/" class="rex-doc-nav-link" data-title="case - browser auth-wall flow">Case - Browser Auth-Wall Flow</a><a href="/docs/case-cross-cli-handoff/" class="rex-doc-nav-link" data-title="case - cross-cli handoff">Case - Cross-CLI Handoff</a><a href="/docs/case-privacy-guard/" class="rex-doc-nav-link" data-title="case - privacy guard config read">Case - Privacy Guard Config Read</a></div></details><details class="rex-doc-nav-group"><summary>Project</summary><div class="rex-doc-nav-items"><a href="/docs/changelog/" class="rex-doc-nav-link" data-title="changelog">Changelog</a><a href="/docs/friends/" class="rex-doc-nav-link" data-title="friends">Friends</a><a href="/docs/skill-candidates/" class="rex-doc-nav-link" data-title="skill candidates guide">Skill Candidates Guide</a></div></details></div>
+    <p class="rex-doc-search-empty" id="rex-doc-search-empty" hidden>No matching docs</p>
+    <div class="rex-doc-sidebar__status">AIOS · v8.0.0 · local-first</div>
+  </aside>
+  <article class="rex-doc-article">
+    <p class="eyebrow">文档 · English</p>
+    <h1>HUD User Guide</h1>
+    <p class="lede" style="font-size:17px">Guide to the AIOS HUD: monitor long-running agent sessions, read quality-gate outcomes, dispatch work, and review skill candidates without interrupting the run.</p>
+    <div class="rex-doc-content md-body">
+<p>HUD (Heads-Up Display) provides real-time visibility into agent session status, dispatch outcomes, and improvement opportunities.</p>
+<h2 id="when-to-use-hud">When to Use HUD</h2>
+<ul>
+<li><strong>Long-running tasks</strong>: Monitor progress without interrupting the agent</li>
+<li><strong>Debugging failures</strong>: See quality-gate outcomes and hindsight analysis</li>
+<li><strong>Skill improvement</strong>: Discover and apply skill candidate patches</li>
+<li><strong>Team coordination</strong>: Track multiple concurrent sessions</li>
+</ul>
+<h2 id="hud-modes">HUD Modes</h2>
+<h3 id="minimal-mode">Minimal Mode</h3>
+<p>Best for watch mode in long-running sessions:
+- Shows only essential status
+- Fast refresh (1s data polling)
+- Adaptive interval to reduce resource usage</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>hud<span class="w"> </span>--watch<span class="w"> </span>--preset<span class="w"> </span>minimal<span class="w"> </span>--fast
+</code></pre></div>
+<h3 id="compact-mode">Compact Mode</h3>
+<p>Terminal-friendly summary:
+- Session goal
+- Dispatch summary
+- Quality-gate status</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>hud<span class="w"> </span>--preset<span class="w"> </span>compact
+</code></pre></div>
+<h3 id="focused-mode-default">Focused Mode (Default)</h3>
+<p>Balanced detail for most use cases:
+- All compact info
+- Recent dispatch artifacts
+- Skill candidate hints</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>hud<span class="w"> </span>--preset<span class="w"> </span>focused
+</code></pre></div>
+<h3 id="full-mode">Full Mode</h3>
+<p>Complete diagnostics:
+- All focused info
+- Full hindsight analysis
+- Quality-gate details
+- Fix hints and recommendations</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>hud<span class="w"> </span>--preset<span class="w"> </span>full
+</code></pre></div>
+<h2 id="basic-usage">Basic Usage</h2>
+<h3 id="view-current-session">View Current Session</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Default focused view</span>
+aios<span class="w"> </span>hud
+
+<span class="c1"># Specify provider</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--provider<span class="w"> </span>claude
+aios<span class="w"> </span>hud<span class="w"> </span>--provider<span class="w"> </span>gemini
+</code></pre></div>
+<h3 id="watch-mode">Watch Mode</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Continuous monitoring (1s refresh)</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--watch
+
+<span class="c1"># Custom interval (milliseconds)</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--watch<span class="w"> </span>--interval-ms<span class="w"> </span><span class="m">2000</span>
+
+<span class="c1"># Fast mode with adaptive interval</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--watch<span class="w"> </span>--fast
+</code></pre></div>
+<h3 id="specify-session">Specify Session</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># By session ID</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--session<span class="w"> </span>&lt;session-id&gt;
+
+<span class="c1"># From recent history</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--session<span class="w"> </span><span class="k">$(</span>aios<span class="w"> </span>team<span class="w"> </span><span class="nb">history</span><span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.[0].sessionId&#39;</span><span class="k">)</span>
+</code></pre></div>
+<h3 id="json-output">JSON Output</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Machine-readable output</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--json
+
+<span class="c1"># Combine with jq for filtering</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.selection.qualityGate&#39;</span>
+</code></pre></div>
+<h2 id="skill-candidate-features">Skill Candidate Features</h2>
+<h3 id="view-skill-candidates">View Skill Candidates</h3>
+<p>Skill candidates appear automatically when a session has improvement suggestions:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Show candidates inline with HUD</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--show-skill-candidates
+
+<span class="c1"># Detail view (standalone candidate list)</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--show-skill-candidates<span class="w"> </span>--skill-candidate-view<span class="w"> </span>detail
+
+<span class="c1"># Limit number of candidates (1-20)</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--show-skill-candidates<span class="w"> </span>--skill-candidate-limit<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+<h3 id="skill-candidate-view-modes">Skill Candidate View Modes</h3>
+<p><strong>Inline (default)</strong>: Candidates shown below HUD</p>
+<div class="highlight"><pre><span></span><code>═══════════════════════════════════════
+HUD Status
+═══════════════════════════════════════
+Session: abc123
+Goal: Implement user authentication
+Status: running | dispatch=ok | quality=ok
+...
+
+───────────────────────────────────────
+Skill Candidates (3)
+───────────────────────────────────────
+[1] skill-candidate-001
+    Scope: authentication
+    Failure: token-validation-edge-case
+    Lessons: 2
+    Patch: Add retry logic for expired tokens
+
+[2] skill-candidate-002
+    ...
+</code></pre></div>
+<p><strong>Detail</strong>: Only candidates shown (HUD hidden)</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>hud<span class="w"> </span>--show-skill-candidates<span class="w"> </span>--skill-candidate-view<span class="w"> </span>detail
+</code></pre></div>
+<h3 id="export-patch-templates">Export Patch Templates</h3>
+<p>Export skill candidates as patch template artifacts:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Export to default location</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--export-skill-candidate-patch-template
+
+<span class="c1"># Export with specific draft ID filter</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--export-skill-candidate-patch-template<span class="w"> </span>--draft-id<span class="w"> </span>&lt;draft-id&gt;
+
+<span class="c1"># Export with custom candidate limit</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--export-skill-candidate-patch-template<span class="w"> </span>--skill-candidate-limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p><strong>Output location</strong>: <code>.aios/context-db/sessions/&lt;session-id&gt;/artifacts/skill-candidate-patch-template-&lt;timestamp&gt;.md</code></p>
+<h3 id="filter-by-draft-id">Filter by Draft ID</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Show only candidates from specific draft</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--show-skill-candidates<span class="w"> </span>--draft-id<span class="w"> </span>&lt;draft-id&gt;
+
+<span class="c1"># Export filtered candidates</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--export-skill-candidate-patch-template<span class="w"> </span>--draft-id<span class="w"> </span>&lt;draft-id&gt;
+</code></pre></div>
+<h2 id="quality-gate-integration">Quality-Gate Integration</h2>
+<h3 id="view-quality-gate-status">View Quality-Gate Status</h3>
+<p>HUD shows quality-gate outcomes automatically:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Full view includes quality details</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--preset<span class="w"> </span>full
+
+<span class="c1"># JSON output for programmatic access</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.selection.qualityGate&#39;</span>
+</code></pre></div>
+<h3 id="filter-by-quality-category">Filter by Quality Category</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Not directly supported in HUD - use team history</span>
+aios<span class="w"> </span>team<span class="w"> </span><span class="nb">history</span><span class="w"> </span>--quality-category<span class="w"> </span>clarity<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<h2 id="performance-tuning">Performance Tuning</h2>
+<h3 id="fast-watch-mode">Fast Watch Mode</h3>
+<p>Optimized for long-running watch sessions:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Minimal preset + fast mode = lowest overhead</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--watch<span class="w"> </span>--preset<span class="w"> </span>minimal<span class="w"> </span>--fast
+
+<span class="c1"># Data refresh: 1s (minimum)</span>
+<span class="c1"># Render interval: adaptive (1s-10s based on activity)</span>
+</code></pre></div>
+<h3 id="custom-refresh-intervals">Custom Refresh Intervals</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Slower refresh for background monitoring</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--watch<span class="w"> </span>--interval-ms<span class="w"> </span><span class="m">5000</span>
+
+<span class="c1"># Adaptive interval (auto-adjusts based on session activity)</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--watch<span class="w"> </span>--adaptive-interval
+</code></pre></div>
+<h3 id="concurrency-controls">Concurrency Controls</h3>
+<p>HUD reads session data sequentially by default. For multiple sessions:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Not applicable to single-session HUD</span>
+<span class="c1"># Use team status for multi-session views</span>
+</code></pre></div>
+<h2 id="watch-mode-best-practices">Watch Mode Best Practices</h2>
+<h3 id="terminal-management">Terminal Management</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Run in tmux pane for persistent monitoring</span>
+tmux<span class="w"> </span>new-session<span class="w"> </span>-a<span class="w"> </span>-s<span class="w"> </span>aios-hud<span class="w"> </span><span class="s1">&#39;aios hud --watch&#39;</span>
+
+<span class="c1"># Split terminal: agent on top, HUD on bottom</span>
+tmux<span class="w"> </span>split-window<span class="w"> </span>-v
+<span class="c1"># Top pane: run agent</span>
+<span class="c1"># Bottom pane: aios hud --watch --preset minimal</span>
+</code></pre></div>
+<h3 id="notification-integration">Notification Integration</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Alert on quality-gate failure (example with terminal-notifier)</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--watch<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="nb">read</span><span class="w"> </span>line<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$line</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.selection.qualityGate.outcome&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-q<span class="w"> </span>failed<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>osascript<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;display notification &quot;Quality gate failed!&quot; with title &quot;AIOS HUD&quot;&#39;</span>
+<span class="k">done</span>
+</code></pre></div>
+<h3 id="log-correlation">Log Correlation</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Correlate HUD timestamps with agent logs</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--watch<span class="w"> </span><span class="p">|</span><span class="w"> </span>ts<span class="w"> </span><span class="s1">&#39;[%Y-%m-%d %H:%M:%S] HUD: &#39;</span>
+</code></pre></div>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="hud-shows-stale-data">HUD Shows Stale Data</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Force refresh by restarting watch</span>
+<span class="c1"># HUD caches data for performance</span>
+
+<span class="c1"># Check data refresh interval</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--watch<span class="w"> </span>--interval-ms<span class="w"> </span><span class="m">500</span>
+</code></pre></div>
+<h3 id="no-skill-candidates-shown">No Skill Candidates Shown</h3>
+<p>Possible reasons:
+- No session selected (use <code>--session</code>)
+- Session has no failed quality-gates
+- Session passed all quality checks
+- Learn-eval hasn't run yet</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Verify session has quality-gate failures</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.selection.qualityGate&#39;</span>
+
+<span class="c1"># Check if learn-eval ran</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.selection.dispatchHindsight&#39;</span>
+</code></pre></div>
+<h3 id="json-output-parsing-issues">JSON Output Parsing Issues</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Validate JSON structure</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.
+
+<span class="c1"># Access specific fields</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.selection.sessionId&#39;</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.selection.dispatch.jobCount&#39;</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.selection.qualityGate.outcome&#39;</span>
+</code></pre></div>
+<h2 id="examples">Examples</h2>
+<h3 id="monitor-build-pipeline">Monitor Build Pipeline</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Start build in background, monitor with HUD</span>
+aios<span class="w"> </span>orchestrate<span class="w"> </span>--live<span class="w"> </span><span class="p">&amp;</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--watch<span class="w"> </span>--preset<span class="w"> </span>minimal<span class="w"> </span>--fast
+</code></pre></div>
+<h3 id="debug-failed-session">Debug Failed Session</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># View full details of failed session</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--session<span class="w"> </span>&lt;failed-session-id&gt;<span class="w"> </span>--preset<span class="w"> </span>full
+
+<span class="c1"># Export skill candidates for patching</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--session<span class="w"> </span>&lt;failed-session-id&gt;<span class="w"> </span>--export-skill-candidate-patch-template
+</code></pre></div>
+<h3 id="multi-session-dashboard">Multi-Session Dashboard</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Watch multiple providers simultaneously</span>
+<span class="c1"># Terminal 1</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--provider<span class="w"> </span>codex<span class="w"> </span>--watch<span class="w"> </span>--preset<span class="w"> </span>minimal
+
+<span class="c1"># Terminal 2</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--provider<span class="w"> </span>claude<span class="w"> </span>--watch<span class="w"> </span>--preset<span class="w"> </span>minimal
+
+<span class="c1"># Terminal 3 (aggregated view)</span>
+aios<span class="w"> </span>team<span class="w"> </span>status<span class="w"> </span>--watch<span class="w"> </span>--preset<span class="w"> </span>minimal
+</code></pre></div>
+<h2 id="related-documentation">Related Documentation</h2>
+<ul>
+<li><a href="/docs/team-ops/">Team Ops</a> - Overview of Team Operations</li>
+<li><a href="/docs/skill-candidates/">Skill Candidates</a> - Understanding and applying patches</li>
+<li><a href="/docs/contextdb/">ContextDB</a> - Session storage and retrieval</li>
+</ul></div>
+    <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+    <nav class="rex-doc-pager"><a href="/docs/getting-started/">← 上一篇</a><a href="/docs/index/">下一篇 →</a></nav>
+    <a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  </article>
+</div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

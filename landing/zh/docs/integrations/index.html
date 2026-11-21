@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="zh" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIOS 中用 TypeSafe Jev——安装、开启判定闸门、后台运行</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">中文</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/docs/integrations/" hreflang="en" lang="en">English</a><a class="rex-lang-opt is-active" href="/zh/docs/integrations/" hreflang="zh" lang="zh" aria-current="true">中文</a><a class="rex-lang-opt" href="/ja/docs/integrations/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/docs/integrations/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+<div class="rex-doc-layout">
+  <aside class="rex-doc-sidebar">
+    <a class="rex-doc-sidebar__home" href="/zh/docs/">全部文档</a>
+    <div class="rex-doc-search"><input type="search" id="rex-doc-search-input" placeholder="搜索文档…" aria-label="搜索文档…" autocomplete="off"></div>
+    <div id="rex-doc-nav"><details class="rex-doc-nav-group"><summary>快速上手</summary><div class="rex-doc-nav-items"><a href="/zh/docs/getting-started/" class="rex-doc-nav-link" data-title="快速开始：安装并验证 aios">快速开始：安装并验证 AIOS</a><a href="/zh/docs/windows-guide/" class="rex-doc-nav-link" data-title="windows 指南：powershell 安装与恢复">Windows 指南：PowerShell 安装与恢复</a><a href="/zh/docs/troubleshooting/" class="rex-doc-nav-link" data-title="aios 故障排查">AIOS 故障排查</a><a href="/zh/docs/windows-ai-coding-agent-setup/" class="rex-doc-nav-link" data-title="windows 上搭建 ai 编码 agent：10 分钟安装与验证">Windows 上搭建 AI 编码 Agent：10 分钟安装与验证</a></div></details><details class="rex-doc-nav-group"><summary>问题优先指南</summary><div class="rex-doc-nav-items"><a href="/zh/docs/why-agents-forget-context/" class="rex-doc-nav-link" data-title="为什么你的 ai 编码 agent 会跨会话失忆（以及怎么修）">为什么你的 AI 编码 Agent 会跨会话失忆（以及怎么修）</a><a href="/zh/docs/reduce-agent-token-cost/" class="rex-doc-nav-link" data-title="降低 ai 编码 agent 的 token 成本：claude code 与 codex 预算控制">降低 AI 编码 Agent 的 Token 成本：Claude Code 与 Codex 预算控制</a><a href="/zh/docs/claude-code-vs-codex-vs-gemini/" class="rex-doc-nav-link" data-title="claude code vs codex vs gemini cli：ai 编码 agent 该怎么选？">Claude Code vs Codex vs Gemini CLI：AI 编码 Agent 该怎么选？</a><a href="/zh/docs/overnight-agent-runs/" class="rex-doc-nav-link" data-title="怎么让编码 agent 跑一整夜不崩、不漂移">怎么让编码 Agent 跑一整夜不崩、不漂移</a><a href="/zh/docs/multi-agent-code-review/" class="rex-doc-nav-link" data-title="多 agent 代码评审：真正有用的并行编码 agent">多 Agent 代码评审：真正有用的并行编码 Agent</a><a href="/zh/docs/use-cases/" class="rex-doc-nav-link" data-title="按场景找命令：选择 aios 路径">按场景找命令：选择 AIOS 路径</a></div></details><details class="rex-doc-nav-group" open><summary>核心能力</summary><div class="rex-doc-nav-items"><a href="/zh/docs/contextdb/" class="rex-doc-nav-link" data-title="contextdb：按需读取的项目记忆">ContextDB：按需读取的项目记忆</a><a href="/zh/docs/token-compression/" class="rex-doc-nav-link" data-title="token intelligence 与压缩边界">Token Intelligence 与压缩边界</a><a href="/zh/docs/workflow-policy/" class="rex-doc-nav-link" data-title="工作流策略">工作流策略</a><a href="/zh/docs/model-router/" class="rex-doc-nav-link" data-title="模型路由器">模型路由器</a><a href="/zh/docs/codemap/" class="rex-doc-nav-link" data-title="代码审查图谱 (codemap)">代码审查图谱 (Codemap)</a><a href="/zh/docs/team-ops/" class="rex-doc-nav-link" data-title="agent team：带证据的并行工作">Agent Team：带证据的并行工作</a><a href="/zh/docs/solo-harness/" class="rex-doc-nav-link" data-title="solo harness：可恢复长任务">Solo Harness：可恢复长任务</a><a href="/zh/docs/superpowers/" class="rex-doc-nav-link" data-title="rex 工作流迁移">Rex 工作流迁移</a><a href="/zh/docs/integrations/" aria-current="page" class="rex-doc-nav-link is-active" data-title="aios 中用 typesafe jev——安装、开启判定闸门、后台运行">AIOS 中用 TypeSafe Jev——安装、开启判定闸门、后台运行</a><a href="/zh/docs/perception/" class="rex-doc-nav-link" data-title="perception">Perception</a></div></details><details class="rex-doc-nav-group"><summary>参考手册</summary><div class="rex-doc-nav-items"><a href="/zh/docs/architecture/" class="rex-doc-nav-link" data-title="aios 架构">AIOS 架构</a><a href="/zh/docs/route-concurrency-profiles/" class="rex-doc-nav-link" data-title="路由与并发档位">路由与并发档位</a><a href="/zh/docs/advanced-design-skills/" class="rex-doc-nav-link" data-title="高级设计技能">高级设计技能</a><a href="/zh/docs/hud-guide/" class="rex-doc-nav-link" data-title="hud 用户指南">HUD 用户指南</a><a href="/zh/docs/debug-hub/" class="rex-doc-nav-link" data-title="debug-hub">debug-hub</a><a href="/zh/docs/cli-comparison/" class="rex-doc-nav-link" data-title="cli 对比">CLI 对比</a><a href="/zh/docs/engineering-standards/" class="rex-doc-nav-link" data-title="工程标准——aios 构建软件，而不只是生成代码">工程标准——AIOS 构建软件，而不只是生成代码</a></div></details><details class="rex-doc-nav-group"><summary>实战案例</summary><div class="rex-doc-nav-items"><a href="/zh/docs/case-library/" class="rex-doc-nav-link" data-title="案例库：可复现的 aios 工作流">案例库：可复现的 AIOS 工作流</a><a href="/zh/docs/case-auth-wall-browser/" class="rex-doc-nav-link" data-title="案例 - 浏览器认证墙流程">案例 - 浏览器认证墙流程</a><a href="/zh/docs/case-cross-cli-handoff/" class="rex-doc-nav-link" data-title="案例 - 跨 cli 接力">案例 - 跨 CLI 接力</a><a href="/zh/docs/case-privacy-guard/" class="rex-doc-nav-link" data-title="案例 - privacy guard 配置读取">案例 - Privacy Guard 配置读取</a></div></details><details class="rex-doc-nav-group"><summary>项目</summary><div class="rex-doc-nav-items"><a href="/zh/docs/changelog/" class="rex-doc-nav-link" data-title="更新日志">更新日志</a><a href="/zh/docs/friends/" class="rex-doc-nav-link" data-title="友情链接">友情链接</a><a href="/zh/docs/skill-candidates/" class="rex-doc-nav-link" data-title="skill candidates 指南">Skill Candidates 指南</a></div></details></div>
+    <p class="rex-doc-search-empty" id="rex-doc-search-empty" hidden>没有匹配的文档</p>
+    <div class="rex-doc-sidebar__status">AIOS · v8.0.0 · 本地优先</div>
+  </aside>
+  <article class="rex-doc-article">
+    <p class="eyebrow">文档 · 中文</p>
+    <h1>AIOS 中用 TypeSafe Jev——安装、开启判定闸门、后台运行</h1>
+    <p class="lede" style="font-size:17px">安装 TypeSafe（System One / Jev）技能与文档 MCP，设置 TYPESAFE_API_KEY，再跑 aios judgment enable typesafe。只安装永远不会触发 Jev；开启后 aios_judge 工具与 rex 阶段闸门在后台自动介入，无需关键词。</p>
+    <div class="rex-doc-content md-body">
+<blockquote>
+<p><strong>一句话答案：</strong> <code>aios integration add &lt;厂商&gt;</code> 通过钉住的 commit、校验过的 sha256、逐客户端的注册计划和一次真实握手检查，来安装第三方 Agent 技能及其 MCP 服务。首个内置厂商是 <strong>TypeSafe（System One / Jev）</strong>。先跑 <code>aios integration add typesafe --dry-run</code>，在动任何磁盘内容之前看清每个客户端会发生什么。</p>
+<p><strong>安装不等于开启。</strong> 这条集成装的是文档 MCP 服务，它永远产生不了判断。要让 Jev 在后台介入——不用关键词，平时怎么聊还怎么聊——请设置 <code>TYPESAFE_API_KEY</code> 并跑 <code>aios judgment enable typesafe</code>。没开之前看不到任何触发是正常行为，不是 bug。</p>
+<p><strong>名称说明：</strong> 语音输入常把 <strong>Jev</strong> 听成“JVM”，“JVM MVC”多半是 Jev 加 MCP 文档服务混在一起听错了。本文统一用 <strong>Jev</strong>（<code>jev-latest</code>）和 <strong>MCP</strong>。</p>
+</blockquote>
+<h2 id="_1">为什么需要一条集成命令</h2>
+<p>多数厂商的接入方式是"复制这段提示词 / 把这段配置贴进你的 Agent"——这是一条供应链风险：文本没有版本、没有哈希、也没有针对你真实客户端集合验证过。</p>
+<p><code>aios integration</code> 把这段文字变成一条运维命令，带四道硬闸：</p>
+<table>
+<thead>
+<tr>
+<th>闸门</th>
+<th>它证明了什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>钉住 commit</td>
+<td>技能来自不可变版本，而不是会漂移的分支</td>
+</tr>
+<tr>
+<td>校验 sha256</td>
+<td>内容与已审阅产物一致；被改过或过期的副本会被拒绝</td>
+</tr>
+<tr>
+<td>逐客户端计划</td>
+<td>十种 AIOS 客户端都有明确、可检查的注册步骤</td>
+</tr>
+<tr>
+<td>真实握手</td>
+<td>文档 MCP 服务确实可达，且暴露了预期工具</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">支持的模型</h2>
+<p>AIOS 把厂商的模型信息视为集成契约的一部分，因此路由和提示词可以直接点名。</p>
+<table>
+<thead>
+<tr>
+<th>厂商</th>
+<th>模型</th>
+<th>模型 ID</th>
+<th>凭据</th>
+<th>文档 MCP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TypeSafe（System One）</td>
+<td>Jev</td>
+<td><code>jev-latest</code></td>
+<td><code>TYPESAFE_API_KEY</code></td>
+<td><code>https://docs.typesafe.ai/mcp</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>TypeSafe System One</strong> 提供可以像编程原语一样使用的小块 AI 智能：<code>Choice</code>、<code>Score</code>、<code>Noul</code>。<strong>Jev</strong> 把自然语言加应用状态转成带类型的判断与概率，让普通代码可以直接组合，从而把"提示词 + 解析"这一步变成结构化决策。</p>
+<h2 id="_3">配置凭据</h2>
+<p><code>TYPESAFE_API_KEY</code> 是这个厂商唯一需要的凭据。AIOS 只检查它<strong>是否存在</strong>——从不读取、打印或存储它的值。这一步要你自己做，而且要设在你编码客户端真正运行的那个环境里。</p>
+<p>最常见的失败原因是作用域：在某个终端里 <code>export</code> 的变量，或写在另一个账号 <em>User</em> 作用域里的变量，对已经在运行的客户端是不可见的。</p>
+<p><strong>Windows —— 对你的账号持久生效：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="no">[Environment]</span><span class="p">::</span><span class="n">SetEnvironmentVariable</span><span class="p">(</span><span class="s1">&#39;TYPESAFE_API_KEY&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;你的密钥&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;User&#39;</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Windows —— 对全部账号生效（需要管理员终端）：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="no">[Environment]</span><span class="p">::</span><span class="n">SetEnvironmentVariable</span><span class="p">(</span><span class="s1">&#39;TYPESAFE_API_KEY&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;你的密钥&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;Machine&#39;</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>macOS / Linux：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">TYPESAFE_API_KEY</span><span class="o">=</span><span class="s2">&quot;&lt;你的密钥&gt;&quot;</span><span class="w">                                </span><span class="c1"># 仅当前 shell</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export TYPESAFE_API_KEY=&quot;&lt;你的密钥&gt;&quot;&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc<span class="w">            </span><span class="c1"># 持久化</span>
+</code></pre></div>
+<p>然后<strong>重启你的编码客户端</strong>。环境变量只在进程启动时读取一次；已经打开的客户端永远看不到你之后设置的值。</p>
+<p>查看客户端将看到什么——凭据那一行只报告 <code>present</code> 或 <code>unset</code>，不会显示值：</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>integration<span class="w"> </span>doctor<span class="w"> </span>typesafe
+</code></pre></div>
+<h2 id="typesafe">安装 TypeSafe 集成</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. 预演全部十种客户端的改动 —— 不写任何文件</span>
+aios<span class="w"> </span>integration<span class="w"> </span>add<span class="w"> </span>typesafe<span class="w"> </span>--dry-run
+
+<span class="c1"># 2. 安装技能并注册文档 MCP 服务</span>
+aios<span class="w"> </span>integration<span class="w"> </span>add<span class="w"> </span>typesafe
+
+<span class="c1"># 3. 用真实证据验证结果，而不是看一句成功提示</span>
+aios<span class="w"> </span>integration<span class="w"> </span>doctor<span class="w"> </span>typesafe
+</code></pre></div>
+<p>预演会打印客户端的注册步骤，并标出必须由人工完成的部分：</p>
+<div class="highlight"><pre><span></span><code>TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
+  skill      planned @65a39f393687 sha256=71ea90d7906c
+  claude     planned
+             run: claude mcp add --scope user --transport http typesafe-docs https://docs.typesafe.ai/mcp
+  codex      planned
+             run: codex mcp add typesafe-docs --url https://docs.typesafe.ai/mcp
+  gemini     planned
+             run: gemini mcp add --scope user --transport http typesafe-docs https://docs.typesafe.ai/mcp
+  probe      verified 2987ms
+</code></pre></div>
+<h2 id="_4">客户端覆盖</h2>
+<p>十种 AIOS 客户端全部覆盖。这里"覆盖"的意思是为<strong>每个客户端都给出诚实、可执行的下一步</strong>，而不是宣称每个客户端都有完全相同的 CLI。</p>
+<table>
+<thead>
+<tr>
+<th>客户端</th>
+<th>注册方式</th>
+<th>AIOS 如何报告</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claude Code</td>
+<td><code>claude mcp add --transport http</code></td>
+<td>verified</td>
+</tr>
+<tr>
+<td>Codex</td>
+<td><code>codex mcp add --url</code></td>
+<td>verified</td>
+</tr>
+<tr>
+<td>OpenCode</td>
+<td><code>opencode mcp add --url</code></td>
+<td>verified</td>
+</tr>
+<tr>
+<td>Grok</td>
+<td><code>grok mcp add -t http</code></td>
+<td>verified</td>
+</tr>
+<tr>
+<td>Pi</td>
+<td>写入 <code>~/.pi/agent/mcp.json</code></td>
+<td>verified</td>
+</tr>
+<tr>
+<td>Gemini CLI</td>
+<td><code>gemini mcp add --scope user --transport http</code></td>
+<td>verified</td>
+</tr>
+<tr>
+<td>Hermes</td>
+<td><code>hermes mcp add --url</code></td>
+<td>需要交互式终端</td>
+</tr>
+<tr>
+<td>WorkBuddy</td>
+<td>写入 <code>~/.workbuddy/mcp.json</code>（<code>mcpServers</code>，<code>type: "http"</code> + <code>url</code>）</td>
+<td>verified</td>
+</tr>
+<tr>
+<td>ZCode</td>
+<td>写入 <code>~/.zcode/cli/config.json</code>（<code>mcp.servers</code>）</td>
+<td>stdio 已验证；HTTP 需人工步骤</td>
+</tr>
+<tr>
+<td>Qoder</td>
+<td><code>qoder mcp add --scope user --transport http</code></td>
+<td>verified</td>
+</tr>
+</tbody>
+</table>
+<p>两处行为是刻意的：</p>
+<ul>
+<li><strong>Hermes</strong> 会交互式追问认证方式，且没有非交互开关。AIOS 不会去猜一个答案、也不会让脚本挂住；它打印出确切命令并标记为 <code>pending-interactive</code>。</li>
+<li><strong>ZCode</strong> 是没有 <code>PATH</code> CLI 的 Electron 客户端。AIOS 把 stdio server 写进 <code>~/.zcode/cli/config.json</code> 的 <code>mcp.servers</code>，ZCode 从那里读取；它的 HTTP 条目还额外需要一个 AIOS 目前不写入的 <code>url</code> 字段，因此那部分仍需人工步骤。</li>
+</ul>
+<p><strong>WorkBuddy</strong> 不再是例外。<code>codebuddy mcp add</code> 根本没有 <code>--agent</code> 参数，<code>-t, --transport</code> 支持 <code>http</code>，所以之前缺的只有 HTTP 键名——它是 <code>{"type":"http","url":...}</code>。AIOS 把这个形状写进 <code>~/.workbuddy/mcp.json</code>（即 <code>codebuddy mcp list</code> 读取的那个文件），而不是 CLI 自己的用户文件 <code>~/.codebuddy/.mcp.json</code>，所以归属追踪、备份与“只删自己写的”语义都保持不变。</p>
+<p><strong>Qoder</strong> 不需要例外说明——它在 CLI 上就提供了完整的 MCP 增删改查（<code>mcp add</code>、<code>add-json</code>、<code>list</code>、<code>get</code>、<code>remove</code>），并支持三个作用域：<code>--scope user</code>（<code>~/.qoder/settings.json</code>）、<code>--scope project</code>（<code>&lt;repo&gt;/.qoder/settings.json</code>，会提交进仓库）、<code>--scope local</code>（<code>.qoder/settings.local.json</code>，被 gitignore）。AIOS 写入 user 与 project 两个文件；local 是合法的 Qoder 作用域，但 AIOS 不会去动它。<code>--transport</code> 接受 <code>stdio</code>、<code>sse</code>、<code>http</code>、<code>ws</code> 四种。</p>
+<p>客户端没安装时会报告为 <code>client-missing</code> 并给出二进制名，绝不会静默算作成功。</p>
+<h2 id="opt-in">判定闸门（opt-in，默认关闭）</h2>
+<p>上面那条集成装的是一个<strong>文档</strong> MCP 服务。它能检索 TypeSafe 文档，但产生不了判断——所以装了它，Jev 也不会回答任何东西。真正调用 Jev 是另一项能力，而且要由你打开才生效：</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>judgment<span class="w"> </span>status<span class="w">                    </span><span class="c1"># 在你表态之前一直是 disabled</span>
+aios<span class="w"> </span>judgment<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>typesafe<span class="w">           </span><span class="c1"># 写入 ~/.aios/judgment/config.json</span>
+aios<span class="w"> </span>judgment<span class="w"> </span>ask<span class="w"> </span>--state<span class="w"> </span><span class="s2">&quot;&lt;要评的内容&gt;&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--questions<span class="w"> </span><span class="s1">&#39;{&quot;severity&quot;:{&quot;type&quot;:&quot;score&quot;,&quot;instructions&quot;:&quot;风险有多大？&quot;,&quot;criteria&quot;:[&quot;可忽略&quot;,&quot;常规&quot;,&quot;有风险&quot;,&quot;可能丢数据&quot;]}}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--risk<span class="w"> </span>destructive<span class="w"> </span>--json
+</code></pre></div>
+<p>在任何一个字节离开你的机器之前，三个条件必须同时成立：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>条件</th>
+<th>默认</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>客户端环境中存在 <code>TYPESAFE_API_KEY</code></td>
+<td>未设置</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>~/.aios/judgment/config.json</code> 中 <code>enabled: true</code></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>会话调用数与输入长度预算未超</td>
+<td>20 次、20000 字符</td>
+</tr>
+</tbody>
+</table>
+<p>任一条件不成立，这个调用面就不存在：不会发出任何请求，也不存在任何"回退成当作答案是肯定的"代码路径。<code>enable --probe</code> 只发一次计量调用，且只因为你明确要了它。</p>
+<p>判断是<strong>提案，不是事实</strong>。每个结果都带着它的模型、<code>x-typesafe-request-id</code>、token 用量和置信度，AIOS 会把它映射成三种裁决之一：</p>
+<table>
+<thead>
+<tr>
+<th>裁决</th>
+<th>条件</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>act</code></td>
+<td>置信度 ≥ <code>actFloor</code></td>
+<td>不必询问，可以推进</td>
+</tr>
+<tr>
+<td><code>confirm</code></td>
+<td>落在两个门槛之间</td>
+<td>先问人</td>
+</tr>
+<tr>
+<td><code>abort</code></td>
+<td>低于 <code>confirmFloor</code></td>
+<td>不要动手</td>
+</tr>
+</tbody>
+</table>
+<p>风险只会<strong>抬高</strong>行动门槛，所以破坏性改动需要比只读动作更高的置信度。<code>Noul</code> 按设计不携带置信度，闸门就使用它给出的概率并如实说明，而不是编一个数出来。</p>
+<h3 id="_5">闸门接在哪里</h3>
+<p>打开闸门只增加两个面：</p>
+<table>
+<thead>
+<tr>
+<th>面</th>
+<th>触发时机</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aios_judge</code> MCP 工具</td>
+<td>仅在闸门已开启且凭据存在时</td>
+<td>工具出现在 <code>tools/list</code> 中；关闭时它直接缺席，而不是“注册了再拒绝”</td>
+</tr>
+<tr>
+<td>rex 阶段闸门</td>
+<td>在某次 provider 证据推进 rex 阶段之前</td>
+<td>证据不可验证时，推进被拦住（hold）</td>
+</tr>
+</tbody>
+</table>
+<p>两个面都只能<strong>收窄</strong>动作。它们都不能生成内容，也都不能把已被拒绝的推进变成放行。判定方联系不上时默认 hold，因为闸门是你主动开的；如果你宁愿让厂商故障放行，把 <code>onJudgmentError</code> 设为 <code>"allow"</code>。</p>
+<p>rex 阶段闸门是 host 侧策略。rex 子模块并不知道它存在，所以闸门保持关闭时，行为与引入之前完全一致。</p>
+<h2 id="_6">命令</h2>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aios integration list</code></td>
+<td>列出已知厂商及其安装内容</td>
+</tr>
+<tr>
+<td><code>aios integration add &lt;厂商&gt; [--dry-run] [--clients a,b] [--skip-skills] [--skip-mcp]</code></td>
+<td>安装技能并注册 MCP 服务</td>
+</tr>
+<tr>
+<td><code>aios integration doctor &lt;厂商&gt; [--json]</code></td>
+<td>校验技能哈希、客户端注册、凭据是否存在、以及实时 MCP 握手</td>
+</tr>
+<tr>
+<td><code>aios integration remove &lt;厂商&gt; [--dry-run]</code></td>
+<td>只注销和删除 AIOS 自己写下的内容</td>
+</tr>
+<tr>
+<td><code>aios judgment status \| enable \| disable \| ask</code></td>
+<td>查看、开启、关闭并使用这个 opt-in 判定闸门</td>
+</tr>
+</tbody>
+</table>
+<p>常用参数：</p>
+<ul>
+<li><code>--dry-run</code> 打印完整计划，不写任何内容。</li>
+<li><code>--clients claude,codex</code> 只跑指定客户端；默认是全部十种。</li>
+<li><code>--skip-skills</code> 或 <code>--skip-mcp</code> 在只需要一半集成时隔离单一平面。</li>
+<li><code>doctor</code> 的 <code>--json</code> 输出机器可读证据，便于接 CI。</li>
+</ul>
+<h2 id="skill">skill 平面装了什么</h2>
+<p>技能先进入 AIOS catalog（<code>skill-sources/</code>），随后由现成的技能分发器铺到全部客户端——这与 AIOS 自己技能的路径完全相同，所以第三方技能和内置技能不会走散。</p>
+<p>AIOS 会在 catalog 副本里补上内部 frontmatter 键，用它决定分发目标，并在写入任何客户端技能树之前把这些键剥掉。你的客户端只会看到厂商自己的 <code>name</code>、<code>description</code> 和 <code>license</code> 字段。</p>
+<p>不是 AIOS 持有的同名 catalog 目录绝不会被覆盖。如果 <code>skill-sources/typesafe-ai</code> 里已有你自己的改动，安装会以 <code>unmanaged-existing-catalog-directory</code> 拒绝，并告诉你去看哪里。</p>
+<h2 id="_7">安全性质</h2>
+<ul>
+<li><strong>凭据只查存在性。</strong> doctor 只报告 <code>TYPESAFE_API_KEY</code> 是否已设置，从不读取、打印或存储它的值。</li>
+<li><strong>归属被记录。</strong> <code>~/.aios/integrations/&lt;厂商&gt;.json</code> 记录 AIOS 写下的每个条目的指纹，因此后续运行能区分 <code>owned</code> / <code>external</code> / <code>conflict</code>，并拒绝覆盖你自己加的条目。</li>
+<li><strong>卸载有边界。</strong> <code>aios integration remove</code> 只注销 AIOS 注册过的条目；同一文件里别人写的 MCP 服务会被保留。</li>
+<li><strong>改动前先备份。</strong> 配置文件在重写前会备份为 <code>.bak-&lt;时间戳&gt;</code>。</li>
+</ul>
+<h2 id="_8">故障排查</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>manual step required</code></td>
+<td>该客户端的 HTTP 配置形状未经验证</td>
+<td>打开打印出的文件，对照客户端文档确认 transport 键名</td>
+</tr>
+<tr>
+<td><code>needs a terminal</code></td>
+<td>客户端的 <code>mcp add</code> 会交互式提问</td>
+<td>你自己在真实终端里跑打印出的命令</td>
+</tr>
+<tr>
+<td><code>client not installed</code></td>
+<td>客户端二进制不在 <code>PATH</code> 上</td>
+<td>安装该客户端后重跑</td>
+</tr>
+<tr>
+<td><code>probe unreachable</code></td>
+<td>文档 MCP 端点未完成握手</td>
+<td>检查网络或代理设置，然后重跑 <code>doctor</code></td>
+</tr>
+<tr>
+<td><code>unmanaged-existing-catalog-directory</code></td>
+<td><code>skill-sources/&lt;名称&gt;</code> 不属于 AIOS</td>
+<td>把你的改动移开，再重跑安装</td>
+</tr>
+<tr>
+<td><code>装了但 Jev 从不回答</code></td>
+<td>预期行为：文档 MCP 装好了，判定闸门还没开</td>
+<td>设置 <code>TYPESAFE_API_KEY</code>、重启客户端、跑 <code>aios judgment enable typesafe</code>，用 <code>aios judgment status</code> 验证</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_9">下一步</h2>
+<ul>
+<li><a href="/zh/docs/model-router/">模型路由器</a> —— 声明 <code>task-type</code> 并把任务路由到指定模型面。</li>
+<li><a href="/zh/docs/contextdb/">ContextDB</a> —— 集成技能读取的项目记忆。</li>
+<li><a href="/zh/docs/workflow-policy/">工作流策略</a> —— AIOS 如何在 direct / guarded / planned 之间决策。</li>
+</ul></div>
+    <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+    <nav class="rex-doc-pager"><a href="/zh/docs/index/">← 上一篇</a><a href="/zh/docs/model-router/">下一篇 →</a></nav>
+    <a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  </article>
+</div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

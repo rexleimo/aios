@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="zh" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hermes Agent 正式成为 AIOS 一等公民客户端</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">中文</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-06-hermes-agent-aios-client/" hreflang="en" lang="en">English</a><a class="rex-lang-opt is-active" href="/zh/blog/2026-06-hermes-agent-aios-client/" hreflang="zh" lang="zh" aria-current="true">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-06-hermes-agent-aios-client/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/blog/2026-06-hermes-agent-aios-client/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-06-30</p><h1>Hermes Agent 正式成为 AIOS 一等公民客户端</h1>
+    <p class="lede" style="font-size:17px">AIOS 现在把 Hermes Agent (Nous Research) 注册为一等公民 AIOS 客户端，并通过 MCP 桥接服务器暴露 5 个核心工具，让 Hermes 用户直接享受 AIOS 的上下文记忆、Doctor 健康检查、Token 压缩、Skill 验证和 Skill 安装能力。</p>
+    <div class="meta"><a href="/zh/blog/">← 全部文章</a> · <a href="/zh">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>Hermes Agent（Nous Research 开源的 CLI AI Agent）现在和 Codex CLI、Claude Code、Gemini CLI、OpenCode、Crush 并列——成为 AIOS 的第七个一等公民客户端。</p>
+<p>这不是简单地在配置文件里加一行。这次集成的核心是 <strong>MCP 桥接服务器</strong>——把 AIOS 最有价值的 5 个能力直接暴露为 Hermes 可以调用的 MCP 工具。</p>
+<h2 id="hermes-agent">为什么 Hermes Agent 需要这个</h2>
+<p>Hermes Agent 已经有 <code>session_search</code>、<code>memory</code>、<code>delegate_task</code>、<code>skill_manage</code>、<code>cronjob</code> 这些内置工具。但跟其他 AIOS 客户端一样，它在三个方向上缺少系统性支持：</p>
+<ol>
+<li><strong>策略化上下文召回</strong> — Hermes 可以搜索历史会话，但没有按 token budget 做优先级裁剪的能力。长会话中上下文窗口会被大量历史淹没。</li>
+<li><strong>环境健康自检</strong> — MCP 配置错了、Node 版本不对、skill 目录残缺……这些小问题会默默拖垮整个工作流，但 Hermes 没有自动检测和修复手段。</li>
+<li><strong>大型输出压缩</strong> — 浏览器截图、长 shell 输出、HTML dumps 这些东西直接进 context window 很浪费，但 Hermes 没有中间拦截层。</li>
+</ol>
+<p>AIOS 的 MCP 桥接直接补上了这三块。</p>
+<h2 id="5-mcp">5 个 MCP 工具详解</h2>
+<p><code>scripts/aios-mcp-server.mjs</code> 是新增的 MCP 桥接服务器，暴露 5 个工具：</p>
+<h3 id="aios_context_pack">aios_context_pack</h3>
+<p>按 token budget 策略化压缩上下文。支持三种策略：</p>
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>行为</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>legacy</code></td>
+<td>尾部截断</td>
+<td>简单场景，不关心优先级</td>
+</tr>
+<tr>
+<td><code>balanced</code></td>
+<td>优先级排序后裁剪</td>
+<td>日常使用，保留最重要信息</td>
+</tr>
+<tr>
+<td><code>aggressive</code></td>
+<td>只保留关键信号</td>
+<td>harness/checkpoint 模式，极致压缩</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="c1"># 在 Hermes 中使用 MCP 工具</span>
+aios_context_pack<span class="o">(</span><span class="nv">query</span><span class="o">=</span><span class="s2">&quot;auth bug fix history&quot;</span>,<span class="w"> </span><span class="nv">token_budget</span><span class="o">=</span><span class="m">2000</span>,<span class="w"> </span><span class="nv">strategy</span><span class="o">=</span><span class="s2">&quot;balanced&quot;</span><span class="o">)</span>
+</code></pre></div>
+<h3 id="aios_doctor_suite">aios_doctor_suite</h3>
+<p>系统健康检查，覆盖 MCP 配置、Node 版本、ContextDB 状态、skill 目录和客户端连通性。支持 <code>--fix</code> 自动修复。</p>
+<div class="highlight"><pre><span></span><code>aios_doctor_suite<span class="o">(</span><span class="nv">workspace</span><span class="o">=</span><span class="s2">&quot;/path/to/project&quot;</span>,<span class="w"> </span><span class="nv">fix</span><span class="o">=</span><span class="nb">true</span><span class="o">)</span>
+</code></pre></div>
+<h3 id="aios_intercept_compress">aios_intercept_compress</h3>
+<p>大型工具输出压缩。三档压缩模式：</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>压缩程度</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tight</code></td>
+<td>平衡压缩</td>
+<td>默认模式</td>
+</tr>
+<tr>
+<td><code>ultra</code></td>
+<td>最大压缩</td>
+<td>harness/checkpoint</td>
+</tr>
+<tr>
+<td><code>precise</code></td>
+<td>最少压缩</td>
+<td>安全关键、不可损操作</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>aios_intercept_compress<span class="o">(</span><span class="nv">text</span><span class="o">=</span><span class="s2">&quot;&lt;raw browser output&gt;&quot;</span>,<span class="w"> </span><span class="nv">mode</span><span class="o">=</span><span class="s2">&quot;tight&quot;</span>,<span class="w"> </span><span class="nv">tool_name</span><span class="o">=</span><span class="s2">&quot;page.screenshot&quot;</span><span class="o">)</span>
+</code></pre></div>
+<h3 id="aios_skill_validate">aios_skill_validate</h3>
+<p>验证 Hermes/AIOS skill 目录结构完整性——检查 SKILL.md frontmatter 必须字段（name、description、version、author）、内容完整性和引用文件存在性。</p>
+<div class="highlight"><pre><span></span><code>aios_skill_validate<span class="o">(</span><span class="nv">skill_path</span><span class="o">=</span><span class="s2">&quot;/path/to/.hermes/skills/my-skill&quot;</span><span class="o">)</span>
+</code></pre></div>
+<h3 id="aios_skill_install">aios_skill_install</h3>
+<p>从 AIOS skill-sources 目录安装 skill 到 Hermes 的 <code>.hermes/skills/</code> 目录。支持 <code>copy</code>（便携）和 <code>link</code>（本地开发）两种安装模式。</p>
+<div class="highlight"><pre><span></span><code>aios_skill_install<span class="o">(</span><span class="nv">skill_name</span><span class="o">=</span><span class="s2">&quot;context-pack&quot;</span>,<span class="w"> </span><span class="nv">install_mode</span><span class="o">=</span><span class="s2">&quot;copy&quot;</span><span class="o">)</span>
+</code></pre></div>
+<h2 id="_1">客户端注册详情</h2>
+<p>Hermes 在 <code>CLIENT_DEFINITIONS</code> 中注册的关键信息：</p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>capabilities</td>
+<td>skills, native, harness, superpowers</td>
+<td>暂不含 team/agents</td>
+</tr>
+<tr>
+<td>commandName</td>
+<td>hermes</td>
+<td>CLI 命令名</td>
+</tr>
+<tr>
+<td>runtimeClientId</td>
+<td>hermes-agent</td>
+<td>运行时标识</td>
+</tr>
+<tr>
+<td>projectSkillRoot</td>
+<td><code>.hermes/skills</code></td>
+<td>Skill 安装目录</td>
+</tr>
+<tr>
+<td>instructionFileName</td>
+<td>AGENTS.md</td>
+<td>Hermes 自动加载项目根 AGENTS.md</td>
+</tr>
+<tr>
+<td>modelArgFlag</td>
+<td><code>--model</code></td>
+<td>模型选择参数</td>
+</tr>
+<tr>
+<td>unattendedArgs</td>
+<td>空</td>
+<td>Hermes 没有 <code>--yolo</code> 模式</td>
+</tr>
+</tbody>
+</table>
+<p>MCP 配置双作用域：</p>
+<table>
+<thead>
+<tr>
+<th>作用域</th>
+<th>文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>项目级</td>
+<td><code>.mcp.json</code></td>
+<td>与 Claude Code 共享</td>
+</tr>
+<tr>
+<td>用户级</td>
+<td><code>config.yaml</code> (under <code>~/.hermes/</code>)</td>
+<td>Hermes YAML 配置</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">如何启用</h2>
+<h3 id="step-1-aios">Step 1: 确保 AIOS 已安装</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 检查 AIOS 是否已安装</span>
+aios<span class="w"> </span>doctor
+</code></pre></div>
+<h3 id="step-2-setup">Step 2: 运行 Setup</h3>
+<div class="highlight"><pre><span></span><code>aios<span class="w">          </span><span class="c1"># TUI → 选择 Setup → 选择包含 hermes 的客户端</span>
+</code></pre></div>
+<p>或直接：</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>setup<span class="w"> </span>--client<span class="w"> </span>hermes
+</code></pre></div>
+<h3 id="step-3-mcp">Step 3: 验证 MCP 桥接</h3>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>doctor<span class="w"> </span>--fix
+<span class="c1"># Doctor 会自动注册 aios-mcp-server 到 Hermes 的 MCP 配置</span>
+</code></pre></div>
+<h3 id="step-4-hermes">Step 4: 在 Hermes 中使用</h3>
+<p>启动 Hermes 并在项目中打开会话，AIOS 的 5 个 MCP 工具会自动可用：</p>
+<div class="highlight"><pre><span></span><code>hermes
+<span class="c1"># 在对话中：@aios_context_pack query=&quot;...&quot; token_budget=2000 strategy=&quot;balanced&quot;</span>
+</code></pre></div>
+<h2 id="_3">与其他客户端的差异</h2>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>Codex/Claude</th>
+<th>Hermes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Skills 目录</td>
+<td><code>.codex/skills</code> / <code>.claude/skills</code></td>
+<td><code>.hermes/skills</code></td>
+</tr>
+<tr>
+<td>指令文件</td>
+<td>AGENTS.md / CLAUDE.md</td>
+<td>AGENTS.md（共享）</td>
+</tr>
+<tr>
+<td>无人值守模式</td>
+<td><code>--yolo</code> / <code>--dangerously-skip-permissions</code></td>
+<td>无（使用 <code>delegate_task</code>）</td>
+</tr>
+<tr>
+<td>MCP 配置</td>
+<td>JSON / TOML</td>
+<td>JSON + YAML 双作用域</td>
+</tr>
+<tr>
+<td>Team 编排</td>
+<td>支持</td>
+<td>暂不支持（未来扩展）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">接下来做什么</h2>
+<ul>
+<li><strong>提炼 Hermes 原生 skill</strong> — 从 AIOS skill-sources 提炼 <code>context-pack</code>、<code>hermes-doctor</code> 等 skill 到 <code>.hermes/skills/</code> 格式</li>
+<li><strong>Team 编排扩展</strong> — Hermes 的 <code>delegate_task</code> 已经支持子代理派发，未来可以接入 AIOS 的多客户端 team 编排</li>
+<li><strong>ACP 子代理桥接</strong> — Hermes 支持 ACP（如 Copilot CLI），可以与 AIOS 的 <code>delegate_task</code> 融合实现跨客户端编排</li>
+</ul>
+<hr />
+<p>阅读 <a href="/docs/zh/">AIOS 官方文档</a> 获取完整使用指南，或查看 <a href="/blog/zh/2026-06-agent-governance/">Agent 治理文章</a> 了解 AIOS 如何保证多客户端工作流的安全性。</p>
+<h2 id="_5">相关文档</h2>
+<ul>
+<li><a href="/docs/zh/getting-started/">快速开始</a></li>
+<li><a href="/docs/zh/getting-started/">Quick Start</a> — 30 秒安装 AIOS</li>
+<li><a href="/docs/zh/workflow-policy/">Workflow Policy</a> — direct / guarded / planned 路由</li>
+</ul></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

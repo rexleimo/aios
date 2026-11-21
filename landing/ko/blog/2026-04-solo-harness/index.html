@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ko" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solo Harness: Agent 에게 작업을 맡기고 주무세요, 아침에 결과를 확인하세요</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">한국어</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-04-solo-harness/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/blog/2026-04-solo-harness/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-04-solo-harness/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt is-active" href="/ko/blog/2026-04-solo-harness/" hreflang="ko" lang="ko" aria-current="true">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-04-26</p><h1>Solo Harness: Agent 에게 작업을 맡기고 주무세요, 아침에 결과를 확인하세요</h1>
+    <p class="lede" style="font-size:17px">AIOS 1.7에서 도입한 무인 agent 실행입니다. 실행 저널, 중지와 재개 제어, git worktree 격리를 갖추어 중단되어도 마지막 체크포인트에서 다시 시작합니다. 실제 야간 작업의 실행 기록과 검증 증거, 무인 실행에 맞지 않는 작업도 다룹니다.</p>
+    <div class="meta"><a href="/ko/blog/">← 全部文章</a> · <a href="/ko">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>Coding agent 는 짧은 작업에 강합니다. "이 버그 고쳐줘", "이 함수 작성해줘", "이 파일 리팩터링해줘" — 몇 분이면 끝나죠.</p>
+<p>하지만 더 큰 목표는 어떨까요? "인증 모듈 전체를 리팩터링하고 테스트도 작성해줘." 몇 시간이 걸릴 작업입니다. 옆에서 지켜볼 수는 없죠.</p>
+<p><strong>Solo Harness 를 사용하면 큰 작업을 넘겨주고 완료될 때 돌아오면 됩니다.</strong></p>
+<h2 id="vs">예전 방식 vs 새로운 방식</h2>
+<p><strong>예전:</strong> 긴 작업을 실행하고, 잠자리에 들고, 아침에 일어나면... 뭔가가 되어 있었습니다. 완료되었을 수도, 멈췄을 수도, git 히스토리가 엉망이 되었을 수도 있습니다. 무슨 일이 일어났는지 알 수 없었죠.</p>
+<p><strong>이후:</strong> <code>--worktree</code> 로 harness 실행을 시작하고, 잠자리에 들고, 아침에:</p>
+<ul>
+<li><strong>실행 저널</strong> 을 확인해 정확히 무슨 일이 있었는지 확인</li>
+<li><strong>구조화된 상태</strong> 를 확인해 완료되었는지 확인</li>
+<li>멈추었다면 멈춘 지점에서 <strong>재개</strong></li>
+<li>엉뚱한 방향으로 갔다면 <strong>worktree 를 삭제</strong> — 메인 브랜치는 그대로</li>
+</ul>
+<h2 id="_1">작동 방식</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># 저녁: 실행 시작</span>
+aios<span class="w"> </span>harness<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--objective<span class="w"> </span><span class="s2">&quot;인증 모듈을 리팩터링하고 통합 테스트 작성&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--session<span class="w"> </span>nightly-auth<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--worktree
+
+<span class="c1"># 아침: 무슨 일이 있었는지 확인</span>
+aios<span class="w"> </span>harness<span class="w"> </span>status<span class="w"> </span>--session<span class="w"> </span>nightly-auth<span class="w"> </span>--json
+
+<span class="c1"># 완료되었다면: 변경사항 리뷰</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--session<span class="w"> </span>nightly-auth
+
+<span class="c1"># 멈추었다면: 문제를 해결하고 재개</span>
+aios<span class="w"> </span>harness<span class="w"> </span>resume<span class="w"> </span>--session<span class="w"> </span>nightly-auth<span class="w"> </span>--max-iterations<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+<h2 id="-worktree"><code>--worktree</code> 가 중요한 이유</h2>
+<p><code>--worktree</code> 플래그는 중요합니다. Agent 가 자유롭게 변경할 수 있는 별도의 레포 복사본을 만듭니다.</p>
+<ul>
+<li><strong>좋은 결과?</strong> worktree 를 메인 브랜치에 병합</li>
+<li><strong>나쁜 결과?</strong> worktree 만 삭제하면 됩니다 — 코드에 영향 없음</li>
+</ul>
+<p><code>git reset --hard</code> 도 필요 없고, 위험한 정리도 필요 없습니다. 안전한 격리뿐입니다.</p>
+<h2 id="_2">무엇이 기록되는가</h2>
+<p>모든 harness 실행은 저널을 작성합니다:</p>
+<div class="highlight"><pre><span></span><code>memory/context-db/sessions/&lt;session-id&gt;/artifacts/solo-harness/
+  ├── objective.md           # 요청한 목표
+  ├── run-summary.json       # 현재 상태와 진행률
+  ├── control.json           # 중지 요청과 메모
+  ├── iteration-0001.json    # 각 반복에서 일어난 일
+  └── iteration-0001.log     # 상세 로그
+</code></pre></div>
+<p>이것은 <strong>읽을 수 있는 인계 기록</strong> 을 제공합니다 — "agent 가 한동안 실행되었다"가 아니라, 정확히 무엇을 했고, 무엇이 잘 되었고, 무엇이 안 되었는지 알 수 있습니다.</p>
+<h2 id="solo-harness">Solo Harness 를 사용해야 할 때</h2>
+<p><strong>사용하세요:</strong>
+- 시간이 오래 걸리는 명확한 목표가 하나 있을 때
+- 작업을 여러 agent 에 나눌 필요가 없을 때
+- 지켜보는 대신 결과를 기다리고 싶을 때</p>
+<p><strong>사용하지 마세요:</strong>
+- 작업을 독립적인 부분으로 나눌 수 있을 때 (<a href="/docs/ko/team-ops/">Agent Team</a> 을 대신 사용)
+- 아직 요구사항을 정리하는 중일 때 (일반 세션으로 시작)
+- 품질 게이트가 있는 단계별 실행이 필요할 때 (orchestrate 를 사용)</p>
+<h2 id="_3">직접 해보세요</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># 모든 것이 준비되었는지 dry run 으로 확인</span>
+aios<span class="w"> </span>harness<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--objective<span class="w"> </span><span class="s2">&quot;결제 모듈에 대한 통합 테스트 작성&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--session<span class="w"> </span>test-dry<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--worktree<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--dry-run<span class="w"> </span>--json
+
+<span class="c1"># 준비되었다면 실제 실행</span>
+aios<span class="w"> </span>harness<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--objective<span class="w"> </span><span class="s2">&quot;결제 모듈에 대한 통합 테스트 작성&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--session<span class="w"> </span>payment-tests<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--worktree<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--max-iterations<span class="w"> </span><span class="m">20</span>
+</code></pre></div>
+<hr />
+<p><em>Solo Harness 는 AIOS 1.7 에 포함되어 있습니다. <a href="/docs/ko/solo-harness/">전체 문서</a>를 읽거나 오늘 밤 직접 시도해 보세요.</em></p></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

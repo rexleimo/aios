@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ja" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jev + AIOS クイックスタート：キーワード不要、裏側で自動判断（JVM の誤解も解消）</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">日本語</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-09-jev-aios-quickstart/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/blog/2026-09-jev-aios-quickstart/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt is-active" href="/ja/blog/2026-09-jev-aios-quickstart/" hreflang="ja" lang="ja" aria-current="true">日本語</a><a class="rex-lang-opt" href="/ko/blog/2026-09-jev-aios-quickstart/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-09-19</p><h1>Jev + AIOS クイックスタート：キーワード不要、裏側で自動判断（JVM の誤解も解消）</h1>
+    <p class="lede" style="font-size:17px">TYPESAFE_API_KEY を設定し、aios integration add typesafe と aios judgment enable typesafe を実行したら、普段どおり話すだけで Jev（jev-latest）が裏側で判断します。導入だけでは発火しない理由、aios_judge と rex ステージゲート、予算、JVM/MVC の聞き間違いを解説。</p>
+    <div class="meta"><a href="/ja/blog/">← 全部文章</a> · <a href="/ja">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>TypeSafe 統合を入れたのに何も起きない——それは正常です。導入は Jev について学ぶことであり、<strong>有効化</strong>して初めて Jev が答えます。4 コマンドで最初の裏側判断まで進みます。</p>
+<h2 id="_1">早見表</h2>
+<table>
+<thead>
+<tr>
+<th>質問</th>
+<th>答え</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>導入したのに Jev が答えないのはなぜ？</td>
+<td>統合が入れるのは<strong>ドキュメント</strong> MCP であり、判断を生成できません。<code>aios judgment enable typesafe</code> を実行してください。</td>
+</tr>
+<tr>
+<td>「JVM」のようなキーワードは必要？</td>
+<td>不要です。有効化後は普段どおり話すだけ。ゲートが裏側で発火します。</td>
+</tr>
+<tr>
+<td>人が言う「JVM」/「JVM MVC」とは？</td>
+<td><strong>Jev</strong> と <strong>MCP</strong> ドキュメントサーバーをまとめて聞き取ったものです。モデルは <code>jev-latest</code>、サーバーは <code>typesafe-docs</code>。</td>
+</tr>
+<tr>
+<td>費用は？</td>
+<td>判断 1 回ごとに課金 1 回。デフォルトはセッションあたり 20 回・入力 20000 文字上限。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="0">ステップ 0——二つの半分を区別する</h2>
+<table>
+<thead>
+<tr>
+<th>半分</th>
+<th>内容</th>
+<th>Jev を呼べるか</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aios integration add typesafe</code></td>
+<td>固定版スキル（<code>65a39f3</code>、sha256 検証）+ 全 9 クライアントの <code>typesafe-docs</code> MCP</td>
+<td>不可。ドキュメント検索のみ。</td>
+</tr>
+<tr>
+<td><code>aios judgment enable typesafe</code></td>
+<td><code>~/.aios/judgment/config.json</code> に <code>enabled: true</code> を書く</td>
+<td>可——<code>TYPESAFE_API_KEY</code> がある場合のみ。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="1">ステップ 1——統合を導入する</h2>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>integration<span class="w"> </span>add<span class="w"> </span>typesafe<span class="w"> </span>--dry-run<span class="w">   </span><span class="c1"># 全クライアントの変更を事前表示、書き込みなし</span>
+aios<span class="w"> </span>integration<span class="w"> </span>add<span class="w"> </span>typesafe<span class="w">             </span><span class="c1"># スキル導入 + ドキュメント MCP 登録</span>
+aios<span class="w"> </span>integration<span class="w"> </span>doctor<span class="w"> </span>typesafe<span class="w">          </span><span class="c1"># ハッシュ・登録・資格情報の有無を検証</span>
+</code></pre></div>
+<h2 id="2">ステップ 2——資格情報を設定しクライアントを再起動する</h2>
+<p><code>TYPESAFE_API_KEY</code> が唯一の秘密情報です。AIOS は有無だけを見ます。値を読む・表示する・保存することはありません。</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># macOS / Linux</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">TYPESAFE_API_KEY</span><span class="o">=</span><span class="s2">&quot;&lt;your-key&gt;&quot;</span><span class="w">                              </span><span class="c1"># このシェルのみ</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export TYPESAFE_API_KEY=&quot;&lt;your-key&gt;&quot;&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc<span class="w">          </span><span class="c1"># 永続化</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c"># Windows（自分のアカウントに永続）</span>
+<span class="no">[Environment]</span><span class="p">::</span><span class="n">SetEnvironmentVariable</span><span class="p">(</span><span class="s1">&#39;TYPESAFE_API_KEY&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;your-key&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;User&#39;</span><span class="p">)</span>
+</code></pre></div>
+<p>その後<strong>コーディングクライアントを再起動</strong>してください。環境変数はプロセス起動時に一度だけ読まれます。開きっぱなしのクライアントに後から設定した値は見えません。</p>
+<h2 id="3">ステップ 3——ゲートを有効にする</h2>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>judgment<span class="w"> </span>status<span class="w">           </span><span class="c1"># 期待値：disabled、credential present</span>
+aios<span class="w"> </span>judgment<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>typesafe<span class="w">  </span><span class="c1"># ~/.aios/judgment/config.json に書き込む</span>
+aios<span class="w"> </span>judgment<span class="w"> </span>status<span class="w">           </span><span class="c1"># 期待値：ENABLED、model jev-latest</span>
+</code></pre></div>
+<p>任意の正直チェック（課金 1 回、あなたが明示したときだけ）：</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>judgment<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>typesafe<span class="w"> </span>--probe
+</code></pre></div>
+<h2 id="4jev">ステップ 4——普段どおり話す。Jev は裏側で働く</h2>
+<p>キーワード不要、「JVM を使って」と言う必要もありません。普通に作業してください：</p>
+<ul>
+<li>リスクの高い変更を頼む。実行前にゲートが深刻度を採点し、<code>strict-tdd</code> と <code>tdd</code> を使い分けます。迷えば先にあなたに聞きます。</li>
+<li>実装が一巡する。rex ステージが進む前に、ゲートは Jev に <code>noul</code> を 1 問だけ聞きます：この証拠は完了を検証可能に示しているか？ 基準未満なら理由付きで保留（hold）します。</li>
+</ul>
+<p>手動で 1 回試す（戻り値の形を見る）：</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>judgment<span class="w"> </span>ask<span class="w"> </span>--state<span class="w"> </span><span class="s2">&quot;バックアップなしで本番 sessions テーブルを削除した。&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--questions<span class="w"> </span><span class="s1">&#39;{&quot;severity&quot;:{&quot;type&quot;:&quot;score&quot;,&quot;instructions&quot;:&quot;この変更のリスクは？&quot;,&quot;criteria&quot;:[&quot;無視できる&quot;,&quot;通常&quot;,&quot;リスクあり&quot;,&quot;データ喪失&quot;]}}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--risk<span class="w"> </span>destructive<span class="w"> </span>--json
+</code></pre></div>
+<p>すべての答えは<strong>提案であり事実ではありません</strong>：<code>model</code>・<code>x-typesafe-request-id</code>・token <code>usage</code>・確信度を持ち、<code>act</code> / <code>confirm</code> / <code>abort</code> に映射されます。破壊的変更は読み取り専用より高い確信度を要求します。ゲートの発言がコンテンツを生成したり、却下を覆したりすることはありません。</p>
+<h2 id="guardrail">知っておくべき guardrail</h2>
+<ul>
+<li><strong>デフォルトはオフ、fail closed。</strong> 資格情報なし・フラグなし・設定破損のいずれも結果は同じ：<code>tools/list</code> に道具なし、ネットワーク呼び出しゼロ、次の手順付きの拒否。</li>
+<li><strong>二つの面、どちらも狭めるだけ。</strong> <code>aios_judge</code> は有効時のみ出現。rex ステージゲートの答えは <code>advance</code> / <code>hold</code> のみ。動作を緩めることはできません。</li>
+<li><strong>支出は監査可能。</strong> 毎回 <code>requestId</code> + <code>usage</code> + 呼び出し元を記録。</li>
+<li><strong>ベンダー障害時はデフォルトで保留</strong>します。あなたが自分で開けたゲートだからです。障害時も通したい場合は <code>onJudgmentError</code> を <code>"allow"</code> に。</li>
+</ul>
+<h2 id="_2">トラブルシューティング</h2>
+<table>
+<thead>
+<tr>
+<th>症状</th>
+<th>対処</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>導入済みなのに発火しない</td>
+<td>有効化までは正常：<code>aios judgment enable typesafe</code></td>
+</tr>
+<tr>
+<td><code>credential ... (NOT SET)</code></td>
+<td>クライアントの実環境に <code>TYPESAFE_API_KEY</code> を設定し、クライアントを再起動</td>
+</tr>
+<tr>
+<td><code>ask</code> が <code>judgment-disabled</code></td>
+<td>先に有効化。終了コード 3 は「未有効」であり「故障」ではない</td>
+</tr>
+<tr>
+<td>Agent が「JVM モデル」と言う</td>
+<td>Jev（<code>jev-latest</code>）のこと。そのまま使って問題なし</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">次の手順</h2>
+<ul>
+<li><a href="/docs/ja/integrations/">AIOS で TypeSafe Jev を使う</a>——リファレンス。</li>
+<li><a href="2026-09-v519-judgment-gate-surfaces.md">v5.19.0：判断ゲートに身体を与える</a>——無効時に道具が欠席する理由。</li>
+<li><a href="2026-09-v518-judgment-gate.md">v5.18.0：デフォルトはオフ、意図的に</a>——fail closed 設計。</li>
+</ul></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

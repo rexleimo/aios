@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="en" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v5.6.1: Plan-Driven Dispatch — aios work Reads Your Plan</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">English</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt is-active" href="/blog/2026-08-v561-aios-work-plan-driven-dispatch/" hreflang="en" lang="en" aria-current="true">English</a><a class="rex-lang-opt" href="/zh/blog/2026-08-v561-aios-work-plan-driven-dispatch/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-08-v561-aios-work-plan-driven-dispatch/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/blog/2026-08-v561-aios-work-plan-driven-dispatch/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-08-12</p><h1>v5.6.1: Plan-Driven Dispatch — aios work Reads Your Plan</h1>
+    <p class="lede" style="font-size:17px">v5.6.1 makes aios work plan-driven: eligible tasks from the active plan become parallel work items with dependencies, owned paths, and acceptance criteria.</p>
+    <div class="meta"><a href="/blog/">← 全部文章</a> · <a href="/">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article"><h1 id="v561-plan-driven-multi-agent-dispatch-aios-work-reads-your-plan">v5.6.1: Plan-Driven Multi-Agent Dispatch — <code>aios work</code> Reads Your Plan</h1>
+<h2 id="problem">Problem</h2>
+<p><a href="2026-08-v560-aios-work-concurrent-dispatch.md">v5.6.0</a> made <code>aios work</code> the one-command entry for parallel multi-agent coding: it plans, decomposes, and dispatches planner, implementer, reviewer, and security-reviewer jobs with a merge gate. But the decomposition step was still implicit — work items were guessed from the task title and <code>--context</code> hints. If your plan lived in a structured plan document (with dependencies, owned paths, and acceptance criteria), the dispatch never read it, and the post-dispatch report could disagree with the work items that were actually executed.</p>
+<h2 id="quick-answer">Quick Answer</h2>
+<p><strong>v5.6.1 makes <code>aios work</code> plan-driven: when a structured plan is active, eligible plan tasks become the parallel work items.</strong> Each work item keeps its dependencies, its owned paths (<code>targets</code> + <code>allowedWrites</code>), and its acceptance criteria from the plan, so parallel subagents work exactly the boundaries your plan drew. The <code>;</code>-separated <code>--context</code> fallback stays for no-plan runs, and a new <code>aios-work-dispatch</code> skill teaches agents when parallel dispatch is the right call — planned work with at least two independent items, disjoint file ownership, and no strict ordering — with a preview/approval boundary before anything goes live.</p>
+<h2 id="what-changed-in-v561">What changed in v5.6.1</h2>
+<ol>
+<li><strong>Plan tasks become work items.</strong> <code>aios work</code> decomposes the active structured plan: eligible plan tasks are lifted into work items with dependencies, owned paths (<code>targets</code> + <code>allowedWrites</code>), and acceptance criteria preserved from the plan.</li>
+<li><strong>Semicolon context remains the fallback.</strong> No active plan? <code>--context "mcp-server 重构; docs 更新; 测试补充"</code> still decomposes into work items as before — no-plan invocations are unchanged.</li>
+<li><strong>The report matches the executed plan.</strong> The post-dispatch report now preserves the plan-driven decomposition instead of recomputing work items, so the top-level <code>workItems</code> you see are the ones that ran.</li>
+<li><strong>Agents learn when to dispatch.</strong> The new canonical <code>aios-work-dispatch</code> skill encodes the entry criteria (planned disposition, at least two independent items, disjoint file ownership, no strict ordering), how to express decomposition, and the preview/approval boundary.</li>
+<li><strong>The router sends parallel work to dispatch.</strong> <code>aios-workflow-router</code> now routes parallel-capable planned work into the dispatch skill, so the loop from plan to parallel execution is a taught behavior, not a guess.</li>
+</ol>
+<h2 id="how-plan-driven-decomposition-works">How plan-driven decomposition works</h2>
+<ul>
+<li><strong>Source of truth is the plan.</strong> Eligible plan tasks carry their own dependencies, owned paths, and acceptance criteria — <code>aios work</code> reads them instead of re-guessing from free text.</li>
+<li><strong>Ownership is explicit.</strong> Each work item's <code>targets</code> + <code>allowedWrites</code> keep parallel subagents inside their lanes; the merge gate still blocks overlapping file ownership.</li>
+<li><strong>Fallback stays predictable.</strong> Without an active plan, decomposition uses the task title plus <code>;</code>-separated <code>--context</code> hints, exactly like v5.6.0.</li>
+<li><strong>Safety is unchanged.</strong> Preflight readiness, capability guard, owned-path file policy, and the merge gate all still apply; <code>--dry-run</code> previews the decomposed plan and work items at zero cost.</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Plan-driven: work items come from the active structured plan</span>
+aios<span class="w"> </span>work<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;Ship the release checklist&quot;</span>
+
+<span class="c1"># Preview the plan-driven decomposition before anything runs</span>
+aios<span class="w"> </span>work<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;Ship the release checklist&quot;</span><span class="w"> </span>--dry-run<span class="w"> </span>--json
+
+<span class="c1"># No-plan fallback still works</span>
+aios<span class="w"> </span>work<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;Prepare the release&quot;</span><span class="w"> </span>--context<span class="w"> </span><span class="s2">&quot;update changelog; refresh docs; bump version&quot;</span>
+
+<span class="c1"># Force serial for coupled plan tasks</span>
+aios<span class="w"> </span>work<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;Refactor the auth module&quot;</span><span class="w"> </span>--serial
+</code></pre></div>
+<h2 id="faq">FAQ</h2>
+<h3 id="how-do-i-know-dispatch-will-read-my-plan">How do I know dispatch will read my plan?</h3>
+<p><code>aios work --task "..." --dry-run --json</code> prints the decomposed work items, their dependencies, and their owned paths before anything executes. If the plan is active, the work items come from it.</p>
+<h3 id="does-this-replace-my-planning-process">Does this replace my planning process?</h3>
+<p>No. The plan stays the single source of truth — dispatch just honors it. If your workflow uses a structured plan, <code>aios work</code> now executes its boundaries instead of inventing new ones.</p>
+<h3 id="when-should-i-not-parallelize">When should I <em>not</em> parallelize?</h3>
+<p>Parallel dispatch needs at least two independent work items, disjoint file ownership, and no strict ordering between them. Coupled changes belong on one lane (<code>--serial</code>), and the new <code>aios-work-dispatch</code> skill encodes exactly these gates so agents do not guess.</p>
+<h3 id="is-the-approval-boundary-still-human-controlled">Is the approval boundary still human-controlled?</h3>
+<p>Yes. The dispatch skill requires a preview before live execution; <code>--dry-run</code> is the zero-cost way to review the plan-driven work items, and live dispatch keeps the readiness, capability, ownership, and merge-gate guards from v5.6.0.</p>
+<h3 id="my-mcp-servers-broke-after-an-upgrade-or-after-moving-the-repo">My MCP servers broke after an upgrade or after moving the repo</h3>
+<p>MCP entries in client configs (for example <code>~/.config/opencode/opencode.json</code>) store absolute paths to this repository's <code>scripts/</code> launchers. After the project or install directory moves, those paths no longer exist and the servers fail to start. Fix from the new project root:</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>internal<span class="w"> </span>browser<span class="w"> </span>mcp-migrate
+<span class="c1"># or: aios update   (the browser component is in the default update set)</span>
+</code></pre></div>
+<p>Then restart your client. <code>aios doctor</code> checks launcher paths without rewriting anything. Full details: <a href="/docs/troubleshooting/">Troubleshooting</a>.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="2026-08-v560-aios-work-concurrent-dispatch.md">v5.6.0: Parallel Multi-Agent Coding with One Command — aios work</a></li>
+<li><a href="orchestrate-live.md">Orchestrate Live: Running Subagents in Production</a></li>
+<li><a href="2026-08-parallel-coding-agents.md">Parallel Coding Agents Are Not Free: Git Worktrees Isolate Files, Not State</a></li>
+<li><a href="2026-06-agent-governance.md">Agent Governance: Make Team Runs Prove Themselves Before Going Live</a></li>
+<li>Docs: <a href="/docs/team-ops/">Team Ops</a> · <a href="/docs/route-concurrency-profiles/">Route &amp; Concurrency Profiles</a></li>
+</ul></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

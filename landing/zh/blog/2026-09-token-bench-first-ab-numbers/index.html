@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="zh" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我们实测了自己的 token 压缩：AIOS Token Bench 首份 A/B 数据</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">中文</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-09-token-bench-first-ab-numbers/" hreflang="en" lang="en">English</a><a class="rex-lang-opt is-active" href="/zh/blog/2026-09-token-bench-first-ab-numbers/" hreflang="zh" lang="zh" aria-current="true">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-09-token-bench-first-ab-numbers/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/blog/2026-09-token-bench-first-ab-numbers/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-09-30</p><h1>我们实测了自己的 token 压缩：AIOS Token Bench 首份 A/B 数据</h1>
+    <p class="lede" style="font-size:17px">AIOS 在冻结的任务集上实测自己的压缩机制。新 Pi 观察卸载机制的三对 A/B：成本均值省 21%，但 token 节省在 +21% 到 -64% 之间摆动，机制以 opt-in 发布。完整表格与诊断。</p>
+    <div class="meta"><a href="/zh/blog/">← 全部文章</a> · <a href="/zh">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<blockquote>
+<p><strong>一句话答案：</strong> 我们不再争论"压缩到底省不省"，改为直接测量。在冻结的 8 任务基准上（模型钉死），我们对新上线的 Pi 观察卸载机制（关 → 开）跑了三对 A/B。token 节省在前两对是 +16% 和 +21%，第三对<strong>反转成 −64%</strong>——三对平均 −4%——原因是模型有时在大读取任务上多花很多轮翻页取回。成本均值省 21%，方差同样大。所以诚实的标题是：目标任务常常能省一半 token，机制按我们自己立的两道闸门<strong>以 opt-in 发布（默认关闭）</strong>，方差是下一个工程问题。以下每个数字都能用三条命令复现。</p>
+</blockquote>
+<h2 id="_1">为什么是测量，不是争论</h2>
+<p>NVIDIA 的 SoL-Pi 用自动研究循环加冻结的 held-out 基准，把 152 个候选机制筛到 4 个。我们评估了他们的包，发现与我们 Pi 安全闸门和托管传输有两个结构性冲突，最终一行没装——但把那套纪律整体借了过来：</p>
+<ol>
+<li><strong>冻结任务集</strong>：只做验收，永不用于调参。</li>
+<li><strong>统一账本</strong>：每个 token 事件都归属到层、任务和模型。</li>
+<li><strong>两道验收闸门</strong>：能力检查必须通过、实测节省必须为正——否则机制保持 opt-in。</li>
+</ol>
+<h2 id="_2">基准长什么样</h2>
+<p>AIOS token bench 就在仓库里：8 条冻结任务（纯回复、JSON 契约、shell 往返、小/大日志读取、多轮写后跑），打托管 Pi RPC 传输执行，模型钉死在 <code>kimi-k2.7-code</code>。每一轮的用量——输入、输出、缓存读、成本、停止原因——都按任务 id 流进账本。</p>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/token-bench/run.mjs<span class="w"> </span>--dry<span class="w"> </span>--json<span class="w">   </span><span class="c1"># 校验冻结集，不启动任何客户端</span>
+node<span class="w"> </span>scripts/token-bench/run.mjs<span class="w"> </span>--session<span class="w"> </span>bench-ab-off<span class="w"> </span>--model<span class="w"> </span>&lt;provider/model&gt;<span class="w">   </span><span class="c1"># 实跑，烧真实 token</span>
+node<span class="w"> </span>scripts/token-bench/compare.mjs<span class="w"> </span>--a<span class="w"> </span>bench-ab-off<span class="w"> </span>--b<span class="w"> </span>bench-ab-on<span class="w">              </span><span class="c1"># A/B 对比报表</span>
+</code></pre></div>
+<h2 id="ab">首份 A/B 结果</h2>
+<p>同一批任务、同一个模型，唯一的变量：观察卸载机制关 vs 开。这是三对中的第一对。</p>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>关·轮次</th>
+<th>开·轮次</th>
+<th>关·tokens</th>
+<th>开·tokens</th>
+<th>Δ tokens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bench-001 纯回复</td>
+<td>1</td>
+<td>1</td>
+<td>16,548</td>
+<td>16,559</td>
+<td>+11</td>
+</tr>
+<tr>
+<td>bench-002 shell 版本号</td>
+<td>2</td>
+<td>2</td>
+<td>33,210</td>
+<td>33,229</td>
+<td>+19</td>
+</tr>
+<tr>
+<td>bench-003 小日志读取</td>
+<td>2</td>
+<td>2</td>
+<td>33,531</td>
+<td>33,787</td>
+<td>+256</td>
+</tr>
+<tr>
+<td>bench-004 数 ERROR 行</td>
+<td>3</td>
+<td>2</td>
+<td>53,465</td>
+<td>35,070</td>
+<td>−18,395（−34%）</td>
+</tr>
+<tr>
+<td>bench-005 JSON 契约</td>
+<td>1</td>
+<td>1</td>
+<td>16,566</td>
+<td>16,578</td>
+<td>+12</td>
+</tr>
+<tr>
+<td>bench-006 算术命令</td>
+<td>2</td>
+<td>2</td>
+<td>33,254</td>
+<td>33,239</td>
+<td>−15</td>
+</tr>
+<tr>
+<td>bench-007 大日志读取（126 KB）</td>
+<td>4</td>
+<td>2</td>
+<td>67,500</td>
+<td>34,316</td>
+<td>−33,184（−49%）</td>
+</tr>
+<tr>
+<td>bench-008 多轮写+跑</td>
+<td>3</td>
+<td>3</td>
+<td>50,272</td>
+<td>51,570</td>
+<td>+1,298（+3%）</td>
+</tr>
+<tr>
+<td><strong>合计</strong></td>
+<td></td>
+<td></td>
+<td><strong>304,346（$0.1035）</strong></td>
+<td><strong>254,348（$0.0602）</strong></td>
+<td><strong>−49,998（−16%）</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="_3">这些数字真正说了什么</h2>
+<p><strong>目标形状的反应和设计完全一致。</strong>bench-007 强制把约 126 KB 的工具观察塞进上下文。机制开启后，这份观察只落盘一次、上下文里只留句柄加摘要，模型只在需要时精确翻页取回。该任务 token 降 49%，轮次从 4 轮收敛到 2 轮。</p>
+<p><strong>成本降得比 token 快。</strong>总 token 降 16%，实测成本降 42%。关臂多出来的轮次在按最贵的价格重复计费大块未缓存输入；轮次变少后，更多消耗转移到缓存读上。优化 token 能拿到一部分，优化轮次才能拿全。</p>
+<p><strong>小任务是噪声带，这本身就是结论。</strong>零工具任务背着约 16K token 的上下文地板（系统提示加 harness 基线），任何卸载机制都碰不到它——我们更早的基线里这个地板占总消耗 59%。卸载不是治地板的杠杆，地板数字的存在意义就是把这个边界说清楚。</p>
+<h2 id="_4">另外两对显示了什么</h2>
+<p>我们承诺过 default-on 决策之前跑满三对重复。它们改写了故事：</p>
+<table>
+<thead>
+<tr>
+<th>配对</th>
+<th>关·tokens</th>
+<th>开·tokens</th>
+<th>Δ tokens</th>
+<th>Δ 成本</th>
+<th>bench-007 关 → 开</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>304,346（$0.1035）</td>
+<td>254,348（$0.0602）</td>
+<td>−16%</td>
+<td>−42%</td>
+<td>67,500 → 34,316（4→2 轮）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>338,064（$0.0982）</td>
+<td>268,559（$0.0585）</td>
+<td>−21%</td>
+<td>−40%</td>
+<td>120,284 → 67,432</td>
+</tr>
+<tr>
+<td>3</td>
+<td>237,685（$0.0551）</td>
+<td>389,675（$0.0837）</td>
+<td><strong>+64%</strong></td>
+<td><strong>+52%</strong></td>
+<td>36,240 → 172,992（10 轮）</td>
+</tr>
+<tr>
+<td><strong>均值</strong></td>
+<td>293,365</td>
+<td>304,194</td>
+<td><strong>−4%</strong></td>
+<td><strong>−21%</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>第三对反转了。逐轮账本把原因指得清清楚楚：开臂的 bench-007 跑了 <strong>10 轮而不是 2–4 轮</strong>，每一轮成本结构都正常（同样的 ~16K 地板、缓存读健康）——模型反复翻页取回，迟迟不肯收敛。机制没有故障；恰恰在机制针对的那类任务上，模型的取回策略是高方差的。</p>
+<p>由此得出两个诚实结论。其一，三对里成本均值仍省 21%，且模型快速收敛的两对中机制表现与设计一致——但 token 均值 −4% 不是稳定的赢。其二，按我们自己立的两道闸门，<strong>机制以 opt-in 发布（默认关闭，<code>AIOS_PI_OFFLOAD=on</code> 显式开启）</strong>，直到方差有了工程答案：给每个任务设取回预算，超预算后句柄退化为"归档过大"的普通指针。</p>
+<h2 id="_5">我们仍然不声明什么</h2>
+<ul>
+<li><strong>均值不是稳定的赢。</strong>三对 −4% 的 token 均值在零的方差范围内；成本均值（−21%）好一些，但靠的是同样三次掷骰子。</li>
+<li><strong>ON 臂有一次检查失败</strong>（第一对开臂的 bench-007 回复漏掉期望 id）。同机制同模型单独复跑时精确命中。我们判定为模型方差而非机制损伤——但它记录在案，不是"偶发、忽略"。</li>
+<li><strong>token 数字来自运行时的 usage 上报</strong>，不是厂商账单。下文三个月账本的数字是字节估算（bytes ÷ 4）。</li>
+<li><strong>只有一个模型。</strong>换后端，百分比可能明显移动——包括取回轮次方差本身。</li>
+</ul>
+<h2 id="_6">背后的三个月账本</h2>
+<p>A/B 是新的，记账不是。refs 层——在编排器边界卸载超大工具输出的那层——从六月起记录每个事件。截至本文：<strong>2,552 个事件，估算 raw 5.73M tokens，5.43M 没有进入上下文（94.8%）</strong>，零失控事件、零策略违规。大头是 MCP 工具结果（1,768 个事件）和工具清单（578 个）。<code>aios tokens report</code> 按层、按会话打印这些。</p>
+<h2 id="_7">机制本身，一段话说完</h2>
+<p><code>ObservationPack-lite</code> 随 AIOS Pi 扩展发布，<strong>默认关闭</strong>（<code>AIOS_PI_OFFLOAD=on</code> 显式开启）。在 Pi 的 <code>context</code> 事件（每次 LLM 调用前触发）上，任何达到 20K 字符的文本观察会被一次性归档到工作区状态根下的内容寻址文件，上下文里的副本替换为一个 16 位十六进制 ref、行数/字节数和头尾摘要。只读的 <code>aios_offload_retrieve</code> 工具按 ref 和行区间翻页取回原文。它不碰工具执行，所以与安全闸门零交互。</p>
+<h2 id="_8">往后的规矩</h2>
+<p>任何机制默认开启之前，必须过冻结基准上的两道闸门：能力落在容差内、节省实测为正——而且是跨重复对稳定成立，不是一次好运。ObservationPack-lite 在它的取回轮次方差有了工程答案之前保持 opt-in（显而易见的候选方案是给每个任务设取回预算，而基准存在的意义正是验证它）。基准从真实任务历史里持续扩充，账本保存凭证，从这篇开始，博客上的每个声明都应该是一条别人能跑的命令。</p></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

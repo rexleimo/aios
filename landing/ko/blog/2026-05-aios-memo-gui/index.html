@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ko" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aios memo GUI: 에이전트의 기억을 살아있는 그래프로 시각화</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">한국어</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-05-aios-memo-gui/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/blog/2026-05-aios-memo-gui/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-05-aios-memo-gui/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt is-active" href="/ko/blog/2026-05-aios-memo-gui/" hreflang="ko" lang="ko" aria-current="true">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-05-15</p><h1>aios memo GUI: 에이전트의 기억을 살아있는 그래프로 시각화</h1>
+    <p class="lede" style="font-size:17px">ContextDB의 비주얼 인터페이스입니다. 세션, 체크포인트, 기억의 관계를 노드 그래프로 탐색하며 어떤 결론이 어느 대화에서 왔는지 추적할 수 있습니다. 글에서는 실행 방법, 자주 쓰는 조작, 데이터 저장 위치, CLI와의 역할 분담을 소개합니다.</p>
+    <div class="meta"><a href="/ko/blog/">← 全部文章</a> · <a href="/ko">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>당신의 코딩 에이전트가 몇 주간 작업해왔습니다. 코드를 작성하고, 버그를 수정하고, 결정을 내렸죠. 하지만 그 이력은 실제로 어떻게 보일까요?</p>
+<p><strong>이제 직접 볼 수 있습니다.</strong></p>
+<p>aios memo GUI는 ContextDB의 비주얼 인터페이스입니다 — 에이전트의 세션 이력을 인터랙티브 노드 그래프로 변환하여, 무슨 일이 언제 일어났고 어떻게 연결되어 있는지 탐색할 수 있습니다.</p>
+<figure>
+  <img src="/ko/assets/aios-memo-gui-screenshot.png" alt="aios memo GUI가 ContextDB를 인터랙티브 노드 그래프로 표시, 우측에 세션 상세 패널">
+  <figcaption>aios memo GUI: 프로젝트의 기억을 시각화.</figcaption>
+</figure>
+
+<h2 id="_1">무엇을 보고 있는 건가요</h2>
+<p>위 스크린샷은 aios memo GUI의 <strong>ContextDB 뷰</strong>를 보여줍니다. 각 부분의 의미:</p>
+<p><strong>그래프 (좌측):</strong>
+- 각 <strong>노드</strong>는 프로젝트 기억의 조각 — 세션, 체크포인트, 파일 참조
+- <strong>노드 사이의 선</strong>은 관계를 보여줍니다: "이 체크포인트는 저 세션에서 나왔다", "이 파일은 저 이벤트에서 참조되었다"
+- <strong>보라색 노드</strong>는 프로젝트 내 실제 파일에 대한 참조</p>
+<p><strong>상세 패널 (우측):</strong>
+- 아무 노드나 클릭하면 전체 상세 정보 표시
+- 신뢰 점수와 위험 수준 등 메트릭 표시
+- 부모 세션 및 증거 참조 목록
+- 소스 파일 경로 표시</p>
+<p><strong>상단 바:</strong>
+- 빠른 통계: 노드, 세션, 체크포인트, 위험 수
+- 필터 탭: 전체, 세션, 체크포인트, 이벤트, 위험
+- 검색: 이름으로 특정 노드 찾기</p>
+<h2 id="_2">왜 이것이 중요한가</h2>
+<p>GUI가 있기 전에는, 에이전트의 이력을 이해하려면 다음과 같은 작업이 필요했습니다:</p>
+<ul>
+<li><code>memory/context-db/sessions/</code>의 파일을 뒤지기</li>
+<li>CLI 명령을 실행하고 JSON 출력 읽기</li>
+<li>세션, 체크포인트, 이벤트를 머릿속으로 연결하기</li>
+</ul>
+<p><strong>이제 그냥 보면 됩니다.</strong></p>
+<p>지난 화요일에 에이전트가 무엇을 하고 있었는지 알고 싶나요? 세션 노드를 클릭하세요. 특정 체크포인트 동안 어떤 파일이 건드려졌는지 보고 싶나요? 엣지를 따라가 보세요. 플래그된 위험을 찾고 싶나요? 위험 탭으로 필터하세요.</p>
+<h2 id="_3">시작하기</h2>
+<p>aios memo GUI는 기존 ContextDB 데이터를 읽어옵니다. 이미 AIOS가 설정되어 있고 프로젝트에 <code>.contextdb-enable</code>이 있다면, 데이터가 준비되어 있습니다.</p>
+<ol>
+<li>GUI를 열고 프로젝트를 지정</li>
+<li><strong>Load</strong>를 클릭하여 ContextDB 데이터 가져오기</li>
+<li>그래프 탐색 — 노드 클릭, 연결 따라가기, 검색 활용</li>
+</ol>
+<p>그래프는 프로젝트의 전체 기억을 로드합니다: 세션, 체크포인트, 이벤트, 파일 참조, 위험 플래그, 핸드오프 기록. ContextDB가 기록한 모든 것을 한눈에 볼 수 있습니다.</p>
+<h2 id="_4">할 수 있는 것들</h2>
+<h3 id="_5">세션 간 버그 추적</h3>
+<p>위험 노드를 클릭하고, 엣지를 따라 해당 위험이 처음 감지된 세션과 체크포인트로 돌아가기. 문제가 나타났을 때 에이전트가 정확히 무엇을 하고 있었는지 확인할 수 있습니다.</p>
+<h3 id="_6">기억의 계통 이해</h3>
+<p>세션이 어떻게 연결되어 있는지 보기: 어떤 체크포인트가 다음 세션을 생성했는지, 어떤 파일이 여러 세션에서 참조되었는지, 컨텍스트가 에이전트 간에 어떻게 전달되었는지.</p>
+<h3 id="_7">에이전트 행동 감사</h3>
+<p>각 노드의 신뢰 점수와 위험 수준으로 빠른 상태 확인. "위험"으로 필터하여 플래그된 항목만 보고, 하나씩 조사.</p>
+<h3 id="_8">특정 이벤트 검색</h3>
+<p>검색 바로 파일 이름, 세션 ID 또는 임의의 텍스트 콘텐츠로 노드 찾기. 더 이상 JSONL 파일을 grep할 필요가 없습니다.</p>
+<h2 id="_9">더 큰 그림</h2>
+<p>aios memo GUI는 <strong>ContextDB</strong> 생태계의 일부입니다 — 코딩 에이전트가 세션 간에 기억할 수 있게 하는 기억 시스템. ContextDB는 백그라운드에서 자동으로 작동하고(이벤트 기록, 체크포인트 생성, 컨텍스트 팩 구축), GUI는 그 과정을 인간이 읽을 수 있는 형태로 보여줍니다.</p>
+<p>단순히 예쁜 것이 아닙니다 — 실용적입니다. 궤도를 벗어난 에이전트를 디버깅할 때, 결정의 이유를 이해하려 할 때, 또는 야간 하네스 실행 중 무슨 일이 있었는지 감사할 때, 비주얼 그래프는 어떤 로그 파일보다 빠르게 스토리를 전달합니다.</p>
+<h2 id="_10">사용해 보기</h2>
+<p>이미 AIOS에서 ContextDB를 사용하고 있다면, 데이터가 준비되어 있습니다. aios memo GUI를 열고 탐색을 시작하세요.</p>
+<p>AIOS가 처음이신가요? <a href="/docs/ko/getting-started/">퀵스타트 가이드</a>로 시작하여 프로젝트에서 ContextDB를 실행하고, 돌아와서 에이전트의 기억을 시각화하세요.</p>
+<hr />
+<p><em>aios memo GUI는 <a href="/">AIOS</a> 생태계의 일부입니다.<a href="/docs/ko/getting-started/">시작하기</a> 또는 <a href="/docs/ko/contextdb/">ContextDB 문서</a>를 읽고 에이전트 기억에 대해 자세히 알아보세요.</em></p>
+<h2 id="_11">관련 문서</h2>
+<ul>
+<li><a href="/docs/ko/contextdb/">ContextDB</a></li>
+<li><a href="/docs/ko/getting-started/">Quick Start</a> — 30초 안에 AIOS 설치</li>
+<li><a href="/docs/ko/workflow-policy/">Workflow Policy</a> — direct / guarded / planned 라우트</li>
+</ul></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

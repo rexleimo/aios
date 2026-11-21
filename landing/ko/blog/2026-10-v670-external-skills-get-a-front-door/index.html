@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ko" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v6.7.0: 한 명령, 모든 클라이언트 — &#x27;aios skill add&#x27;가 커뮤니티 스킬에 정문을 열어주다</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">한국어</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-10-v670-external-skills-get-a-front-door/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/blog/2026-10-v670-external-skills-get-a-front-door/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-10-v670-external-skills-get-a-front-door/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt is-active" href="/ko/blog/2026-10-v670-external-skills-get-a-front-door/" hreflang="ko" lang="ko" aria-current="true">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-10-18</p><h1>v6.7.0: 한 명령, 모든 클라이언트 — &#x27;aios skill add&#x27;가 커뮤니티 스킬에 정문을 열어주다</h1>
+    <p class="lede" style="font-size:17px">v6.7.0은 AIOS 스킬 체계의 조용한 공백을 메운다: `skill-sources/` 바깥의 훌륭한 스킬에는入口가 없었다. 가장 유용한 커뮤니티 스킬(clone-website)은 한 클라이언트의 전역 스킬 디렉터리에만 존재했고, 나머지 아홉 클라이언트는 그 존재를 볼 수 없었다. 해법은 마이그레이션이 아니라 정문 설치다: `aios skill add &lt;source&gt;`가 로컬 디렉터리나 git URL(얕은 클론, owner/repo 약칭 포함)을 해석하고, c</p>
+    <div class="meta"><a href="/ko/blog/">← 全部文章</a> · <a href="/ko">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<blockquote>
+<p><strong>TL;DR:</strong> 이 머신에서 가장 쓸모 있는 스킬 — <code>clone-website</code>, 실존하는 사이트를 픽셀 단위로 일치시키는 재건축으로 되돌리는 — 은 열 클라이언트 중 아홉에서 보이지 않았다. <code>pi</code>에서만 동작했다. 우연히 그곳에 설치되어 있었을 뿐이다. AIOS 자체의 스킬 동기화(<code>skill-sources/</code> + <code>config/skills-sync-manifest.json</code>)는 릴리스에 동봉되는 스킬만 배포한다. 커뮤니티 스킬에는 정문 자체가 없었다. v6.7.0이 그 문을 하나 달았다: <code>aios skill add &lt;source&gt;</code>. 소스는 로컬 디렉터리이거나 git URL이다. canonical 외부 레지스트리에 스테이징한 뒤, 모든 클라이언트의 사용자 레벨 스킬 루트에 소유권 메타데이터와 함께 배포한다. 재실행은 멱등하고, 진짜 흥미로운 부분은 가드레일이다: fail-closed 선택, unmanaged 디렉터리만 인수하는 force, 그리고 <code>clone-website</code> 설치 도중 원본 삭제를 거부한 자가복사 가드.</p>
+</blockquote>
+<h2 id="_1">공백을 정확히 말하면</h2>
+<p>AIOS에는 원래 두 개의 스킬 면이 있었다:</p>
+<ol>
+<li><strong>Canonical 스킬</strong> — <code>skill-sources/</code>에서 작성되고, 릴리스 시점의 동기화가 모든 클라이언트에 투영한다. 관리 대상이고, 버전 관리되고, 테스트된다.</li>
+<li><strong>사용자가 클라이언트 스킬 디렉터리에 넣어둔 것들</strong> — 완전히 비관리. <code>clone-website</code>는 여기 살고 있었다: <code>~/.pi/agent/skills/clone-website/</code>, <code>LICENSE</code>와 <code>README.md</code>와 <code>SKILL.md</code>를 갖추고. 아마 언젠가 커뮤니티 저장소에서 내려받은 것. 한 클라이언트, 한 디렉터리, 출처 없음, 전파 없음.</li>
+</ol>
+<p>고장 양상은 물기 전까지 보이지 않는다: <code>pi</code>에서 그 스킬의 존재를 알고, <code>codex</code>로 갈아타면, 스킬은 단지 없다. 있을 수 있었다는 것을 알려주는 것은 아무것도 없다. 어느 컴포넌트의 버그도 아니다 — 문이 하나 없는 것이다.</p>
+<h2 id="_2">파이프라인: 세 단계, 한 명령</h2>
+<p><code>aios skill add &lt;source&gt; [--client &lt;list|all&gt;] [--skill &lt;names&gt;] [--yes] [--force] [--json]</code></p>
+<p><strong>1단계 — 소스 해석.</strong> 루트에 <code>SKILL.md</code>를 둔 로컬 디렉터리는 단일 스킬. 바로 아래 하위 디렉터리들이 각자 <code>SKILL.md</code>를 두면 다중 스킬 팩. <code>https://</code> URL, <code>*.git</code> 접미사, <code>owner/repo</code> 약칭은 얕은 git 클론이 되어 일회용 임시 디렉터리에 떨어지고, 설치자가 <code>finally</code>에서 회수한다. 그 외에는 실행 가능한 한 줄과 함께 거부된다.</p>
+<p><strong>2단계 — 외부 레지스트리로 스테이징.</strong> <code>~/.aios/skills/external/&lt;name&gt;/</code>(테스트에서는 <code>AIOS_HOME</code>으로 리디렉트 가능). 각 엔트리는 <code>.aios-skill-install.json</code>을 갖는다: <code>client: "registry"</code>, <code>scope: "external"</code>, 원본 소스는 <code>catalogSource</code>에 기록. 이 레지스트리는 저장소 내 <code>skill-sources/</code> 트리와 <strong>병렬</strong>로 달리며, 그것을 대체하지 않는다 — 두 동기화 경로는 같은 클라이언트 스킬 루트에 수렴하지만, 코드도 소유권도 공유하지 않는다.</p>
+<p><strong>3단계 — 모든 클라이언트로 배포.</strong> 목표 루트는 catalog 설치자와 같은 <code>getClientHomes()</code> 맵에서 나온다: <code>~/.codex/skills</code>, <code>~/.claude/skills</code>, <code>~/.gemini/skills</code>, <code>~/.config/opencode/skills</code>, <code>~/.hermes/skills</code>, <code>~/.grok/skills</code>, <code>~/.workbuddy/skills</code>, <code>~/.pi/agent/skills</code>, <code>~/.zcode/skills</code>, 그리고 Qoder의 에디션 인식 홈(<code>~/.qoder-cn</code> 또는 <code>~/.qoder</code>). 모든 복사본은 자신의 메타데이터를 쓰고, <code>catalogSource</code>는 레지스트리 엔트리를 가리킨다 — 사슬 전체가 감사 가능: <em>이 복사본 ← 레지스트리 ← 원본 소스</em>.</p>
+<p>첫 실제 실행은 자신이 한 일을 한 글자도 빠뜨리지 않고 말했다:</p>
+<div class="highlight"><pre><span></span><code>[copy] registry skill installed: clone-website
+[copy] codex skill installed (global): clone-website
+[copy] claude skill installed (global): clone-website
+...
+[skip] pi target is the source directory itself; keeping the original untouched
+[done] ... installed=10 reused=0 replaced=0 skipped=1
+</code></pre></div>
+<p>재실행에서 나온 것은 이것을 동기화 스크립트가 아닌 <strong>동기화</strong>로 만드는 형상이다: <code>installed=0 reused=10 replaced=0 skipped=0</code>.</p>
+<h2 id="_3">기본값으로 넘어가지 않고 결정된 세 가지 의미</h2>
+<p><strong>선택은 fail-closed.</strong> 다중 스킬 소스, 명시적 선택 없음, <code>--yes</code> 없음, TTY 밖 — "전부"도 "첫 번째"도 설치하지 않고, 목록과 해결 플래그를 붙여 오류를 낸다. 대화형 모드는 <code>Install which skills? [a=all, 1,3 or names, Enter=cancel]</code>라고 묻는다. AIOS 전체를 관통하는 원칙과 같은 뿌리다: 코어는 모호함에서 의미를 추측하지 않는다 — 빠진 결정은 거부이지, 기본값이 아니다.</p>
+<p><strong><code>--force</code>는 불도저가 아니다.</strong> 역할은 <em>unmanaged</em> 디렉터리의 인수 — 존재하지만 AIOS 메타데이터를 갖지 않는 표적. 사용자가 손으로 놓았을 수도 있다. 내용이 소스와 동일한 관리 대상 복사본은 force가 있든 없든 <em>reuse</em>된다. 이 구분에는 무게가 있다: 출력의 <code>replaced</code>는 "AIOS가 존재하는 것을 덮어썼다"를 뜻하며, 이 줄은 정말로 인수할 것이 있을 때만 나타나야 한다.</p>
+<p><strong>자가복사 가드는 편집증이 아니다.</strong> <code>copyDirRecursive</code>는 복사 전에 표적에 <code>rmSync</code>를 한다. 스킬의 첫 채택 시점에 클라이언트 쪽 표적 경로(<code>~/.pi/agent/skills/clone-website</code>)는 <em>바로</em> 소스 경로 그 자체다. 가드가 없다면, <code>pi</code>로의 <code>clone-website</code> 설치는 원본을 먼저 지운다 — 레지스트리 복사본이 먼저 만들어지므로 데이터는 살아남지만, 사용자의 디렉터리는 재투영이 되고 원본이 아니게 된다. 가드는 resolve된 경로를 비교하고, 표적이 소스로 resolve되면 거부한다. 플래그가 무엇을 말하든.</p>
+<h2 id="changelog">알려진 한계, changelog에 적은 그대로</h2>
+<p>TTY 프롬프트 경로는 로직은 커버되지만 실제 대화형 세션 테스트는 없다 — agent와 CI는 <code>--skill</code>/<code>--yes</code> 경로를 걷는다. <code>--mode link</code>(레지스트리→클라이언트 symlink)는 실행 가능한 오류로 거부되며, 별도의 결정 사항이다. 제거 명령은 이번 배치에 없다: 외부 스킬은 손으로 지울 수 있지만, 메타데이터의 소유권 사슬은 훗날의 <code>skill remove</code>를 위해 이미 깔려 있다. GitHub 소스는 얕은 클론이며, tarball/registry 프로토콜은 없다.</p>
+<p>그리고 한 가지 정직한 과정 기록: 개발 중 한 테스트가 <code>client: 'all'</code>을 기본으로 삼으면서 세 개의 클라이언트 홈만 모킹했다 — 테스트 스킬이 실제 <code>~/.gemini</code>, <code>~/.hermes</code> 등에 기록되었다. 정리에 쓰인 것은 바로 이 기능 자체가 제공하는 출처 메커니즘이다: 오염된 모든 디렉터리의 <code>catalogSource</code>는 <code>/aios-home/skills/external/</code>를 포함했고, 스물한 디렉터리는 정확히 제거되었으며, 실제 사용자 내용은 온전했다. 테스트 스위트는 이제 모든 클라이언트 선택을 모킹 집합에 고정한다. 교훈은 일반화된다: <em>여러 루트로 배포하는 도구는 자신의 메타데이터에서 "어느 루트를 건드렸는지"에 답할 수 있어야 한다</em> — 이제 답할 수 있다.</p></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

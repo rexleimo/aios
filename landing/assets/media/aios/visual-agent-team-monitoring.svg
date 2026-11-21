@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+<title id="title">Agent Team 与 HUD 监控</title><desc id="desc">展示多 Agent 启动和状态监控。</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8fbff"/><stop offset="1" stop-color="#eaf4ff"/></linearGradient>
+  <linearGradient id="ink" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1a73e8"/><stop offset="1" stop-color="#00a884"/></linearGradient>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#174ea6" flood-opacity="0.14"/></filter>
+  <style>
+    .title{font:700 30px 'Google Sans','Segoe UI',Arial,sans-serif;fill:#172033}.subtitle{font:500 16px 'Google Sans Text','Segoe UI',Arial,sans-serif;fill:#5f6b7a}.label{font:700 17px 'Google Sans','Segoe UI',Arial,sans-serif;fill:#1f2937}.small{font:500 13px 'Roboto Mono','SFMono-Regular',monospace;fill:#536271}.tiny{font:600 12px 'Google Sans Text','Segoe UI',Arial,sans-serif;fill:#657285}.card{fill:#fff;stroke:#d7e3f3;stroke-width:1.2;filter:url(#shadow)}.terminal{fill:#101820}.termText{font:500 13px 'Roboto Mono','SFMono-Regular',monospace;fill:#dce7f7}.green{fill:#16a34a}.blue{fill:#1a73e8}.amber{fill:#f59e0b}.red{fill:#ef4444}.muted{fill:#edf4fb;stroke:#d7e3f3;stroke-width:1}.line{stroke:#9ab5d5;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}.arrow{marker-end:url(#arrow)}
+  </style>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6c8fb8"/></marker>
+</defs>
+<rect width="1200" height="680" rx="34" fill="url(#bg)"/>
+<text x="70" y="78" class="title">多 Agent 不是盲目开更多人</text>
+<text x="70" y="108" class="subtitle">先判断任务是否可拆，再用 HUD 看 Running、Blocked、Failed。</text>
+<rect x="70" y="150" width="410" height="430" rx="26" class="card"/><text x="110" y="204" class="label">开 team 前 3 个检查</text><g transform="translate(112,245)"><rect width="280" height="46" rx="12" fill="#e6f4ea"/><circle cx="24" cy="23" r="10" class="green"/><path d="M18 23 l5 5 l10 -13" stroke="white" stroke-width="3" fill="none"/><text x="48" y="29" class="small">能拆成 2+ 独立模块</text></g><g transform="translate(112,315)"><rect width="280" height="46" rx="12" fill="#e6f4ea"/><circle cx="24" cy="23" r="10" class="green"/><path d="M18 23 l5 5 l10 -13" stroke="white" stroke-width="3" fill="none"/><text x="48" y="29" class="small">不会争抢同一批文件</text></g><g transform="translate(112,385)"><rect width="280" height="46" rx="12" fill="#e6f4ea"/><circle cx="24" cy="23" r="10" class="green"/><path d="M18 23 l5 5 l10 -13" stroke="white" stroke-width="3" fill="none"/><text x="48" y="29" class="small">验收标准一句话说清</text></g><rect x="112" y="470" width="300" height="62" rx="16" class="terminal"/><text x="135" y="507" class="termText">$ aios team 3:codex "任务"</text>
+<rect x="560" y="150" width="570" height="430" rx="26" class="terminal" filter="url(#shadow)"/><rect x="560" y="150" width="570" height="42" rx="26" fill="#17212f"/><circle cx="592" cy="172" r="6" fill="#ff5f56"/><circle cx="613" cy="172" r="6" fill="#ffbd2e"/><circle cx="634" cy="172" r="6" fill="#27c93f"/><text x="665" y="178" class="termText">aios team status --watch</text>
+<text x="606" y="242" class="termText">Session: codex-cli-20260425-demo</text>
+<g transform="translate(606,285)"><text class="termText">worker-a  Running</text><rect x="190" y="-15" width="270" height="18" rx="9" fill="#193527"/><rect x="190" y="-15" width="210" height="18" rx="9" class="green"/></g>
+<g transform="translate(606,350)"><text class="termText">worker-b  Blocked</text><rect x="190" y="-15" width="270" height="18" rx="9" fill="#3d2f12"/><rect x="190" y="-15" width="138" height="18" rx="9" class="amber"/></g>
+<g transform="translate(606,415)"><text class="termText">worker-c  Failed</text><rect x="190" y="-15" width="270" height="18" rx="9" fill="#3a1d21"/><rect x="190" y="-15" width="76" height="18" rx="9" class="red"/></g>
+<rect x="606" y="484" width="450" height="48" rx="12" fill="#111827" stroke="#324154"/><text x="628" y="514" class="termText">Ctrl+C 只停止监控，不关闭主任务窗口</text>
+<path d="M480 500 C525 505 535 505 560 505" class="line arrow"/>
+<text x="70" y="630" class="subtitle">建议默认 3 workers；第一次或文件可能冲突时用 2；模块极独立再考虑 4。</text>
+</svg>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ko" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>코드 리뷰 그래프 (Codemap)</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">한국어</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/docs/codemap/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/docs/codemap/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/docs/codemap/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt is-active" href="/ko/docs/codemap/" hreflang="ko" lang="ko" aria-current="true">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+<div class="rex-doc-layout">
+  <aside class="rex-doc-sidebar">
+    <a class="rex-doc-sidebar__home" href="/ko/docs/">모든 문서</a>
+    <div class="rex-doc-search"><input type="search" id="rex-doc-search-input" placeholder="문서 검색…" aria-label="문서 검색…" autocomplete="off"></div>
+    <div id="rex-doc-nav"><details class="rex-doc-nav-group"><summary>시작하기</summary><div class="rex-doc-nav-items"><a href="/ko/docs/getting-started/" class="rex-doc-nav-link" data-title="빠른 시작: aios 설치와 검증">빠른 시작: AIOS 설치와 검증</a><a href="/ko/docs/windows-guide/" class="rex-doc-nav-link" data-title="windows 가이드: powershell 설정과 복구">Windows 가이드: PowerShell 설정과 복구</a><a href="/ko/docs/troubleshooting/" class="rex-doc-nav-link" data-title="aios 문제 해결">AIOS 문제 해결</a><a href="/ko/docs/windows-ai-coding-agent-setup/" class="rex-doc-nav-link" data-title="windows ai 코딩 에이전트 설정: 10분 안에 설치하고 검증하기">Windows AI 코딩 에이전트 설정: 10분 안에 설치하고 검증하기</a></div></details><details class="rex-doc-nav-group"><summary>문제별 가이드</summary><div class="rex-doc-nav-items"><a href="/ko/docs/why-agents-forget-context/" class="rex-doc-nav-link" data-title="ai 코딩 에이전트가 세션 사이에 컨텍스트를 잊어버리는 이유 (그리고 해결 방법)">AI 코딩 에이전트가 세션 사이에 컨텍스트를 잊어버리는 이유 (그리고 해결 방법)</a><a href="/ko/docs/reduce-agent-token-cost/" class="rex-doc-nav-link" data-title="ai 코딩 에이전트 토큰 비용 줄이기: claude code와 codex 예산 관리">AI 코딩 에이전트 토큰 비용 줄이기: Claude Code와 Codex 예산 관리</a><a href="/ko/docs/claude-code-vs-codex-vs-gemini/" class="rex-doc-nav-link" data-title="claude code vs codex vs gemini cli: 어떤 코딩 에이전트 cli를 선택해야 할까?">Claude Code vs Codex vs Gemini CLI: 어떤 코딩 에이전트 CLI를 선택해야 할까?</a><a href="/ko/docs/overnight-agent-runs/" class="rex-doc-nav-link" data-title="코딩 에이전트를 밤새 크래시나 이탈 없이 실행하는 방법">코딩 에이전트를 밤새 크래시나 이탈 없이 실행하는 방법</a><a href="/ko/docs/multi-agent-code-review/" class="rex-doc-nav-link" data-title="멀티 에이전트 코드 리뷰: 실제로 도움이 되는 병렬 코딩 에이전트">멀티 에이전트 코드 리뷰: 실제로 도움이 되는 병렬 코딩 에이전트</a><a href="/ko/docs/use-cases/" class="rex-doc-nav-link" data-title="사용 사례: aios route 선택">사용 사례: AIOS route 선택</a></div></details><details class="rex-doc-nav-group" open><summary>기능</summary><div class="rex-doc-nav-items"><a href="/ko/docs/contextdb/" class="rex-doc-nav-link" data-title="contextdb: pull-based 프로젝트 기억">ContextDB: pull-based 프로젝트 기억</a><a href="/ko/docs/token-compression/" class="rex-doc-nav-link" data-title="token intelligence와 압축 경계">Token Intelligence와 압축 경계</a><a href="/ko/docs/workflow-policy/" class="rex-doc-nav-link" data-title="워크플로 정책">워크플로 정책</a><a href="/ko/docs/model-router/" class="rex-doc-nav-link" data-title="모델 라우터">모델 라우터</a><a href="/ko/docs/codemap/" aria-current="page" class="rex-doc-nav-link is-active" data-title="코드 리뷰 그래프 (codemap)">코드 리뷰 그래프 (Codemap)</a><a href="/ko/docs/team-ops/" class="rex-doc-nav-link" data-title="agent team: 증거를 남기는 병렬 작업">Agent Team: 증거를 남기는 병렬 작업</a><a href="/ko/docs/solo-harness/" class="rex-doc-nav-link" data-title="solo harness: 재개 가능한 장기 작업">Solo Harness: 재개 가능한 장기 작업</a><a href="/ko/docs/superpowers/" class="rex-doc-nav-link" data-title="rex 워크플로 마이그레이션">Rex 워크플로 마이그레이션</a><a href="/ko/docs/integrations/" class="rex-doc-nav-link" data-title="aios에서 typesafe jev 쓰기——설치·판단 게이트 켜기·백그라운드 실행">AIOS에서 TypeSafe Jev 쓰기——설치·판단 게이트 켜기·백그라운드 실행</a><a href="/ko/docs/perception/" class="rex-doc-nav-link" data-title="perception(인지 레이어)">Perception(인지 레이어)</a></div></details><details class="rex-doc-nav-group"><summary>레퍼런스</summary><div class="rex-doc-nav-items"><a href="/ko/docs/architecture/" class="rex-doc-nav-link" data-title="aios 아키텍처">AIOS 아키텍처</a><a href="/ko/docs/route-concurrency-profiles/" class="rex-doc-nav-link" data-title="라우팅/병렬 프로필">라우팅/병렬 프로필</a><a href="/ko/docs/advanced-design-skills/" class="rex-doc-nav-link" data-title="고급 디자인 스킬">고급 디자인 스킬</a><a href="/ko/docs/hud-guide/" class="rex-doc-nav-link" data-title="hud 사용자 가이드">HUD 사용자 가이드</a><a href="/ko/docs/debug-hub/" class="rex-doc-nav-link" data-title="debug-hub">debug-hub</a><a href="/ko/docs/cli-comparison/" class="rex-doc-nav-link" data-title="cli 비교">CLI 비교</a><a href="/ko/docs/engineering-standards/" class="rex-doc-nav-link" data-title="엔지니어링 표준 — aios는 코드를 생성할 뿐만 아니라 소프트웨어를 구축한다">엔지니어링 표준 — AIOS는 코드를 생성할 뿐만 아니라 소프트웨어를 구축한다</a></div></details><details class="rex-doc-nav-group"><summary>사례 연구</summary><div class="rex-doc-nav-items"><a href="/ko/docs/case-library/" class="rex-doc-nav-link" data-title="사례 라이브러리: 재현 가능한 aios workflow">사례 라이브러리: 재현 가능한 AIOS workflow</a><a href="/ko/docs/case-auth-wall-browser/" class="rex-doc-nav-link" data-title="케이스 - 브라우저 인증벽 플로우">케이스 - 브라우저 인증벽 플로우</a><a href="/ko/docs/case-cross-cli-handoff/" class="rex-doc-nav-link" data-title="케이스 - 크로스 cli 핸드오프">케이스 - 크로스 CLI 핸드오프</a><a href="/ko/docs/case-privacy-guard/" class="rex-doc-nav-link" data-title="케이스 - privacy guard 설정 읽기">케이스 - Privacy Guard 설정 읽기</a></div></details><details class="rex-doc-nav-group"><summary>프로젝트</summary><div class="rex-doc-nav-items"><a href="/ko/docs/changelog/" class="rex-doc-nav-link" data-title="변경 로그">변경 로그</a><a href="/ko/docs/friends/" class="rex-doc-nav-link" data-title="추천 링크">추천 링크</a><a href="/ko/docs/skill-candidates/" class="rex-doc-nav-link" data-title="skill candidates 가이드">Skill Candidates 가이드</a></div></details></div>
+    <p class="rex-doc-search-empty" id="rex-doc-search-empty" hidden>일치하는 문서 없음</p>
+    <div class="rex-doc-sidebar__status">AIOS · v8.0.0 · 로컬 우선</div>
+  </aside>
+  <article class="rex-doc-article">
+    <p class="eyebrow">文档 · 한국어</p>
+    <h1>코드 리뷰 그래프 (Codemap)</h1>
+    <p class="lede" style="font-size:17px">Tree-sitter 기반 구조 지식 그래프입니다. 코딩 에이전트가 판단할 때마다 호출자, 의존 대상, 테스트 커버리지, 영향 반경을 바로 볼 수 있습니다. 코드를 반복해서 grep할 필요가 없고 명령 하나로 같은 맵을 공유합니다.</p>
+    <div class="rex-doc-content md-body">
+<blockquote>
+<p><strong>Quick Answer:</strong> Codemap은 저장소 구조 그래프를 로컬에 만들어 편집 전에 caller, dependent, import, 영향 흐름, 테스트 커버리지를 확인하게 합니다. 영향 범위를 좁히는 도구이며 테스트를 대신하지 않습니다.</p>
+</blockquote>
+<h2 id="_1">먼저 답해야 할 세 가지 질문</h2>
+<p>변경 전에 무엇이 영향을 받는지, 어떤 흐름이 의존하는지, 대상에 어떤 테스트가 있는지 확인합니다. 그래프를 사용할 수 없으면 대상 검색을 대체 근거로 명시합니다.</p>
+<p><strong>요약:</strong> Codemap은 전체 코드베이스의 Tree-sitter 지식 그래프를 구축하여 모든 코딩 에이전트에 MCP 도구로 주입합니다. 에이전트는 맹목적으로 파일을 grep하는 대신, 무엇이 무엇을 호출하는지, 어떤 테스트가 무엇을 커버하는지, 변경 시 무엇이 깨질지 파악하며 정보에 기반한 결정을 내리기 시작합니다.</p>
+<p>외부 서비스 없음. 클라우드 없음. <code>.code-review-graph/</code> 안의 로컬 SQLite 그래프뿐입니다.</p>
+<h2 id="codemap">Codemap을 사용하는 이유</h2>
+<p>Codemap이 없으면 에이전트는 코드베이스를 이렇게 탐색합니다:</p>
+<div class="highlight"><pre><span></span><code>Agent reads README → grep for &quot;auth&quot; → reads 3 files blind → guesses impact → modifies code → reads more files to verify → may miss callers → rework
+</code></pre></div>
+<p>Codemap이 있으면:</p>
+<div class="highlight"><pre><span></span><code>Agent queries graph → knows callers/dependents/tests → calculates blast radius → makes informed change → queries graph to verify → confident submission
+</code></pre></div>
+<p><strong>측정된 토큰 감소:</strong> 실제 저장소에서 4.9배–27.3배, 평균 8.2배. 더 중요한 것은 에이전트 결정의 <em>품질</em>이 달라진다는 점입니다.</p>
+<h2 id="_2">단 한 줄로 설정</h2>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>internal<span class="w"> </span>codemap<span class="w"> </span>install
+</code></pre></div>
+<p>끝입니다. 이 단일 명령어가 하는 일:</p>
+<ol>
+<li><code>uv</code> 사용 가능 여부 확인 (CRG는 <code>uvx</code>를 통해 실행 — 전역 설치 불필요)</li>
+<li>초기 그래프 구축 (대부분 프로젝트에서 약 5~15초)</li>
+<li>감지된 모든 클라인트(codex / claude / gemini / opencode / hermes / grok / workbuddy, Pi 는 자체 MCP 어댑터 경루)에 CRG MCP 서버 주입</li>
+<li>opencode 자동 업데이트 플러그인 설치 (opencode 감지 시)</li>
+<li>그래프 우선 의사결정 가이드로 <code>AGENTS.md</code> 업데이트</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="c1"># 설치 상태 확인</span>
+aios<span class="w"> </span>internal<span class="w"> </span>codemap<span class="w"> </span>doctor
+
+<span class="c1"># 문제 해결</span>
+aios<span class="w"> </span>internal<span class="w"> </span>codemap<span class="w"> </span>doctor<span class="w"> </span>--fix
+
+<span class="c1"># 그래프를 처음부터 새로 구축</span>
+aios<span class="w"> </span>internal<span class="w"> </span>codemap<span class="w"> </span>build
+
+<span class="c1"># 증분 업데이트 (변경된 파일만, 2초 미만)</span>
+aios<span class="w"> </span>internal<span class="w"> </span>codemap<span class="w"> </span>update
+
+<span class="c1"># 그래프 통계 보기</span>
+aios<span class="w"> </span>internal<span class="w"> </span>codemap<span class="w"> </span>status
+
+<span class="c1"># 정리 (제거 시 .code-review-graph/ 보존)</span>
+aios<span class="w"> </span>internal<span class="w"> </span>codemap<span class="w"> </span>uninstall
+</code></pre></div>
+<h2 id="_3">에이전트 사용 방법</h2>
+<p>설치 후, 모든 에이전트 세션은 AGENTS.md 의사결정 체크포인트를 로드합니다:</p>
+<h3 id="_4">의사결정 체크포인트 (필수)</h3>
+<table>
+<thead>
+<tr>
+<th>시점</th>
+<th>호출</th>
+<th>이유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>작업 시작 전</td>
+<td><code>get_minimal_context(task="...")</code></td>
+<td>프로젝트 컨텍스트 + 권장 다음 단계</td>
+</tr>
+<tr>
+<td>코드 수정 전</td>
+<td><code>get_impact_radius(detail_level="minimal")</code></td>
+<td>영향 범위 확인; 위험이 높으면 계획 재평가</td>
+</tr>
+<tr>
+<td>코드 수정 전</td>
+<td><code>query_graph(pattern="tests_for", target="...")</code></td>
+<td>테스트 존재 여부 확인; 없으면 테스트 먼저 작성</td>
+</tr>
+<tr>
+<td>코드 수정 후</td>
+<td><code>detect_changes(detail_level="minimal")</code></td>
+<td>실제 영향이 예상과 일치하는지 검증</td>
+</tr>
+<tr>
+<td>제출 전</td>
+<td><code>get_affected_flows()</code> + <code>get_suggested_questions()</code></td>
+<td>최종 안전망</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_5">검색 규칙</h3>
+<ul>
+<li>코드 찾기: grep 대신 <code>semantic_search_nodes</code> 우선</li>
+<li>관계 이해: 파일 읽기 대신 <code>query_graph</code> (callers_of/callees_of/tests_for) 우선</li>
+<li>코드 리뷰: 전체 파일 읽기 대신 <code>detect_changes</code> → <code>get_review_context</code> 우선</li>
+</ul>
+<p>항상 <code>detail_level="minimal"</code>을 사용하고, 부족할 때만 "standard"로 확장하세요.</p>
+<h2 id="_6">주요 도구</h2>
+<p>Codemap은 28개의 MCP 도구 + 5개의 프롬프트를 제공합니다. 가장 영향력 있는 것들은 다음과 같습니다:</p>
+<table>
+<thead>
+<tr>
+<th>도구</th>
+<th>기능</th>
+<th>사용 시점</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_minimal_context</code></td>
+<td>프로젝트 구조, 위험 수준, 관련 커뮤니티, 다음 단계 반환</td>
+<td>매 세션 시작 시</td>
+</tr>
+<tr>
+<td><code>get_impact_radius</code></td>
+<td>변경에 영향받는 모든 요소 표시</td>
+<td>코드 작성 전</td>
+</tr>
+<tr>
+<td><code>detect_changes</code></td>
+<td>실제 변경 사항의 위험 평가 분석</td>
+<td>코드 수정 후</td>
+</tr>
+<tr>
+<td><code>query_graph</code></td>
+<td>특정 심볼의 호출자, 피호출자, import, 테스트 추적</td>
+<td>관계 파악 시</td>
+</tr>
+<tr>
+<td><code>semantic_search_nodes</code></td>
+<td>이름이나 의미로 함수/클래스 검색</td>
+<td>코드 위치 찾기 (grep 대체)</td>
+</tr>
+<tr>
+<td><code>get_review_context</code></td>
+<td>코드 리뷰를 위한 집중된 소스 스니펫</td>
+<td>제출 전</td>
+</tr>
+<tr>
+<td><code>get_affected_flows</code></td>
+<td>영향받는 실행 경로 파악</td>
+<td>영향 분석</td>
+</tr>
+</tbody>
+</table>
+<h3 id="query_graph"><code>query_graph</code> 패턴</h3>
+<table>
+<thead>
+<tr>
+<th>패턴</th>
+<th>반환값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>callers_of</code></td>
+<td>대상 함수를 호출하는 함수들</td>
+</tr>
+<tr>
+<td><code>callees_of</code></td>
+<td>대상 함수가 호출하는 함수들</td>
+</tr>
+<tr>
+<td><code>imports_of</code></td>
+<td>파일/모듈의 import 목록</td>
+</tr>
+<tr>
+<td><code>importers_of</code></td>
+<td>파일/모듈을 import하는 파일들</td>
+</tr>
+<tr>
+<td><code>tests_for</code></td>
+<td>대상을 커버하는 테스트들</td>
+</tr>
+<tr>
+<td><code>inheritors_of</code></td>
+<td>대상을 상속하는 클래스들</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_7">딥 인테그레이션</h2>
+<p>Codemap은 독립형 도구가 아닙니다 — AIOS 워크플로우에 긴밀하게 통합되어 있습니다:</p>
+<ul>
+<li><strong>Doctor 스위트:</strong> <code>aios doctor</code> 실행 시 <code>doctor:codemap</code> 게이트가 그래프 상태, MCP 설정, 상태 파일을 점검합니다</li>
+<li><strong>Harness:</strong> Solo harness는 Codemap이 활성화된 워크트리에서 자동으로 그래프를 구축합니다</li>
+<li><strong>Agent Team:</strong> 팀 디스패치 시 CRG <code>detect-changes</code> 분석을 포함하여 모든 작업자가 변경 영향을 파악합니다</li>
+<li><strong>스킬:</strong> search-first, debug-hub, requesting-code-review 스킬에서 grep/glob보다 CRG 도구를 우선 사용합니다</li>
+</ul>
+<h2 id="_8">아키텍처</h2>
+<div class="highlight"><pre><span></span><code>aios internal codemap install
+  ├─ uv/uvx 사용 가능 여부 확인
+  ├─ uvx code-review-graph build 실행        → .code-review-graph/ (SQLite)
+  ├─ 모든 클라이언트에 MCP 설정 주입        → .mcp.json / ~/.claude.json / 등
+  ├─ opencode 자동 업데이트 플러그인 설치    → ~/.config/opencode/plugins/crg-plugin.ts
+  ├─ 상태 파일 기록                          → .aios/codemap.json
+  ├─ AGENTS.md 의사결정 가이드 업데이트
+  └─ aios-codemap-ops 스킬을 클라이언트 디렉터리에 동기화
+</code></pre></div>
+<p>모든 그래프 데이터는 로컬에 유지됩니다. CRG는 stdio MCP를 통해 실행됩니다 — HTTP 서버 없음, 외부 네트워크 호출 없음 (최초 설치 시 일회성 <code>uvx</code> 패키지 해석 제외).</p>
+<h2 id="_9">언인스톨</h2>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>internal<span class="w"> </span>codemap<span class="w"> </span>uninstall
+</code></pre></div>
+<p>MCP 설정 항목, 상태 파일, AGENTS.md 섹션을 제거합니다. <code>.code-review-graph/</code>는 보존됩니다 — 그래프 데이터는 소중하며 절대 삭제되지 않습니다.</p>
+<p>드라이런 미리보기:</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>internal<span class="w"> </span>codemap<span class="w"> </span>uninstall<span class="w"> </span>--dry-run
+</code></pre></div>
+<h2 id="faq">FAQ</h2>
+<h3 id="codemap_1">Codemap은 저장소를 외부 서비스로 보내나요?</h3>
+<p>아닙니다. 그래프 데이터와 stdio MCP는 로컬에서 실행됩니다. 최초 설치의 패키지 해석은 별도의 설치 절차입니다.</p>
+<h3 id="_10">그래프 결과만으로 안전함을 증명할 수 있나요?</h3>
+<p>아닙니다. 영향 범위를 좁힐 뿐이며 테스트, 빌드, 사람의 검토가 완료 근거가 됩니다.</p>
+<h2 id="_11">공식 문서</h2>
+<p><a href="/ko/docs/architecture/">아키텍처</a>, <a href="/ko/docs/workflow-policy/">워크플로 정책</a>, <a href="/ko/docs/troubleshooting/">문제 해결</a>을 함께 읽어 보세요.</p></div>
+    <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+    <nav class="rex-doc-pager"><a href="/ko/docs/cli-comparison/">← 上一篇</a><a href="/ko/docs/contextdb/">下一篇 →</a></nav>
+    <a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  </article>
+</div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

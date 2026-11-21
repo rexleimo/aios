@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="en" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Router</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">English</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt is-active" href="/docs/model-router/" hreflang="en" lang="en" aria-current="true">English</a><a class="rex-lang-opt" href="/zh/docs/model-router/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/docs/model-router/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/docs/model-router/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+<div class="rex-doc-layout">
+  <aside class="rex-doc-sidebar">
+    <a class="rex-doc-sidebar__home" href="/docs/">All docs</a>
+    <div class="rex-doc-search"><input type="search" id="rex-doc-search-input" placeholder="Search docs…" aria-label="Search docs…" autocomplete="off"></div>
+    <div id="rex-doc-nav"><details class="rex-doc-nav-group"><summary>Getting Started</summary><div class="rex-doc-nav-items"><a href="/docs/getting-started/" class="rex-doc-nav-link" data-title="quick start — install aios in 30 seconds">Quick Start — Install AIOS in 30 Seconds</a><a href="/docs/windows-guide/" class="rex-doc-nav-link" data-title="windows guide: powershell setup and recovery">Windows Guide: PowerShell Setup and Recovery</a><a href="/docs/troubleshooting/" class="rex-doc-nav-link" data-title="troubleshooting aios">Troubleshooting AIOS</a><a href="/docs/windows-ai-coding-agent-setup/" class="rex-doc-nav-link" data-title="windows ai coding agent setup: install and verify">Windows AI Coding Agent Setup: Install and Verify</a></div></details><details class="rex-doc-nav-group"><summary>Problem-First Guides</summary><div class="rex-doc-nav-items"><a href="/docs/why-agents-forget-context/" class="rex-doc-nav-link" data-title="why agents forget context — and how to fix it">Why Agents Forget Context — and How to Fix It</a><a href="/docs/reduce-agent-token-cost/" class="rex-doc-nav-link" data-title="reduce ai coding agent token costs: one sentence, less waste">Reduce AI Coding Agent Token Costs: One Sentence, Less Waste</a><a href="/docs/claude-code-vs-codex-vs-gemini/" class="rex-doc-nav-link" data-title="claude code vs codex vs gemini cli: how to choose">Claude Code vs Codex vs Gemini CLI: How to Choose</a><a href="/docs/overnight-agent-runs/" class="rex-doc-nav-link" data-title="run coding agents overnight: resumable and verified">Run Coding Agents Overnight: Resumable and Verified</a><a href="/docs/multi-agent-code-review/" class="rex-doc-nav-link" data-title="multi-agent code review: one sentence, verified results">Multi-Agent Code Review: One Sentence, Verified Results</a><a href="/docs/use-cases/" class="rex-doc-nav-link" data-title="aios commands: find what you need in one sentence">AIOS Commands: Find What You Need in One Sentence</a></div></details><details class="rex-doc-nav-group" open><summary>Capabilities</summary><div class="rex-doc-nav-items"><a href="/docs/contextdb/" class="rex-doc-nav-link" data-title="contextdb: pull-based project memory">ContextDB: Pull-Based Project Memory</a><a href="/docs/token-compression/" class="rex-doc-nav-link" data-title="token intelligence and compression">Token Intelligence and Compression</a><a href="/docs/workflow-policy/" class="rex-doc-nav-link" data-title="workflow policy — direct, guarded, or planned agent work">Workflow Policy — direct, guarded, or planned Agent Work</a><a href="/docs/model-router/" aria-current="page" class="rex-doc-nav-link is-active" data-title="model router">Model Router</a><a href="/docs/codemap/" class="rex-doc-nav-link" data-title="code review graph (codemap)">Code Review Graph (Codemap)</a><a href="/docs/team-ops/" class="rex-doc-nav-link" data-title="agent team: parallel work with evidence">Agent Team: Parallel Work with Evidence</a><a href="/docs/solo-harness/" class="rex-doc-nav-link" data-title="solo harness: resumable long-running work">Solo Harness: Resumable Long-Running Work</a><a href="/docs/superpowers/" class="rex-doc-nav-link" data-title="rex workflow migration">Rex Workflow Migration</a><a href="/docs/integrations/" class="rex-doc-nav-link" data-title="typesafe jev in aios — install, enable the judgment gate, run in background">TypeSafe Jev in AIOS — Install, Enable the Judgment Gate, Run in Background</a><a href="/docs/perception/" class="rex-doc-nav-link" data-title="perception">Perception</a></div></details><details class="rex-doc-nav-group"><summary>Reference</summary><div class="rex-doc-nav-items"><a href="/docs/architecture/" class="rex-doc-nav-link" data-title="how aios works: memory, routing, teams, verification">How AIOS Works: Memory, Routing, Teams, Verification</a><a href="/docs/route-concurrency-profiles/" class="rex-doc-nav-link" data-title="route &amp; concurrency profiles">Route &amp; Concurrency Profiles</a><a href="/docs/advanced-design-skills/" class="rex-doc-nav-link" data-title="advanced design skills">Advanced Design Skills</a><a href="/docs/hud-guide/" class="rex-doc-nav-link" data-title="hud user guide">HUD User Guide</a><a href="/docs/debug-hub/" class="rex-doc-nav-link" data-title="debug-hub">debug-hub</a><a href="/docs/cli-comparison/" class="rex-doc-nav-link" data-title="raw cli vs aios: one sentence vs manual work">Raw CLI vs AIOS: One Sentence vs Manual Work</a><a href="/docs/engineering-standards/" class="rex-doc-nav-link" data-title="engineering standards — aios builds software, it does not just generate code">Engineering Standards — AIOS Builds Software, It Does Not Just Generate Code</a></div></details><details class="rex-doc-nav-group"><summary>Case Studies</summary><div class="rex-doc-nav-items"><a href="/docs/case-library/" class="rex-doc-nav-link" data-title="case library: reproducible aios workflows">Case Library: Reproducible AIOS Workflows</a><a href="/docs/case-auth-wall-browser/" class="rex-doc-nav-link" data-title="case - browser auth-wall flow">Case - Browser Auth-Wall Flow</a><a href="/docs/case-cross-cli-handoff/" class="rex-doc-nav-link" data-title="case - cross-cli handoff">Case - Cross-CLI Handoff</a><a href="/docs/case-privacy-guard/" class="rex-doc-nav-link" data-title="case - privacy guard config read">Case - Privacy Guard Config Read</a></div></details><details class="rex-doc-nav-group"><summary>Project</summary><div class="rex-doc-nav-items"><a href="/docs/changelog/" class="rex-doc-nav-link" data-title="changelog">Changelog</a><a href="/docs/friends/" class="rex-doc-nav-link" data-title="friends">Friends</a><a href="/docs/skill-candidates/" class="rex-doc-nav-link" data-title="skill candidates guide">Skill Candidates Guide</a></div></details></div>
+    <p class="rex-doc-search-empty" id="rex-doc-search-empty" hidden>No matching docs</p>
+    <div class="rex-doc-sidebar__status">AIOS · v8.0.0 · local-first</div>
+  </aside>
+  <article class="rex-doc-article">
+    <p class="eyebrow">文档 · English</p>
+    <h1>Model Router</h1>
+    <p class="lede" style="font-size:17px">Model Router picks an AI model per task from task type, routing profile, capability registry, and fallback rules, and --explain shows why it chose that one.</p>
+    <div class="rex-doc-content md-body">
+<blockquote>
+<p><strong>Quick Answer:</strong> Model Router matches a task to a model using the task type, routing profile, capability registry, and configured fallback rules. Use <code>--explain</code> when you need to see why a model was selected; use a profile or explicit override when the default trade-off is not right for the task.</p>
+</blockquote>
+<h2 id="start-with-an-explainable-route">Start with an explainable route</h2>
+<p>The safest first command is an explainable route. It shows the declared task type, the selected model, and the reason that won, so a routing decision can be reviewed instead of treated as magic.</p>
+<p><strong>Different AI models are good at different things.</strong> Model Router automatically sends each task to the model that's best at it.</p>
+<p>Frontend work? Claude Sonnet 5. Security review? Claude Opus 5. Browser automation? GPT-6-Astra. You do not need to memorize this: the caller declares the task type (a phase role, <code>--task-type</code>, or your own instruction) and the router resolves model + client.</p>
+<h2 id="the-simple-version">The Simple Version</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Route a task to the best model</span>
+node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>route<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task<span class="w"> </span><span class="s2">&quot;Build a beautiful landing page component&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task-type<span class="w"> </span>frontend<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--explain
+
+<span class="c1"># Result: frontend -&gt; claude-sonnet-5 (client `claude`, protocol `claude`)</span>
+</code></pre></div>
+<p>That's it. The router resolves the declared task type into a model and a launchable CLI command.</p>
+<p>It deliberately does <strong>not</strong> infer task type or intent from free text: keyword guessing is not
+reviewable, so <code>scripts/lib/model-router/signals.mjs</code> keeps only explicit declarations and falls
+back to <code>general</code>. Callers that know better (rex phases, team roles, you) say what the task is.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>Without Model Router, you'd need to:</p>
+<ol>
+<li>Know which model is best for each type of task</li>
+<li>Manually switch between <code>codex</code>, <code>claude</code>, and <code>gemini</code> commands</li>
+<li>Remember the right model flags for each CLI</li>
+</ol>
+<p>With Model Router, you just describe the task and it handles the rest.</p>
+<h2 id="how-it-works">How It Works</h2>
+<div class="highlight"><pre><span></span><code>Declared task type (phase role, --task-type, explicit intent)
+    ↓
+Routing rule lookup (primary model + fallback chain)
+    ↓
+Profile adjustment (balanced / premium / budget) + role/env override
+    ↓
+Client contract check (can the launching client speak this model&#39;s protocol?)
+    ↓
+Channel availability check (is that relay channel healthy right now?)
+    ↓
+CLI command generation (correct --model/-m flag for that client)
+    ↓
+Execution + outcome recorded back into channel availability
+</code></pre></div>
+<h2 id="cli-protocol">CLI Protocol</h2>
+<p>Four protocol vocabularies exist; a route is usable only when the model's declared protocols intersect the launching client's (see <em>Client Model Routing Contract</em>):</p>
+<table>
+<thead>
+<tr>
+<th>Protocol</th>
+<th>Relay endpoint</th>
+<th>Launching clients</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>openai-response</code></td>
+<td><code>https://coding.rexai.top/openai/v1/responses</code></td>
+<td>codex, opencode</td>
+</tr>
+<tr>
+<td><code>openai-chat</code></td>
+<td><code>https://coding.rexai.top/openai/v1/chat/completions</code></td>
+<td>hermes, opencode, pi</td>
+</tr>
+<tr>
+<td><code>claude</code></td>
+<td><code>https://coding.rexai.top/claude/v1/messages</code></td>
+<td>claude, hermes, opencode, pi</td>
+</tr>
+<tr>
+<td><code>gemini</code></td>
+<td><code>https://coding.rexai.top/gemini/v1beta/models/&lt;model&gt;:generateContent</code></td>
+<td>opencode</td>
+</tr>
+</tbody>
+</table>
+<p>Codex live worker defaults to <code>--dangerously-bypass-approvals-and-sandbox</code> (equivalent to the old <code>--yolo</code> shortcut), avoiding waiting for approval/sandbox prompts in background subprocesses. Only set <code>AIOS_SUBAGENT_CODEX_UNATTENDED=0</code> when manually debugging Codex.</p>
+<h2 id="supported-models">Supported Models</h2>
+<p>The registry carries 16 models used by routing rules; <code>node scripts/aios.mjs model-router</code> prints the full live list.</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Protocols</th>
+<th>Best at</th>
+<th>Cost</th>
+<th>Context</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Claude Opus 5</strong></td>
+<td><code>claude</code></td>
+<td>code review, architecture design, security audit</td>
+<td>Highest</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>Claude Opus 4.8</strong></td>
+<td><code>claude</code></td>
+<td>code review, security audit, long-form writing</td>
+<td>High</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>GPT-6-Astra</strong></td>
+<td><code>openai-response</code></td>
+<td>all-rounder, general reasoning, browser automation</td>
+<td>Highest</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>Claude Sonnet 4.6</strong></td>
+<td><code>claude</code></td>
+<td>daily development, rapid prototyping, RAG</td>
+<td>Medium</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>GLM-5.2</strong></td>
+<td><code>claude</code>, <code>openai-chat</code></td>
+<td>autonomous loops, long-running planning, math reasoning</td>
+<td>Low</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>Claude Opus 4.7</strong></td>
+<td><code>claude</code></td>
+<td>code review, architecture design, security audit</td>
+<td>Highest</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>DeepSeek-V4-Pro</strong></td>
+<td><code>claude</code></td>
+<td>algorithm implementation, core logic, long-log analysis</td>
+<td>Lowest</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>Claude Sonnet 5</strong></td>
+<td><code>claude</code></td>
+<td>daily development, rapid prototyping, frontend UI</td>
+<td>Medium</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>DeepSeek-V4-Flash</strong></td>
+<td><code>openai-chat</code>, <code>claude</code></td>
+<td>algorithm implementation, batch processing, long-log analysis</td>
+<td>Lowest</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>GPT-5.5</strong></td>
+<td><code>openai-response</code></td>
+<td>general reasoning, browser automation, desktop automation</td>
+<td>Highest</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>Gemini-3.8-Flash</strong></td>
+<td><code>gemini</code></td>
+<td>multimodal analysis, long-document research, video analysis</td>
+<td>Medium</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>GPT-5.6-Sol</strong></td>
+<td><code>openai-response</code></td>
+<td>general reasoning, long-running execution, code execution</td>
+<td>High</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>Claude Haiku 4.5</strong></td>
+<td><code>claude</code></td>
+<td>classification, summarization, batch processing</td>
+<td>Low</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>GLM-5.3-Flash</strong></td>
+<td><code>openai-chat</code></td>
+<td>classification, documentation, test execution</td>
+<td>Lowest</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>Kimi K2.6</strong></td>
+<td><code>claude</code></td>
+<td>multi-agent orchestration, long-running execution, frontend UI</td>
+<td>Low</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>MiniMax-M2.7</strong></td>
+<td><code>claude</code></td>
+<td>self-healing, production recovery, continuous optimization</td>
+<td>Low</td>
+<td>200K</td>
+</tr>
+</tbody>
+</table>
+<h2 id="task-types-routing">Task Types &amp; Routing</h2>
+<table>
+<thead>
+<tr>
+<th>taskType</th>
+<th>Primary model</th>
+<th>Fallback chain</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code-review</code></td>
+<td><strong>Claude Opus 5</strong></td>
+<td>Claude Opus 4.8 → GPT-6-Astra → Claude Sonnet 4.6</td>
+</tr>
+<tr>
+<td><code>security-review</code></td>
+<td><strong>Claude Opus 5</strong></td>
+<td>Claude Opus 4.8 → GPT-6-Astra → GLM-5.2</td>
+</tr>
+<tr>
+<td><code>architecture</code></td>
+<td><strong>Claude Opus 5</strong></td>
+<td>GPT-6-Astra → GLM-5.2 → Claude Opus 4.7</td>
+</tr>
+<tr>
+<td><code>implementation</code></td>
+<td><strong>DeepSeek-V4-Pro</strong></td>
+<td>GPT-6-Astra → Claude Sonnet 5 → DeepSeek-V4-Flash</td>
+</tr>
+<tr>
+<td><code>browser-automation</code></td>
+<td><strong>GPT-6-Astra</strong></td>
+<td>GPT-5.5 → Claude Sonnet 5</td>
+</tr>
+<tr>
+<td><code>research</code></td>
+<td><strong>Gemini-3.8-Flash</strong></td>
+<td>DeepSeek-V4-Pro → Claude Sonnet 5 → GPT-5.6-Sol</td>
+</tr>
+<tr>
+<td><code>planning</code></td>
+<td><strong>GLM-5.2</strong></td>
+<td>GPT-6-Astra → Claude Opus 5 → Claude Opus 4.7</td>
+</tr>
+<tr>
+<td><code>testing</code></td>
+<td><strong>Claude Haiku 4.5</strong></td>
+<td>Claude Sonnet 5 → GLM-5.3-Flash → DeepSeek-V4-Flash</td>
+</tr>
+<tr>
+<td><code>docs</code></td>
+<td><strong>Claude Sonnet 5</strong></td>
+<td>GLM-5.3-Flash → GPT-5.5 → Kimi K2.6</td>
+</tr>
+<tr>
+<td><code>frontend</code></td>
+<td><strong>Claude Sonnet 5</strong></td>
+<td>GPT-5.6-Sol → Kimi K2.6 → GPT-5.5</td>
+</tr>
+<tr>
+<td><code>self-healing</code></td>
+<td><strong>GLM-5.2</strong></td>
+<td>GPT-6-Astra → MiniMax-M2.7 → DeepSeek-V4-Pro</td>
+</tr>
+<tr>
+<td><code>general</code></td>
+<td><strong>GPT-6-Astra</strong></td>
+<td>Claude Sonnet 5 → GLM-5.2 → DeepSeek-V4-Pro</td>
+</tr>
+</tbody>
+</table>
+<p><em>These tables are derived from <code>scripts/lib/specs/model-registry.json</code>; <code>node scripts/aios.mjs model-router</code> prints the live registry plus routing rules, and <code>model-router availability</code> prints which relay channels look healthy right now.</em></p>
+<h2 id="routing-profiles">Routing Profiles</h2>
+<p>Choose how aggressive the routing should be:</p>
+<table>
+<thead>
+<tr>
+<th>Profile</th>
+<th>When to use</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>balanced</code> (default)</td>
+<td>Most work</td>
+<td>Strong signals upgrade the model; normal coding stays cheap</td>
+</tr>
+<tr>
+<td><code>premium</code></td>
+<td>Risky or unclear tasks</td>
+<td>More willing to use expensive models like Claude Opus 5 or GPT-6-Astra</td>
+</tr>
+<tr>
+<td><code>budget</code></td>
+<td>Cost-sensitive work</td>
+<td>Prefers cheap models unless the task really needs a strong one</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="c1"># Use per command</span>
+node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>route<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="w"> </span>--profile<span class="w"> </span>premium<span class="w"> </span>--explain
+
+<span class="c1"># Or set for the session</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_ROUTER_PROFILE</span><span class="o">=</span>premium
+</code></pre></div>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="view-the-registry-and-routing-rules">View the registry and routing rules</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router
+</code></pre></div>
+<h3 id="route-a-task-with-explanation">Route a task with explanation</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>route<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task<span class="w"> </span><span class="s2">&quot;build a beautiful landing page component&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task-type<span class="w"> </span>frontend<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profile<span class="w"> </span>balanced<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--explain
+</code></pre></div>
+<h3 id="force-a-specific-task-type">Force a specific task type</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>route<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task<span class="w"> </span><span class="s2">&quot;refactor database connection&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task-type<span class="w"> </span>implementation
+</code></pre></div>
+<h3 id="view-dispatch-history">View dispatch history</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>stats
+</code></pre></div>
+<h3 id="view-channel-availability-state">View channel availability state</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>availability
+</code></pre></div>
+<h2 id="why-was-this-model-selected">Why Was This Model Selected?</h2>
+<p>Add <code>--explain</code> to any route command to see the reasoning:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;resolvedType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;implementation&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;modelId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek-v4&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DeepSeek-V4-Pro&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;clientId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;claude-code&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;primary match for taskType=\&quot;implementation\&quot;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;profile&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;premium&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;matchedSignals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">  </span><span class="nt">&quot;why&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Explicit task type selected: implementation&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;contractMode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;modelProtocols&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;claude&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;requestedModelId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek-v4&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;skippedForCapability&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="p">}</span>
+</code></pre></div>
+<ul>
+<li><strong><code>resolvedType</code></strong> is the task type resolved from a declaration — it is not evidence of keyword inference</li>
+<li><strong><code>matchedSignals: []</code></strong> because the router never guesses a task type from free text (<code>signals.mjs</code> North Star constraint)</li>
+<li><strong><code>why</code></strong> says whether the route came from <code>Explicit task type selected: ...</code> or the deterministic <code>general</code> fallback</li>
+<li><strong><code>requestedModelId</code> / <code>skippedForCapability</code> / <code>contractMode</code></strong> record how the client contract narrowed the chain</li>
+</ul>
+<h2 id="overriding-model-selection">Overriding Model Selection</h2>
+<p>If you want to force a specific model:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># By role (planner / implementer / reviewer / security-reviewer)</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_PLANNER</span><span class="o">=</span>claude-opus
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_IMPLEMENTER</span><span class="o">=</span>deepseek-v4
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_REVIEWER</span><span class="o">=</span>claude-opus
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_SECURITY_REVIEWER</span><span class="o">=</span>claude-opus
+
+<span class="c1"># By profile</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_ROUTER_PROFILE</span><span class="o">=</span>budget
+
+<span class="c1"># Disable routing entirely (each client keeps its own default model)</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_ROUTER</span><span class="o">=</span><span class="m">0</span>
+</code></pre></div>
+<p>When you override, the router switches the <strong>client</strong> to one that can speak that model; only automatic
+routing is allowed to change the model to fit the worker client.</p>
+<h2 id="configuration-files">Configuration Files</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/lib/specs/model-registry.json</code></td>
+<td>Model capabilities, routing rules, and CLI protocol settings</td>
+</tr>
+<tr>
+<td><code>scripts/lib/specs/orchestrator-agents.json</code></td>
+<td>Agent role to <code>preferredModel</code> mapping</td>
+</tr>
+<tr>
+<td><code>.claude/skills/model-router/SKILL.md</code></td>
+<td>Agent-callable self-service routing skill</td>
+</tr>
+<tr>
+<td><code>scripts/lib/model-router.mjs</code></td>
+<td>Router logic: matching, fallback, CLI construction, and stats</td>
+</tr>
+</tbody>
+</table>
+<h2 id="agent-integration">Agent Integration</h2>
+<h3 id="guided-by-task-routing">Guided by Task Routing</h3>
+<p>Model Router injects agent context through AIOS Task Router. Any agent running under <code>ctx-agent</code> automatically receives model dispatch guidance. When dispatching sub-agents, the agent can call the <code>model-router</code> skill to determine the optimal model.</p>
+<h3 id="via-orchestrator">Via Orchestrator</h3>
+<p>Agent role cards (<code>.claude/agents/*.md</code>) contain a <code>preferredModel</code> field that the orchestrator automatically resolves when dispatching:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># .claude/agents/rex-reviewer.md</span>
+<span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sonnet</span>
+<span class="nt">preferredModel</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">claude-opus</span>
+</code></pre></div>
+<p>Model resolution priority: <strong>environment variable</strong> &gt; <strong>preferredModel</strong> &gt; <strong>model</strong> (fallback).</p>
+<h2 id="perception-feedback-loop">Perception Feedback Loop</h2>
+<p>Each model dispatch is recorded as a <code>model.dispatch</code> event in ContextDB. The perception system can calculate model success rate by task type. Future routing decisions will synthesize: <strong>capability match × historical success rate × cost</strong>.</p>
+<h2 id="common-questions">Common Questions</h2>
+<h3 id="why-does-everything-route-to-deepseek">Why does everything route to DeepSeek?</h3>
+<p>Under <code>balanced</code> profile, normal implementation tasks go to DeepSeek (it's cheap and good). Use <code>--profile premium</code> for tasks where you want stronger models.</p>
+<h3 id="my-task-has-multiple-parts-and-got-one-model">My task has multiple parts and got one model</h3>
+<p>Compound tasks get one model for now. Check <code>recommendedPhases</code> in the explain output — if it shows multiple types, split the work into separate tasks.</p>
+<h3 id="can-i-use-this-with-agent-team">Can I use this with Agent Team?</h3>
+<p>Yes. Agent Team uses Model Router by default — each phase of the team gets routed to the best model automatically.</p>
+<h2 id="client-model-routing-contract">Client Model Routing Contract</h2>
+<p>A route only pays off if the client that actually launches can speak the model. AIOS reads that
+from the client registry (<code>scripts/lib/clients/core/definitions.mjs</code>) rather than guessing, so the
+table below is generated data, not opinion:</p>
+<table>
+<thead>
+<tr>
+<th>Client</th>
+<th><code>modelRouting</code></th>
+<th>Protocols it can speak</th>
+<th><code>--model</code> flag</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>codex</td>
+<td><code>relay</code></td>
+<td><code>openai-response</code></td>
+<td><code>-m</code></td>
+</tr>
+<tr>
+<td>claude</td>
+<td><code>relay</code></td>
+<td><code>claude</code></td>
+<td><code>--model</code></td>
+</tr>
+<tr>
+<td>gemini</td>
+<td><code>own</code></td>
+<td><em>none published</em></td>
+<td><code>-m</code></td>
+</tr>
+<tr>
+<td>opencode</td>
+<td><code>relay</code></td>
+<td><code>openai-chat</code>, <code>openai-response</code>, <code>claude</code>, <code>gemini</code></td>
+<td><code>-m</code></td>
+</tr>
+<tr>
+<td>hermes</td>
+<td><code>relay</code></td>
+<td><code>claude</code>, <code>openai-chat</code></td>
+<td><code>--model</code></td>
+</tr>
+<tr>
+<td>grok</td>
+<td><code>own</code></td>
+<td><em>none published</em></td>
+<td><code>-m</code></td>
+</tr>
+<tr>
+<td>workbuddy</td>
+<td><code>own</code></td>
+<td><em>none published</em></td>
+<td><code>--model</code></td>
+</tr>
+<tr>
+<td>pi</td>
+<td><code>relay</code></td>
+<td><code>openai-chat</code>, <code>claude</code></td>
+<td><code>--model</code></td>
+</tr>
+<tr>
+<td>zcode</td>
+<td><code>own</code></td>
+<td><em>none published</em></td>
+<td><code>—</code></td>
+</tr>
+<tr>
+<td>qoder</td>
+<td><code>own</code></td>
+<td><em>none published</em></td>
+<td><code>—</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>relay</code> clients are native-protocol gateways: point them at <code>coding.rexai.top</code> and they serve the
+whole curated catalog. <code>own</code> clients are launched with <strong>no</strong> model argument so they keep their own
+default, and AIOS never rewrites their config. <code>hermes</code> can terminate <code>openai-chat</code> upstreams but
+launches with the Anthropic-compatible channel only, so it declares <code>claude</code> + <code>openai-chat</code>.
+<code>qoder</code> is <code>own</code> in the same state as <code>zcode</code>, <code>grok</code>, and <code>workbuddy</code>: its model is bound to the
+account and selected with the interactive <code>/model</code> command, and because no headless <code>--model</code> flag
+is verified, AIOS does not relay models to it yet.</p>
+<p>Protocol to endpoint mapping lives in <code>scripts/lib/model-router/protocols.mjs</code>:
+<code>openai-chat</code> -&gt; <code>/openai/v1/chat/completions</code>, <code>openai-response</code> -&gt; <code>/openai/v1/responses</code>,
+<code>claude</code> -&gt; <code>/claude/v1/messages</code>, <code>gemini</code> -&gt; <code>/gemini/v1beta/models/&lt;model&gt;:generateContent</code>.</p>
+<p>Two rules follow:</p>
+<ul>
+<li><strong>Explicit wins.</strong> If you set <code>-m</code>, <code>AIOS_MODEL_*</code>, or a task model, the client follows the model
+  (provider client plus its own <code>--model</code> channel). Only automatic routing may retarget the model
+  so it fits the worker client.</li>
+<li><strong>Automatic routing keeps the worker client.</strong> Team roles, subagents and phase jobs start on the
+  client the task asked for; when that client cannot serve the best model for the job, AIOS walks
+  the fallback chain to the strongest model the client can actually speak.</li>
+</ul>
+<p>Every decision stays inspectable on the route: <code>requestedModelId</code> (what was asked for),
+<code>skippedForCapability</code> (why a candidate lost), <code>modelProtocols</code>, <code>contractMode</code>.</p>
+<h2 id="channel-availability-runtime-layer">Channel Availability (Runtime Layer)</h2>
+<p>The registry records what a model is good at; a separate state machine records what the relay
+serves <strong>right now</strong>. It learns only from real dispatch outcomes:</p>
+<table>
+<thead>
+<tr>
+<th>Observation</th>
+<th>Recorded as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>model_not_found</code>, <code>no available channel</code>, truncated gateway response, probe HTTP 404</td>
+<td>channel <code>down</code> (404 is immediate)</td>
+</tr>
+<tr>
+<td>connect/timeout/reset, 5xx, stream cut before the first byte</td>
+<td><code>network</code> failure on that channel</td>
+</tr>
+<tr>
+<td>the relay served a different model id</td>
+<td><code>degraded</code> (unstable channel)</td>
+</tr>
+<tr>
+<td>first byte beyond the latency budget</td>
+<td><code>degraded</code></td>
+</tr>
+<tr>
+<td>2 consecutive failures</td>
+<td><code>down</code></td>
+</tr>
+<tr>
+<td>success</td>
+<td>recovery path back to <code>ok</code></td>
+</tr>
+</tbody>
+</table>
+<p>Agent-caused failures (<code>tool</code>, <code>provider-output</code>, <code>timeout-after-output</code>) are <strong>not</strong> channel
+evidence — a worker that misused a tool must not cool a model down.</p>
+<p>Inspect it with <code>node scripts/aios.mjs model-router availability</code>. Routing reads this cache only
+when <code>AIOS_MODEL_AVAILABILITY=1</code> is set (keeps dispatch deterministic and offline by default); the
+effect shows up in <code>orchestrate plan preview</code> and in phase dispatch events as <code>channelDown</code> /
+<code>degradedChannel</code>. <code>down</code> cools for <code>cooldownMs</code> (default 300s)
+then auto-recovers; <code>ok</code> records expire after <code>ttlMs</code> (default 600s). The cache is
+<code>memory/specs/model-availability.json</code> (<code>AIOS_MODEL_AVAILABILITY_PATH</code> overrides;
+<code>AIOS_MODEL_AVAILABILITY_FEEDBACK=0</code> disables write-back).</p>
+<h2 id="where-to-go-next">Where To Go Next</h2>
+<ul>
+<li><a href="/docs/team-ops/">Agent Team</a> — multi-agent collaboration with automatic routing</li>
+<li><a href="/docs/contextdb/">ContextDB</a> — project memory</li>
+<li><a href="/docs/solo-harness/">Solo Harness</a> — long-running single-agent work</li>
+</ul>
+<h2 id="faq">FAQ</h2>
+<h3 id="does-model-router-call-a-model-before-it-chooses-one">Does Model Router call a model before it chooses one?</h3>
+<p>No. The router selects a client/model path from task metadata and configured capabilities. The selected client performs the task afterward.</p>
+<h3 id="can-i-override-the-recommendation">Can I override the recommendation?</h3>
+<p>Yes. Use a routing profile or an explicit role/task override when cost, latency, or capability needs differ from the default.</p>
+<h2 id="canonical-docs">Canonical Docs</h2>
+<p>See <a href="/docs/team-ops/">Agent Team</a>, <a href="/docs/workflow-policy/">Workflow Policy</a>, and <a href="/docs/contextdb/">ContextDB</a> for the surrounding execution contract.</p></div>
+    <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+    <nav class="rex-doc-pager"><a href="/docs/integrations/">← 上一篇</a><a href="/docs/multi-agent-code-review/">下一篇 →</a></nav>
+    <a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  </article>
+</div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

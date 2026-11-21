@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ko" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skill Candidates 가이드</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">한국어</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/docs/skill-candidates/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/docs/skill-candidates/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/docs/skill-candidates/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt is-active" href="/ko/docs/skill-candidates/" hreflang="ko" lang="ko" aria-current="true">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+<div class="rex-doc-layout">
+  <aside class="rex-doc-sidebar">
+    <a class="rex-doc-sidebar__home" href="/ko/docs/">모든 문서</a>
+    <div class="rex-doc-search"><input type="search" id="rex-doc-search-input" placeholder="문서 검색…" aria-label="문서 검색…" autocomplete="off"></div>
+    <div id="rex-doc-nav"><details class="rex-doc-nav-group"><summary>시작하기</summary><div class="rex-doc-nav-items"><a href="/ko/docs/getting-started/" class="rex-doc-nav-link" data-title="빠른 시작: aios 설치와 검증">빠른 시작: AIOS 설치와 검증</a><a href="/ko/docs/windows-guide/" class="rex-doc-nav-link" data-title="windows 가이드: powershell 설정과 복구">Windows 가이드: PowerShell 설정과 복구</a><a href="/ko/docs/troubleshooting/" class="rex-doc-nav-link" data-title="aios 문제 해결">AIOS 문제 해결</a><a href="/ko/docs/windows-ai-coding-agent-setup/" class="rex-doc-nav-link" data-title="windows ai 코딩 에이전트 설정: 10분 안에 설치하고 검증하기">Windows AI 코딩 에이전트 설정: 10분 안에 설치하고 검증하기</a></div></details><details class="rex-doc-nav-group"><summary>문제별 가이드</summary><div class="rex-doc-nav-items"><a href="/ko/docs/why-agents-forget-context/" class="rex-doc-nav-link" data-title="ai 코딩 에이전트가 세션 사이에 컨텍스트를 잊어버리는 이유 (그리고 해결 방법)">AI 코딩 에이전트가 세션 사이에 컨텍스트를 잊어버리는 이유 (그리고 해결 방법)</a><a href="/ko/docs/reduce-agent-token-cost/" class="rex-doc-nav-link" data-title="ai 코딩 에이전트 토큰 비용 줄이기: claude code와 codex 예산 관리">AI 코딩 에이전트 토큰 비용 줄이기: Claude Code와 Codex 예산 관리</a><a href="/ko/docs/claude-code-vs-codex-vs-gemini/" class="rex-doc-nav-link" data-title="claude code vs codex vs gemini cli: 어떤 코딩 에이전트 cli를 선택해야 할까?">Claude Code vs Codex vs Gemini CLI: 어떤 코딩 에이전트 CLI를 선택해야 할까?</a><a href="/ko/docs/overnight-agent-runs/" class="rex-doc-nav-link" data-title="코딩 에이전트를 밤새 크래시나 이탈 없이 실행하는 방법">코딩 에이전트를 밤새 크래시나 이탈 없이 실행하는 방법</a><a href="/ko/docs/multi-agent-code-review/" class="rex-doc-nav-link" data-title="멀티 에이전트 코드 리뷰: 실제로 도움이 되는 병렬 코딩 에이전트">멀티 에이전트 코드 리뷰: 실제로 도움이 되는 병렬 코딩 에이전트</a><a href="/ko/docs/use-cases/" class="rex-doc-nav-link" data-title="사용 사례: aios route 선택">사용 사례: AIOS route 선택</a></div></details><details class="rex-doc-nav-group"><summary>기능</summary><div class="rex-doc-nav-items"><a href="/ko/docs/contextdb/" class="rex-doc-nav-link" data-title="contextdb: pull-based 프로젝트 기억">ContextDB: pull-based 프로젝트 기억</a><a href="/ko/docs/token-compression/" class="rex-doc-nav-link" data-title="token intelligence와 압축 경계">Token Intelligence와 압축 경계</a><a href="/ko/docs/workflow-policy/" class="rex-doc-nav-link" data-title="워크플로 정책">워크플로 정책</a><a href="/ko/docs/model-router/" class="rex-doc-nav-link" data-title="모델 라우터">모델 라우터</a><a href="/ko/docs/codemap/" class="rex-doc-nav-link" data-title="코드 리뷰 그래프 (codemap)">코드 리뷰 그래프 (Codemap)</a><a href="/ko/docs/team-ops/" class="rex-doc-nav-link" data-title="agent team: 증거를 남기는 병렬 작업">Agent Team: 증거를 남기는 병렬 작업</a><a href="/ko/docs/solo-harness/" class="rex-doc-nav-link" data-title="solo harness: 재개 가능한 장기 작업">Solo Harness: 재개 가능한 장기 작업</a><a href="/ko/docs/superpowers/" class="rex-doc-nav-link" data-title="rex 워크플로 마이그레이션">Rex 워크플로 마이그레이션</a><a href="/ko/docs/integrations/" class="rex-doc-nav-link" data-title="aios에서 typesafe jev 쓰기——설치·판단 게이트 켜기·백그라운드 실행">AIOS에서 TypeSafe Jev 쓰기——설치·판단 게이트 켜기·백그라운드 실행</a><a href="/ko/docs/perception/" class="rex-doc-nav-link" data-title="perception(인지 레이어)">Perception(인지 레이어)</a></div></details><details class="rex-doc-nav-group"><summary>레퍼런스</summary><div class="rex-doc-nav-items"><a href="/ko/docs/architecture/" class="rex-doc-nav-link" data-title="aios 아키텍처">AIOS 아키텍처</a><a href="/ko/docs/route-concurrency-profiles/" class="rex-doc-nav-link" data-title="라우팅/병렬 프로필">라우팅/병렬 프로필</a><a href="/ko/docs/advanced-design-skills/" class="rex-doc-nav-link" data-title="고급 디자인 스킬">고급 디자인 스킬</a><a href="/ko/docs/hud-guide/" class="rex-doc-nav-link" data-title="hud 사용자 가이드">HUD 사용자 가이드</a><a href="/ko/docs/debug-hub/" class="rex-doc-nav-link" data-title="debug-hub">debug-hub</a><a href="/ko/docs/cli-comparison/" class="rex-doc-nav-link" data-title="cli 비교">CLI 비교</a><a href="/ko/docs/engineering-standards/" class="rex-doc-nav-link" data-title="엔지니어링 표준 — aios는 코드를 생성할 뿐만 아니라 소프트웨어를 구축한다">엔지니어링 표준 — AIOS는 코드를 생성할 뿐만 아니라 소프트웨어를 구축한다</a></div></details><details class="rex-doc-nav-group"><summary>사례 연구</summary><div class="rex-doc-nav-items"><a href="/ko/docs/case-library/" class="rex-doc-nav-link" data-title="사례 라이브러리: 재현 가능한 aios workflow">사례 라이브러리: 재현 가능한 AIOS workflow</a><a href="/ko/docs/case-auth-wall-browser/" class="rex-doc-nav-link" data-title="케이스 - 브라우저 인증벽 플로우">케이스 - 브라우저 인증벽 플로우</a><a href="/ko/docs/case-cross-cli-handoff/" class="rex-doc-nav-link" data-title="케이스 - 크로스 cli 핸드오프">케이스 - 크로스 CLI 핸드오프</a><a href="/ko/docs/case-privacy-guard/" class="rex-doc-nav-link" data-title="케이스 - privacy guard 설정 읽기">케이스 - Privacy Guard 설정 읽기</a></div></details><details class="rex-doc-nav-group" open><summary>프로젝트</summary><div class="rex-doc-nav-items"><a href="/ko/docs/changelog/" class="rex-doc-nav-link" data-title="변경 로그">변경 로그</a><a href="/ko/docs/friends/" class="rex-doc-nav-link" data-title="추천 링크">추천 링크</a><a href="/ko/docs/skill-candidates/" aria-current="page" class="rex-doc-nav-link is-active" data-title="skill candidates 가이드">Skill Candidates 가이드</a></div></details></div>
+    <p class="rex-doc-search-empty" id="rex-doc-search-empty" hidden>일치하는 문서 없음</p>
+    <div class="rex-doc-sidebar__status">AIOS · v8.0.0 · 로컬 우선</div>
+  </aside>
+  <article class="rex-doc-article">
+    <p class="eyebrow">文档 · 한국어</p>
+    <h1>Skill Candidates 가이드</h1>
+    <p class="lede" style="font-size:17px">실패한 세션을 스킬 개선 패치로 바꾸는 방법을 설명합니다. 후보가 어떻게 감지되고 어떻게 검토하며 어떻게 안전하게 적용하고 되돌리는지 이해하면 에이전트의 실패를 쌓아 올릴 수 있는 개선으로 바꿀 수 있습니다. 검토와 검증을 통과한 후보만 정식 스킬에 들어갑니다.</p>
+    <div class="rex-doc-content md-body">
+<p><strong>Skill Candidates</strong> 는 실패한 에이전트 세션에서 자동으로 추출되는 개선 제안입니다. 실패에서 학습하여 AI 어시스턴트의 능력을 지속적으로 개선할 수 있습니다.</p>
+<h2 id="skill-candidates_1">Skill Candidates란?</h2>
+<p>에이전트 세션이 quality-gate 체크에 실패하면 AIOS는 자동으로:
+1. 실패 패턴을 분석
+2. 근본 원인을 식별（예：오류 처리 누락, 엣지 케이스）
+3. 스킬 패치 초안을 생성
+4. 리뷰를 위해 <strong>스킬 후보</strong>로 제시</p>
+<h3 id="_1">흐름 예</h3>
+<div class="highlight"><pre><span></span><code>세션 실패 → Learn-eval이 분석 → 스킬 후보 생성 → 리뷰 → 패치 적용 → 스킬 개선
+</code></pre></div>
+<h2 id="skill-candidate">Skill Candidate 구조</h2>
+<p>각 스킬 후보에는 다음이 포함됩니다:</p>
+<table>
+<thead>
+<tr>
+<th>필드</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>skillId</code></td>
+<td>패치 대상 스킬</td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td>기능 영역（예：「authentication」「file-ops」）</td>
+</tr>
+<tr>
+<td><code>failureClass</code></td>
+<td>발생한 실패 유형</td>
+</tr>
+<tr>
+<td><code>lessonKind</code></td>
+<td>개선 유형（예：「error-handling」「edge-case」）</td>
+</tr>
+<tr>
+<td><code>lessonCount</code></td>
+<td>배운 교훈의 수</td>
+</tr>
+<tr>
+<td><code>patchHint</code></td>
+<td>제안된 코드/텍스트 변경</td>
+</tr>
+<tr>
+<td><code>sourceDraftTargetId</code></td>
+<td>원본 draft ID</td>
+</tr>
+<tr>
+<td><code>reviewStatus</code></td>
+<td>Pending/Approved/Rejected</td>
+</tr>
+</tbody>
+</table>
+<h2 id="skill-candidates_2">Skill Candidates 보기</h2>
+<h3 id="hud">HUD에서</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 세션 상태와 인라인으로 후보 표시</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--show-skill-candidates
+
+<span class="c1"># 상세 뷰（후보만, HUD 없음）</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--show-skill-candidates<span class="w"> </span>--skill-candidate-view<span class="w"> </span>detail
+
+<span class="c1"># 결과 제한</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--show-skill-candidates<span class="w"> </span>--skill-candidate-limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<h3 id="team-status">Team Status에서</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 모든 최근 후보 표시</span>
+aios<span class="w"> </span>team<span class="w"> </span>status<span class="w"> </span>--show-skill-candidates
+
+<span class="c1"># 세션으로 필터</span>
+aios<span class="w"> </span>team<span class="w"> </span>status<span class="w"> </span>--session<span class="w"> </span>&lt;session-id&gt;<span class="w"> </span>--show-skill-candidates
+
+<span class="c1"># 아티팩트 파일로 내보내기</span>
+aios<span class="w"> </span>team<span class="w"> </span>status<span class="w"> </span>--export-skill-candidate-patch-template
+</code></pre></div>
+<h3 id="list">list 명령</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 현재 세션의 후보 나열</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span>list
+
+<span class="c1"># 특정 세션 나열</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span>list<span class="w"> </span>--session-id<span class="w"> </span>&lt;session-id&gt;
+
+<span class="c1"># JSON 출력</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span>list<span class="w"> </span>--json
+</code></pre></div>
+<h3 id="draft-id">Draft ID로 필터</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 특정 draft의 후보만 표시</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span>list<span class="w"> </span>--draft-id<span class="w"> </span>&lt;draft-id&gt;
+
+<span class="c1"># 필터된 후보 내보내기</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--draft-id<span class="w"> </span>&lt;draft-id&gt;
+</code></pre></div>
+<h2 id="_2">패치 내보내기</h2>
+<h3 id="_3">아티팩트 파일로 내보내기</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 기본 위치（세션 아티팩트 폴더）</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span><span class="nb">export</span>
+
+<span class="c1"># 사용자 지정 출력 경로</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--output-path<span class="w"> </span>./patches/my-fix.md
+
+<span class="c1"># draft 필터 포함</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--draft-id<span class="w"> </span>&lt;draft-id&gt;<span class="w"> </span>--output-path<span class="w"> </span>./draft-patch.md
+</code></pre></div>
+<h3 id="_4">내보내기 형식</h3>
+<p>내보내기된 패치 템플릿에는 다음이 포함됩니다:
+- 후보 메타데이터（스킬 ID, scope, failure class）
+- 교훈 설명
+- 제안된 패치 내용
+- 적용 지침</p>
+<h2 id="_5">패치 적용</h2>
+<h3 id="_6">리뷰 프로세스</h3>
+<p><strong>패치를 적용하기 전에:</strong>
+1. failure class 읽기 — 무엇이 잘못되었는지 이해
+2. 교훈 리뷰 — 무엇을 배웠는지
+3. patch hint 검사 — 제안된 변경
+4. 패치가 스킬 버전에 적용 가능한지 확인</p>
+<h3 id="apply">apply 명령</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 특정 후보 적용</span>
+aios<span class="w"> </span>skill-candidate<span class="w"> </span>apply<span class="w"> </span>&lt;candidate-id&gt;
+
+<span class="c1"># 리뷰 모드로 적용</span>
+aios<span class="w"> </span>skill-candidate<span class="w"> </span>apply<span class="w"> </span>&lt;candidate-id&gt;<span class="w"> </span>--review
+
+<span class="c1"># dry-run（변경 미리보기）</span>
+aios<span class="w"> </span>skill-candidate<span class="w"> </span>apply<span class="w"> </span>&lt;candidate-id&gt;<span class="w"> </span>--dry-run
+</code></pre></div>
+<h3 id="_7">일괄 적용</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 스킬의 모든 보류 중 후보 적용</span>
+aios<span class="w"> </span>skill-candidate<span class="w"> </span>apply-all<span class="w"> </span>--skill<span class="w"> </span>&lt;skill-id&gt;
+
+<span class="c1"># 승인 포함 적용</span>
+aios<span class="w"> </span>skill-candidate<span class="w"> </span>apply-all<span class="w"> </span>--skill<span class="w"> </span>&lt;skill-id&gt;<span class="w"> </span>--approve
+</code></pre></div>
+<h2 id="skill-candidate_1">Skill Candidate 워크플로</h2>
+<h3 id="1">단계 1: 후보 발견</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 실패한 세션 후 후보 확인</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--session<span class="w"> </span>&lt;failed-session-id&gt;<span class="w"> </span>--show-skill-candidates
+</code></pre></div>
+<h3 id="2">단계 2: 후보 리뷰</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 신중한 리뷰를 위한 상세 뷰</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--session<span class="w"> </span>&lt;session-id&gt;<span class="w"> </span>--show-skill-candidates<span class="w"> </span>--skill-candidate-view<span class="w"> </span>detail
+
+<span class="c1"># 오프라인 리뷰를 위해 내보내기</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--session-id<span class="w"> </span>&lt;session-id&gt;
+</code></pre></div>
+<h3 id="3">단계 3: 패치를 로컬에서 테스트</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 테스트 브랜치 생성（git 사용 시）</span>
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>skill-patch-&lt;skill-id&gt;
+
+<span class="c1"># 수동으로 패치 적용 또는 apply 명령 사용</span>
+aios<span class="w"> </span>skill-candidate<span class="w"> </span>apply<span class="w"> </span>&lt;candidate-id&gt;
+
+<span class="c1"># 테스트를 실행하여 확인</span>
+npm<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
+<h3 id="4">단계 4: 승인 또는 거부</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 패치가 작동하면 — 승인</span>
+aios<span class="w"> </span>skill-candidate<span class="w"> </span>review<span class="w"> </span>&lt;candidate-id&gt;<span class="w"> </span>--approve
+
+<span class="c1"># 패치에 문제가 있으면 — 피드백으로 거부</span>
+aios<span class="w"> </span>skill-candidate<span class="w"> </span>review<span class="w"> </span>&lt;candidate-id&gt;<span class="w"> </span>--reject<span class="w"> </span>--comment<span class="w"> </span><span class="s2">&quot;엣지 케이스 X를 처리하지 않음&quot;</span>
+</code></pre></div>
+<h2 id="_8">모범 사례</h2>
+<h3 id="_9">우선 순위</h3>
+<p><strong>이 순서로 후보 적용:</strong>
+1. 고빈도 실패（같은 failure class가 여러 번 나타남）
+2. 중요한 경로 스킬（인증, 보안, 데이터 무결성）
+3. 쉬운 성과（한 줄 수정, 명확한 개선）</p>
+<h3 id="_10">리뷰 가이드라인</h3>
+<ul>
+<li><strong>검토 없이 자동 적용 금지</strong> — 각 패치는 인간 검증이 필요</li>
+<li><strong>격리로 테스트</strong> — 패치가 기존 기능을 깨뜨리지 않는지 확인</li>
+<li><strong>충돌 확인</strong> — 여러 패치가 동일한 코드를 수정할 수 있음</li>
+<li><strong>결정 문서화</strong> — 승인/거부 이유 기록</li>
+</ul>
+<h3 id="_11">과적합 피하기</h3>
+<ul>
+<li>일회성 엣지 케이스의 패치는 적용하지 않음</li>
+<li>여러 세션에서 패턴 찾기</li>
+<li>특정 해결책보다 일반적인 솔루션 선호</li>
+</ul>
+<h2 id="learn-eval">Learn-Eval 통합</h2>
+<p>Learn-eval은 스킬 후보를 생성하는 시스템입니다:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 최근 세션을 분석하기 위해 learn-eval 실행</span>
+aios<span class="w"> </span>learn-eval<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+
+<span class="c1"># 스킬 후보를 포함해 권장안 표시</span>
+</code></pre></div>
+<h3 id="learn-eval_1">Learn-Eval 출력</h3>
+<div class="highlight"><pre><span></span><code>Dispatch Hindsight Analysis:
+- 분석된 쌍: 15
+- 반복된 블록 턴: 3
+- 회귀: 1
+- 주요 failure class: token-validation-edge-case
+
+Draft 권장 사항:
+[fix] skill-candidate-001
+    스킬: authentication-handler
+    Scope: token-validation
+    Failure: edge-case-expired-token
+    Lessons: 2
+    Patch: 만료된 토큰에 재시도 로직 추가...
+</code></pre></div>
+<h2 id="quality-gate">Quality-Gate 연결</h2>
+<p>스킬 후보는 quality-gate가 실패할 때 생성됩니다:</p>
+<h3 id="quality-gate_1">Quality-Gate 결과</h3>
+<table>
+<thead>
+<tr>
+<th>결과</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ok</code></td>
+<td>세션 통과 — 후보 생성 안됨</td>
+</tr>
+<tr>
+<td><code>failed</code></td>
+<td>세션 실패 — 후보가 생성되었을 가능성</td>
+</tr>
+<tr>
+<td><code>retry-needed</code></td>
+<td>재시도 필요 — 후보가 생성될 수 있음</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_12">실패 카테고리</h3>
+<p>candidate를 트리거하는 일반적인 quality-gate 실패 카테고리:
+- <code>clarity-needs-input</code> — 에이전트가 더 많은 사용자 입력 필요
+- <code>sample.latency-watch</code> — 성능 문제
+- <code>dispatch.blocked</code> — 작업 실행 차단됨
+- <code>evidence.missing</code> — 검증 증거 누락</p>
+<h2 id="_13">문제 해결</h2>
+<h3 id="_14">실패한 세션 후 후보 없음</h3>
+<p>가능한 이유:
+- learn-eval이 아직 실행되지 않음
+- 실패가 스킬 개선 기회로 분류되지 않음
+- 세션이 quality-gate 체크 임계값을 통과하지 못함</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 수동으로 learn-eval 트리거</span>
+aios<span class="w"> </span>learn-eval<span class="w"> </span>--session<span class="w"> </span>&lt;session-id&gt;
+
+<span class="c1"># quality-gate 상태 확인</span>
+aios<span class="w"> </span>hud<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.selection.qualityGate&#39;</span>
+</code></pre></div>
+<h3 id="_15">후보 패치가 적용되지 않음</h3>
+<p>이유:
+- 대상 스킬이 후보 생성 후 변경됨
+- 패치 형식이 현재 스킬 구조와 호환되지 않음
+- 충돌하는 수정</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 후보 소스 버전 확인</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span>list<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.[0].sourceArtifactPath&#39;</span>
+
+<span class="c1"># 현재 스킬과 비교</span>
+diff<span class="w"> </span>&lt;<span class="o">(</span>cat<span class="w"> </span>&lt;source-artifact&gt;<span class="o">)</span><span class="w"> </span>&lt;<span class="o">(</span>cat<span class="w"> </span>&lt;current-skill-file&gt;<span class="o">)</span>
+</code></pre></div>
+<h3 id="_16">충돌하는 여러 후보</h3>
+<p>여러 후보가 동일한 스킬을 수정할 때:
+1. 먼저 모든 후보 검토
+2. 우선순위 순서로 적용（빈도, 심각도）
+3. 각 적용 후 테스트
+4. 충돌하는 중복 거부</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 스킬의 모든 후보 나열</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span>list<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>jq<span class="w"> </span><span class="s1">&#39;[.[] | select(.skillId == &quot;target-skill-id&quot;)]&#39;</span>
+</code></pre></div>
+<h2 id="_17">고급 사용법</h2>
+<h3 id="_18">프로그래밍 방식 액세스</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 후보를 JSON으로 가져오기</span>
+aios<span class="w"> </span>team<span class="w"> </span>skill-candidates<span class="w"> </span>list<span class="w"> </span>--json<span class="w"> </span>&gt;<span class="w"> </span>candidates.json
+
+<span class="c1"># failure class로 필터</span>
+cat<span class="w"> </span>candidates.json<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>jq<span class="w"> </span><span class="s1">&#39;[.[] | select(.failureClass == &quot;token-validation-edge-case&quot;)]&#39;</span>
+
+<span class="c1"># 스킬별로 카운트</span>
+cat<span class="w"> </span>candidates.json<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>jq<span class="w"> </span><span class="s1">&#39;group_by(.skillId) | map({skill: .[0].skillId, count: length})&#39;</span>
+</code></pre></div>
+<h3 id="_19">사용자 지정 분석</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 시간에 따른 실패 패턴 분석</span>
+aios<span class="w"> </span>team<span class="w"> </span><span class="nb">history</span><span class="w"> </span>--quality-failed-only<span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>jq<span class="w"> </span><span class="s1">&#39;[.[] | .skillCandidate] | group_by(.skillId)&#39;</span>
+
+<span class="c1"># 가장 일반적인 failure class 찾기</span>
+aios<span class="w"> </span>team<span class="w"> </span><span class="nb">history</span><span class="w"> </span>--json<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>jq<span class="w"> </span><span class="s1">&#39;[.[] | .skillCandidate.failureClass] | unique&#39;</span>
+</code></pre></div>
+<h2 id="_20">관련 문서</h2>
+<ul>
+<li><a href="/ko/docs/team-ops/">Team Ops</a> — Team Operations 개요</li>
+<li><a href="/ko/docs/hud-guide/">HUD 가이드</a> — HUD로 세션 모니터링</li>
+<li><a href="/ko/docs/contextdb/">ContextDB</a> — 세션 스토리지 및 아티팩트</li>
+</ul></div>
+    <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+    <nav class="rex-doc-pager"><a href="/ko/docs/route-concurrency-profiles/">← 上一篇</a><a href="/ko/docs/solo-harness/">下一篇 →</a></nav>
+    <a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  </article>
+</div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

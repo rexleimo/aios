@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-labelledby="title desc">
+<title id="title">ContextDB 项目记忆循环</title><desc id="desc">展示 .contextdb-enable 开启后，多个 CLI 共享同一个项目记忆。</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8fbff"/><stop offset="1" stop-color="#eaf4ff"/></linearGradient>
+  <linearGradient id="ink" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1a73e8"/><stop offset="1" stop-color="#00a884"/></linearGradient>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#174ea6" flood-opacity="0.14"/></filter>
+  <style>
+    .title{font:700 30px 'Google Sans','Segoe UI',Arial,sans-serif;fill:#172033}.subtitle{font:500 16px 'Google Sans Text','Segoe UI',Arial,sans-serif;fill:#5f6b7a}.label{font:700 17px 'Google Sans','Segoe UI',Arial,sans-serif;fill:#1f2937}.small{font:500 13px 'Roboto Mono','SFMono-Regular',monospace;fill:#536271}.tiny{font:600 12px 'Google Sans Text','Segoe UI',Arial,sans-serif;fill:#657285}.card{fill:#fff;stroke:#d7e3f3;stroke-width:1.2;filter:url(#shadow)}.terminal{fill:#101820}.termText{font:500 13px 'Roboto Mono','SFMono-Regular',monospace;fill:#dce7f7}.green{fill:#16a34a}.blue{fill:#1a73e8}.amber{fill:#f59e0b}.red{fill:#ef4444}.muted{fill:#edf4fb;stroke:#d7e3f3;stroke-width:1}.line{stroke:#9ab5d5;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}.arrow{marker-end:url(#arrow)}
+  </style>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6c8fb8"/></marker>
+</defs>
+<rect width="1200" height="640" rx="34" fill="url(#bg)"/>
+<text x="70" y="78" class="title">项目记忆怎么生效？</text>
+<text x="70" y="108" class="subtitle">创建一个空文件，之后多个 CLI 都写入同一个本地 ContextDB。</text>
+<rect x="78" y="164" width="340" height="340" rx="26" class="card"/><text x="114" y="216" class="label">你的项目根目录</text><rect x="116" y="250" width="250" height="44" rx="10" fill="#eef6ff" stroke="#b8d4f6"/><text x="136" y="278" class="small">.contextdb-enable</text><rect x="116" y="318" width="250" height="44" rx="10" fill="#f7fafc" stroke="#d7e3f3"/><text x="136" y="346" class="small">src/</text><rect x="116" y="380" width="250" height="44" rx="10" fill="#f7fafc" stroke="#d7e3f3"/><text x="136" y="408" class="small">docs/</text><text x="116" y="466" class="subtitle">只在这个项目启用记忆</text>
+<g transform="translate(505,168)"><rect width="250" height="82" rx="18" class="terminal"/><text x="32" y="34" class="termText">$ codex</text><text x="32" y="58" class="termText">继续实现登录页</text><rect y="130" width="250" height="82" rx="18" class="terminal"/><text x="32" y="164" class="termText">$ claude</text><text x="32" y="188" class="termText">分析失败原因</text><rect y="260" width="250" height="82" rx="18" class="terminal"/><text x="32" y="294" class="termText">$ gemini</text><text x="32" y="318" class="termText">复查测试覆盖</text></g>
+<path d="M418 272 C460 260 470 220 505 210" class="line arrow"/><path d="M418 340 C462 340 470 340 505 340" class="line arrow"/><path d="M418 408 C460 420 470 460 505 470" class="line arrow"/>
+<g transform="translate(860,190)"><ellipse cx="130" cy="54" rx="112" ry="36" fill="#dbeafe" stroke="#8ab4f8" stroke-width="2"/><rect x="18" y="54" width="224" height="190" fill="#dbeafe" stroke="#8ab4f8" stroke-width="2"/><ellipse cx="130" cy="244" rx="112" ry="36" fill="#c7dcff" stroke="#8ab4f8" stroke-width="2"/><text x="73" y="66" class="label">ContextDB</text><text x="56" y="122" class="small">events.jsonl</text><text x="56" y="158" class="small">checkpoints/</text><text x="56" y="194" class="small">context packs</text><text x="56" y="230" class="small">SQLite index</text></g>
+<path d="M755 209 C815 205 820 215 878 235" class="line arrow"/><path d="M755 340 C815 340 820 340 878 340" class="line arrow"/><path d="M755 470 C815 478 820 450 878 430" class="line arrow"/>
+<text x="70" y="570" class="subtitle">换 CLI 不等于换上下文：AIOS 把项目事件和 checkpoint 留在本地项目记忆里。</text>
+</svg>

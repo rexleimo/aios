@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ko" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v5.19.0: 판단 게이트에 몸을 붙이다</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">한국어</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-09-v519-judgment-gate-surfaces/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/blog/2026-09-v519-judgment-gate-surfaces/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-09-v519-judgment-gate-surfaces/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt is-active" href="/ko/blog/2026-09-v519-judgment-gate-surfaces/" hreflang="ko" lang="ko" aria-current="true">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-09-18</p><h1>v5.19.0: 판단 게이트에 몸을 붙이다</h1>
+    <p class="lede" style="font-size:17px">opt-in Jev 게이트가 이제 작업이 실제로 흐르는 두 면에 연결됩니다. 꺼져 있을 때 아예 존재하지 않는 aios_judge MCP 도구와, 진행을 보류할 수만 있는 rex 단계 게이트입니다.</p>
+    <div class="meta"><a href="/ko/blog/">← 全部文章</a> · <a href="/ko">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>v5.18.0이 내놓은 판단 게이트에는 아무도 닿을 수 없었습니다. 설정 계층, 유일한 출구인 클라이언트, 판정 매핑, CLI까지 다 있었지만 작업이 실제로 흐르는 곳으로 이어지는 연결이 없었습니다. 이번 릴리스가 그것을 연결합니다. 그리고 연결 지점 자체가 핵심입니다.</p>
+<h2 id="_1">닿을 수 없는 게이트는 게이트가 아니다</h2>
+<p>v5.18.0의 게이트는 "꺼져 있다"는 점에서는 정직했습니다. 세 조건이 동시에 성립하지 않으면 1바이트도 기기 밖으로 나가지 않았고, 비활성 상태에서 네트워크 호출이 0회임을 단언하는 테스트도 있었습니다. 하지만 "꺼짐"이 "완성됨"의 역할까지 겸하고 있었고, 실제로는 완성이 아니었습니다. 기억해 내야만 쓸 수 있는 CLI 하위 명령 뒤에만 존재하는 능력은 워크플로의 게이트가 아니라 서랍 속의 도구입니다.</p>
+<p>그래서 v5.19.0은 면을 정확히 두 개만 추가합니다:</p>
+<table>
+<thead>
+<tr>
+<th>면</th>
+<th>발화 시점</th>
+<th>효과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aios_judge</code> MCP 도구</td>
+<td>게이트가 켜져 있고 자격 증명이 존재하는 동안만</td>
+<td>도구가 <code>tools/list</code>에 나타납니다. 꺼져 있을 때는 “등록된 뒤 거부”가 아니라 아예 없습니다</td>
+</tr>
+<tr>
+<td>rex 단계 게이트</td>
+<td>어떤 provider의 증거가 rex 단계를 진행시키기 전</td>
+<td>증거를 검증할 수 없으면 진행이 보류(hold)됩니다</td>
+</tr>
+</tbody>
+</table>
+<p>두 면 모두 내용을 생성할 수 없고, 거부된 진행을 허용으로 바꿀 수도 없습니다. 이것이 설계 제약의 전부입니다: <strong>판단은 동작을 좁힐 수만 있습니다.</strong></p>
+<h2 id="1">면 1 — 거부가 아니라 부재</h2>
+<p>opt-in 도구를 내놓는 가장 직관적인 방법은 항상 등록해 두고 호출되면 "활성화되지 않았습니다"를 돌려주는 것입니다. 우리는 반대로 했습니다. 꺼져 있는 동안 <code>aios_judge</code>는 도구 목록에 아예 없습니다.</p>
+<p>이것은 모델의 행동에 대한 의도적인 베팅입니다. <strong>목록에 있는</strong> 도구는 <strong>시도되는</strong> 도구이고, "활성화되지 않았습니다"를 읽은 에이전트는 환경과 협상을 시작합니다. 재시도하고, 설정 키를 추측하고, 더 나쁘게는 "받았을 판단"을 이야기하기 시작합니다. 목록에서 빼는 것은 자동 기계와 논쟁하는 대신 행동 가능성 자체를 제거하는 일입니다.</p>
+<p>거부 경로도 남겨 두었습니다. 심층 방어는 값싸기 때문입니다. 꺼진 도구에 대한 <code>tools/call</code>은 거부되고, 전송 계층이 기록한 호출 수가 0임을 단언하는 테스트가 있습니다. 도구는 보이지 않으며 동시에 작동하지 않습니다.</p>
+<p>한 가지 결과는 솔직히 말해 둘 만합니다. <code>enable</code>이 쓰는 것은 설정 파일이고, 상주하는 MCP 서버는 <code>tools/list</code>마다 그것을 다시 읽습니다. 즉 게이트를 켜는 데 MCP 서버 재시작은 필요 없습니다. 다만 자격 증명은 <strong>클라이언트</strong> 환경에 있어야 하며, 그래서 문서가 "클라이언트를 재시작하십시오"를 반복해서 적고 있습니다.</p>
+<h2 id="2-advance-hold">면 2 — advance 아니면 hold, 그뿐</h2>
+<p>rex 단계 게이트는 어떤 provider의 증거가 단계를 진행하도록 허용되기 전에 <code>noul</code> 질문 하나를 던집니다: 이 증거는 검증 가능한 완료를 보여 주는가. 판단은 증거가 보여 주는 것만을 근거로 합니다.</p>
+<p>답은 두 결과 중 하나입니다. hold는 이유를 동반한 <strong>정상적인 결과</strong>이며 충돌이 아닙니다. "이것을 검증하지 못했다"는 운영자에게 필요한 정보이지, 재시도해야 할 오류가 아니기 때문입니다.</p>
+<p>게이트는 host 측, <code>scripts/lib/ctx-agent-core/run.mjs</code>에서 증거 수집 직전 한 지점에 있습니다. rex 하위 모듈은 그 존재를 모릅니다. 이것이 중요한 이유는 두 가지입니다. 하위 시스템이 정책 엔진이 아니라 상태 기계로 남을 수 있고, 게이트를 꺼 두면 이전 동작이 그대로 유지됩니다. 꺼진 경로는 무엇이든 해석하기 전에 advance를 반환하며, 증거 엔벨로프가 없는 출력을 넣어도 게이트가 <code>disabled</code>를 보고한다고 단언하는 테스트가 그 순서를 고정합니다.</p>
+<h3 id="_2">불편한 기본값</h3>
+<p>게이트가 켜져 있는데 벤더에 닿을 수 없다면 — 500, 타임아웃, 백오프를 견딘 429 — 기본값은 <strong>hold</strong>입니다. 진행이 아닙니다.</p>
+<p>이것이 fail closed의 해석이며, 사용자가 의도적으로 게이트를 켰기 때문에 정당합니다. 조용히 "일단 맞다고 가정"으로 퇴화하면 안전 제어를 장식으로 바꿔 놓을 뿐입니다. 다만 이것은 실제 트레이드오프이므로 숨은 상수가 아니라 설정 키로 두었습니다. 벤더 장애를 통과시키고 싶다면 <code>onJudgmentError</code>를 <code>"allow"</code>로 두십시오. 기본값은 <code>"hold"</code>이고, 이유 문자열은 항상 어느 정책이 적용되었는지 밝힙니다.</p>
+<h2 id="_3">도중에 틀렸고 공개적으로 고친 두 가지</h2>
+<p><strong>그 결정적 precheck는 중복이었습니다.</strong> 게이트는 "쓸 수 있는 참조가 없는" 증거에 호출을 쓰지 않습니다. 그런데 나중에 우리 자신의 엔벨로프 파서를 읽어 보니, 파서 자체가 이미 빈 evidence 배열과 빈 refs를 거부하고 있었습니다. 즉 runner 경로에서는 precheck가 결코 발화하지 않습니다. 남겨 두었지만(이미 파싱된 엔벨로프를 직접 넘기는 호출자에게는 결정적입니다) 코드 주석은 이제 그 사실을 말합니다. 실제로 하지 않는 일을 하는 것처럼 보이는 검사는 검사가 없는 것보다 나쁩니다. 다음 읽는 사람을 오도하기 때문입니다.</p>
+<p><strong>새 설정 키가 기존 게이트를 조용히 꺼 버릴 수 있습니다.</strong> <code>onJudgmentError</code>를 필수로 만들면 v5.18.0이 쓴 모든 설정 파일이 검증에 실패합니다. 그리고 검증 실패의 귀결은 <code>disabled</code>입니다. 게이트를 의도적으로 켜 둔 사용자가 업그레이드 때문에, 아무 메시지도 없이 게이트를 닫히게 됩니다. 그래서 이 키는 "선택 사항이며 기본값 있음"으로 두었고, 바로 그 시나리오의 이름을 딴 테스트를 두었습니다.</p>
+<p>둘 다 "이전 릴리스가 쓴 데이터가 이 코드를 만나면 어떻게 되는가"를 물어서 찾았습니다. 이 질문은 들리는 것보다 훨씬 쌉니다.</p>
+<h2 id="_4">여전히 의도적으로 꺼 둔 것</h2>
+<p>설계에 있던 세 번째 트리거 — 모호한 요청을 Jev에게 의도 분류시켜 워크플로로 라우팅하는 것 — 은 여전히 구현하지 않았고, 시간이 없어서가 아닙니다. 저장소 계약은 산문에서 <code>intent</code>를 추론하는 것을 금지합니다. 모델이 스스로 intent 필드를 채운다면 그것이 <strong>바로</strong> 추론입니다. 같은 필드를 추측시키려고 두 번째 모델을 부른다고 해서 그것이 선언이 되지는 않습니다.</p>
+<p>또 하나 열려 있는 문제: 우리가 사용한 자격 증명에 대해 TypeSafe 콘솔은 요청 0건을 보여 줍니다. 벤더 자체의 게이트웨이는 호출마다 서명된 <code>x-typesafe-request-id</code>와 토큰 수를 돌려주었는데도 그렇습니다. 이것은 코드의 문제가 아니라 벤더 측 문제이며, 덮어 두는 대신 기록해 둡니다.</p>
+<h2 id="_5">켜는 방법</h2>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>judgment<span class="w"> </span>status<span class="w">                 </span><span class="c1"># 사용자가 명시하기 전까지 disabled</span>
+aios<span class="w"> </span>judgment<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>typesafe<span class="w">        </span><span class="c1"># ~/.aios/judgment/config.json을 씁니다</span>
+aios<span class="w"> </span>judgment<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>typesafe<span class="w"> </span>--probe<span class="w">   </span><span class="c1"># 그리고 사용자가 요청했으므로 계량 호출을 정확히 한 번</span>
+</code></pre></div>
+<p>그다음 클라이언트를 재시작해 <code>TYPESAFE_API_KEY</code>를 상속시키십시오. <code>aios doctor typesafe</code>는 자격 증명 값을 출력하지 않고 존재 여부와 MCP 라이브 핸드셰이크를 검증합니다.</p></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

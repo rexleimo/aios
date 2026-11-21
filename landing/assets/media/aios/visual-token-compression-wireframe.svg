@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="820" viewBox="0 0 1440 820" role="img" aria-labelledby="title desc">
+  <title id="title">ContextDB token compression wireframe</title>
+  <desc id="desc">A wireframe showing raw session history, compression strategy, and the smaller context packet sent to the next agent run.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"/>
+    </marker>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#111827" flood-opacity="0.10"/>
+    </filter>
+    <style><![CDATA[
+      .bg { fill: #f8fafc; }
+      .panel { fill: #ffffff; stroke: #1f2937; stroke-width: 2.2; filter: url(#soft); }
+      .subpanel { fill: #f3f4f6; stroke: #374151; stroke-width: 1.5; }
+      .ink { fill: #111827; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+      .muted { fill: #6b7280; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+      .title { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; }
+      .h2 { font-size: 21px; font-weight: 800; }
+      .body { font-size: 17px; font-weight: 600; }
+      .small { font-size: 14px; font-weight: 600; }
+      .tiny { font-size: 12px; font-weight: 600; }
+      .line { stroke: #1f2937; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #9ca3af; stroke-width: 2; stroke-dasharray: 8 8; fill: none; }
+      .amber { fill: #f59e0b; }
+      .amber-stroke { stroke: #f59e0b; stroke-width: 3; fill: none; }
+      .green { fill: #10b981; }
+      .red { fill: #ef4444; }
+      .blue { fill: #2563eb; }
+      .chip { fill: #fffbeb; stroke: #f59e0b; stroke-width: 1.7; }
+    ]]></style>
+  </defs>
+
+  <rect class="bg" width="1440" height="820" rx="0"/>
+  <text x="72" y="68" class="ink title">Token Compression: not “less memory”, but “less noise”</text>
+  <text x="74" y="101" class="muted body">ContextDB packs long agent history into a bounded prompt window, while keeping the lines that help the next run continue.</text>
+
+  <rect x="68" y="144" width="360" height="512" rx="24" class="panel"/>
+  <text x="96" y="185" class="ink h2">1. Raw session history</text>
+  <text x="96" y="214" class="muted small">Useful, but too large to paste verbatim.</text>
+
+  <g transform="translate(96 248)">
+    <rect width="276" height="46" rx="10" class="subpanel"/>
+    <circle cx="22" cy="23" r="7" class="blue"/>
+    <text x="42" y="29" class="ink small">user prompt: continue task</text>
+  </g>
+  <g transform="translate(96 306)">
+    <rect width="276" height="46" rx="10" class="subpanel"/>
+    <circle cx="22" cy="23" r="7" class="green"/>
+    <text x="42" y="29" class="ink small">assistant plan + files</text>
+  </g>
+  <g transform="translate(96 364)">
+    <rect width="276" height="72" rx="10" fill="#fee2e2" stroke="#ef4444" stroke-width="1.6"/>
+    <circle cx="22" cy="23" r="7" class="red"/>
+    <text x="42" y="28" class="ink small">error stack trace</text>
+    <text x="42" y="52" class="muted tiny">127 repeated frames...</text>
+  </g>
+  <g transform="translate(96 448)">
+    <rect width="276" height="72" rx="10" fill="#f9fafb" stroke="#9ca3af" stroke-width="1.6"/>
+    <circle cx="22" cy="23" r="7" fill="#9ca3af"/>
+    <text x="42" y="28" class="ink small">tool output / logs</text>
+    <text x="42" y="52" class="muted tiny">same line x 300...</text>
+  </g>
+  <g transform="translate(96 532)">
+    <rect width="276" height="46" rx="10" class="subpanel"/>
+    <circle cx="22" cy="23" r="7" class="amber"/>
+    <text x="42" y="29" class="ink small">next action + checkpoint</text>
+  </g>
+  <rect x="96" y="604" width="192" height="30" rx="15" class="chip"/>
+  <text x="114" y="624" class="ink tiny">rawTokenUsed: high</text>
+
+  <path class="line" d="M 448 400 C 492 400, 504 400, 548 400"/>
+
+  <rect x="552" y="144" width="372" height="512" rx="24" class="panel"/>
+  <text x="580" y="185" class="ink h2">2. Budget-aware selection</text>
+  <text x="580" y="214" class="muted small">Compress first. Drop only when needed.</text>
+
+  <g transform="translate(584 254)">
+    <rect width="304" height="54" rx="12" fill="#ecfdf5" stroke="#10b981" stroke-width="1.8"/>
+    <text x="18" y="24" class="ink small">Protect high signal</text>
+    <text x="18" y="43" class="muted tiny">latest event, errors, files, commands</text>
+  </g>
+  <g transform="translate(584 326)">
+    <rect width="304" height="54" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.8"/>
+    <text x="18" y="24" class="ink small">Compress noisy text</text>
+    <text x="18" y="43" class="muted tiny">repeated logs, long lines, stack runs</text>
+  </g>
+  <g transform="translate(584 398)">
+    <rect width="304" height="54" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+    <text x="18" y="24" class="ink small">Score the rest</text>
+    <text x="18" y="43" class="muted tiny">recency + role + refs + outcome</text>
+  </g>
+  <g transform="translate(584 470)">
+    <rect width="304" height="54" rx="12" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.8"/>
+    <text x="18" y="24" class="ink small">Drop low priority last</text>
+    <text x="18" y="43" class="muted tiny">only after compression misses budget</text>
+  </g>
+
+  <g transform="translate(594 560)">
+    <rect width="90" height="34" rx="17" fill="#111827"/>
+    <text x="18" y="23" fill="#ffffff" class="tiny" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-weight="700">balanced</text>
+    <rect x="104" width="104" height="34" rx="17" fill="#f3f4f6" stroke="#9ca3af"/>
+    <text x="121" y="23" class="muted tiny">aggressive</text>
+    <rect x="222" width="72" height="34" rx="17" fill="#f3f4f6" stroke="#9ca3af"/>
+    <text x="239" y="23" class="muted tiny">legacy</text>
+  </g>
+
+  <path class="line" d="M 944 400 C 988 400, 1000 400, 1044 400"/>
+
+  <rect x="1048" y="144" width="324" height="512" rx="24" class="panel"/>
+  <text x="1076" y="185" class="ink h2">3. Smaller context packet</text>
+  <text x="1076" y="214" class="muted small">The next agent gets recall, not clutter.</text>
+
+  <g transform="translate(1080 254)">
+    <rect width="248" height="48" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.6"/>
+    <text x="18" y="30" class="ink small">keep: next action</text>
+  </g>
+  <g transform="translate(1080 314)">
+    <rect width="248" height="48" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.6"/>
+    <text x="18" y="30" class="ink small">keep: changed files</text>
+  </g>
+  <g transform="translate(1080 374)">
+    <rect width="248" height="66" rx="10" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.6"/>
+    <text x="18" y="28" class="ink small">compressed stack</text>
+    <text x="18" y="50" class="muted tiny">... [121 stack lines omitted]</text>
+  </g>
+  <g transform="translate(1080 452)">
+    <rect width="248" height="48" rx="10" fill="#f9fafb" stroke="#9ca3af" stroke-width="1.6"/>
+    <text x="18" y="30" class="muted small">drop: duplicate logs</text>
+  </g>
+
+  <g transform="translate(1080 542)">
+    <rect width="248" height="76" rx="14" fill="#111827"/>
+    <text x="18" y="28" fill="#ffffff" class="tiny" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-weight="700">Event Window telemetry</text>
+    <text x="18" y="50" fill="#fbbf24" class="tiny" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-weight="700">tokenUsed &lt;= tokenBudget</text>
+  </g>
+
+  <path class="dash" d="M 246 692 H 1196"/>
+  <g transform="translate(96 708)">
+    <rect width="1238" height="56" rx="18" fill="#ffffff" stroke="#1f2937" stroke-width="2"/>
+    <text x="26" y="35" class="ink body">Why it is useful: long sessions stay cheap to resume, while errors, file refs, and next steps still survive the handoff.</text>
+  </g>
+</svg>

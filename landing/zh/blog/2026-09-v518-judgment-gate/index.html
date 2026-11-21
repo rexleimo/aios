@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="zh" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v5.18.0：AIOS 接入 TypeSafe Jev——默认关闭，是刻意的</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">中文</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-09-v518-judgment-gate/" hreflang="en" lang="en">English</a><a class="rex-lang-opt is-active" href="/zh/blog/2026-09-v518-judgment-gate/" hreflang="zh" lang="zh" aria-current="true">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-09-v518-judgment-gate/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/blog/2026-09-v518-judgment-gate/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-09-18</p><h1>v5.18.0：AIOS 接入 TypeSafe Jev——默认关闭，是刻意的</h1>
+    <p class="lede" style="font-size:17px">四步配好 TYPESAFE_API_KEY，看懂为什么装了文档 MCP 也永远不会触发判断，以及为什么新的 aios judgment 闸门在你明确开启之前一直关闭。</p>
+    <div class="meta"><a href="/zh/blog/">← 全部文章</a> · <a href="/zh">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>AIOS v5.18.0 新增了一个 opt-in 的<strong>判定闸门</strong>：让工作流向 TypeSafe 的 System One 模型（Jev）提出一个狭窄的、带类型的问题，并拿回一个带校准的答案。同一批还修掉了一个会静默弄坏整份 Gemini CLI 配置的缺陷，并堵住了一处会把内部键泄漏进客户端技能树的 frontmatter 漏洞。</p>
+<p>这篇是诚实版，包括我们发现"上一个版本根本不可能做到它看起来做到的事"的那一段。</p>
+<h2 id="_1">一句话答案</h2>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>答案</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>凭据怎么配？</td>
+<td>把 <code>TYPESAFE_API_KEY</code> 设进客户端真正运行的环境，然后<strong>重启客户端</strong>。下面四条命令。</td>
+</tr>
+<tr>
+<td>装了 TypeSafe 集成，Jev 就会回答问题了吗？</td>
+<td>不会。它装的是<strong>文档</strong> MCP 服务，只检索文档，产生不了判断。</td>
+</tr>
+<tr>
+<td>装完判定闸门就是开的吗？</td>
+<td>不是。在你跑 <code>aios judgment enable typesafe</code> 之前它一直是关的。</td>
+</tr>
+<tr>
+<td>凭据或开关缺失会怎样？</td>
+<td>什么都不会发出。也不存在"就当作答案已知"的回退路径。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">我们一开始搞错的地方</h2>
+<p>上一个版本我们发了 <code>aios integration add typesafe</code>：按 commit 钉住厂商技能、校验 sha256、在全部客户端注册 <code>typesafe-docs</code>。doctor 报 <code>verified</code>。它看起来已经完成了。</p>
+<p>然后我们去测量已装的东西实际能干什么：</p>
+<table>
+<thead>
+<tr>
+<th>部件</th>
+<th>它能干什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>typesafe-docs</code> MCP</td>
+<td>4 个工具：<code>search_type_safe_ai</code>、<code>query_docs_filesystem_type_safe_ai</code>、<code>submit_feedback</code>、<code>read_typesafe</code>。<strong>全是文档检索，没有任何推理工具。</strong></td>
+</tr>
+<tr>
+<td>内置的 <code>typesafe-ai</code> 技能</td>
+<td>它就是 TypeSafe 官方技能。<code>grep -c 'TYPESAFE_API_KEY\|POST\|curl\|systemone'</code> → <strong>0</strong>。它讲概念、指向线上文档。</td>
+</tr>
+<tr>
+<td>AIOS 运行期</td>
+<td>零个调用点。</td>
+</tr>
+</tbody>
+</table>
+<p>也就是说，上一个版本装的是 Jev 的<strong>地图</strong>，从没碰过 Jev 本身。这不是安装器的 bug——计划文档里明确写了"任何带凭据的 TypeSafe API 调用"不在范围内。这是叙事上的缺口，而这个版本把它补上了。</p>
+<p>这个教训可以推广：<strong>"集成装好了"和"这个能力能用"是两个不同的断言。</strong> 只有第二个值得放进 doctor 检查。</p>
+<h2 id="_3">配置凭据</h2>
+<p><code>TYPESAFE_API_KEY</code> 是这里唯一涉及的凭据。AIOS 只检查它<strong>是否存在</strong>——从不读取、打印或存储它的值。你要把它设进编码客户端真正运行的那个环境里。</p>
+<p>最常见的失败原因是作用域：在某个终端里 <code>export</code> 的变量，或写在另一个账号 <em>User</em> 作用域里的变量，对已经在运行的客户端是不可见的。</p>
+<p><strong>Windows —— 对你的账号持久生效：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="no">[Environment]</span><span class="p">::</span><span class="n">SetEnvironmentVariable</span><span class="p">(</span><span class="s1">&#39;TYPESAFE_API_KEY&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;你的密钥&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;User&#39;</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Windows —— 对全部账号生效（需要管理员终端）：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="no">[Environment]</span><span class="p">::</span><span class="n">SetEnvironmentVariable</span><span class="p">(</span><span class="s1">&#39;TYPESAFE_API_KEY&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;你的密钥&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;Machine&#39;</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>macOS / Linux：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">TYPESAFE_API_KEY</span><span class="o">=</span><span class="s2">&quot;&lt;你的密钥&gt;&quot;</span><span class="w">                                </span><span class="c1"># 仅当前 shell</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export TYPESAFE_API_KEY=&quot;&lt;你的密钥&gt;&quot;&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc<span class="w">            </span><span class="c1"># 持久化</span>
+</code></pre></div>
+<p>然后<strong>重启你的编码客户端</strong>。环境变量只在进程启动时读一次。已经打开的客户端永远看不到你之后设置的值——而这正是"集成明明装对了，却一直报没有凭据"的第一大原因。</p>
+<p>查看客户端将看到什么：</p>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>integration<span class="w"> </span>doctor<span class="w"> </span>typesafe
+</code></pre></div>
+<p>凭据那一行只报告 <code>present</code> 或 <code>unset</code>，不会显示值。</p>
+<h2 id="_4">打开闸门</h2>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>judgment<span class="w"> </span>status<span class="w">                    </span><span class="c1"># 在你表态之前一直是 disabled</span>
+aios<span class="w"> </span>judgment<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>typesafe<span class="w">           </span><span class="c1"># 写入 ~/.aios/judgment/config.json</span>
+aios<span class="w"> </span>judgment<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>typesafe<span class="w"> </span>--probe<span class="w">   </span><span class="c1"># ……并只发一次计量调用</span>
+</code></pre></div>
+<p>在任何一个字节离开你的机器之前，三个条件必须同时成立：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>条件</th>
+<th>默认</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>进程环境中存在 <code>TYPESAFE_API_KEY</code></td>
+<td>未设置</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>~/.aios/judgment/config.json</code> 中 <code>enabled: true</code></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>会话调用数与输入长度预算未超</td>
+<td>20 次、20000 字符</td>
+</tr>
+</tbody>
+</table>
+<p>任一条件不成立，这个调用面就不存在。不会发出请求，也不存在"回退成当作答案是肯定的"代码路径。<code>--probe</code> 是 AIOS 里唯一会在你不直接使用 <code>ask</code> 的情况下花钱的东西，而且它只因为你亲手敲了它才运行。</p>
+<h2 id="_5">判断是提案，不是事实</h2>
+<p>这是最要紧的设计决定。Jev 没有权限写任何东西。每个结果都带着它的模型、<code>x-typesafe-request-id</code>、token 用量和置信度——而运行时被允许做的唯一一件事，就是拿它去和你配置的阈值比较。</p>
+<table>
+<thead>
+<tr>
+<th>裁决</th>
+<th>条件</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>act</code></td>
+<td>置信度 ≥ <code>actFloor</code></td>
+<td>不必询问，可以推进</td>
+</tr>
+<tr>
+<td><code>confirm</code></td>
+<td>落在两个门槛之间</td>
+<td>先问人</td>
+</tr>
+<tr>
+<td><code>abort</code></td>
+<td>低于 <code>confirmFloor</code></td>
+<td>不要动手</td>
+</tr>
+</tbody>
+</table>
+<p>两条规则防止它变成一个权威：</p>
+<ul>
+<li><strong>风险只会抬高门槛。</strong> 破坏性改动需要比只读动作更高的置信度。不存在任何一条路径能让一个判定让 AIOS 去做本该被闸门拒绝的事。</li>
+<li><strong><code>Noul</code> 按设计不携带置信度。</strong> API 本来就不返回它，所以闸门直接使用概率本身并如实说明，而不是造一个看起来像置信度的数字。</li>
+</ul>
+<p>形状先于取值被校验。如果某个 <code>choice</code> 答案给出了从未声明过的选项，或者答案的 <code>type</code> 与发出的问题不匹配，那就是错误——绝不会被强转成一个能用的值。</p>
+<h2 id="_6">同批还修了什么</h2>
+<ul>
+<li><strong>Gemini CLI 配置修复。</strong> AIOS 曾把 <code>startupTimeoutSec</code>（秒）写进 <code>~/.gemini/settings.json</code>。Gemini 对 MCP server 条目做严格模式校验，而它真正接受的字段是 <code>timeout</code>，单位是<strong>毫秒</strong>——所以一个错误的键会静默让<strong>整份</strong>配置失效，Gemini 直接拒绝启动。现在有了带显式字段白名单的归一化器（沿用既有的 ZCode 路径），并就地迁移了两份已经被写坏的配置，附带备份。</li>
+<li><strong>CRLF 文件上的 frontmatter 泄漏。</strong> <code>parseFrontmatter</code> 用 <code>lines[0] !== '---'</code> 判断文件有没有 frontmatter。在 CRLF 文件里那一行是 <code>'---\r'</code>，判定失败，解析器原样返回，于是 AIOS 的内部键（<code>clients</code>、<code>scopes</code>、<code>repoTargets</code>……）直接漏进了客户端技能树——恰好是文档承诺绝不会发生的事。解析器现在在入口处归一化行尾并恒定输出 LF。AIOS 自己的哈希校验一直没报警，因为它在计算哈希<strong>之前</strong>就归一化了行尾。</li>
+<li><strong>诚实的客户端覆盖行。</strong> Gemini 现在是已验证的 <code>cli</code> transport。ZCode 被查明是没有 <code>PATH</code> CLI 的 Electron 客户端——AIOS 把 stdio server 写进 <code>~/.zcode/cli/config.json</code> 的 <code>mcp.servers</code>，ZCode 从那里读取；但它的 HTTP 条目还需要一个 AIOS 目前不写入的 <code>url</code> 字段，所以那部分仍是人工步骤。文档不再暗示相反的说法。</li>
+<li><strong>两处与版本绑定的站点门禁。</strong> <code>check:site-sync</code> 要求每个语言都有一篇发布博客。在本次发版之前，它是失败的。</li>
+</ul>
+<h2 id="_7">证据</h2>
+<p>闸门是对着真实端点端到端验证的，不是 mock：</p>
+<div class="highlight"><pre><span></span><code>POST https://api.typesafe.ai/v1/systemone
+date: Fri, 18 Sep 2026 11:54:33 GMT
+HTTP/1.1 200 OK
+x-typesafe-request-id: req_01a0b45e4b9d76d6b5346020c5df7aa9
+{&quot;model&quot;:&quot;jev-1.13.0&quot;,
+ &quot;answers&quot;:{&quot;severity&quot;:{&quot;type&quot;:&quot;score&quot;,&quot;score&quot;:2.94,&quot;confidence&quot;:0.94,
+            &quot;probabilities&quot;:{&quot;0&quot;:0.0,&quot;1&quot;:0.01,&quot;2&quot;:0.05,&quot;3&quot;:0.94}}},
+ &quot;usage&quot;:{&quot;input_tokens&quot;:325,&quot;output_tokens&quot;:17}}
+</code></pre></div>
+<p><code>x-typesafe-request-id</code> 由服务器签发，响应还带着 <code>istio-envoy</code> 的上游耗时头——这个请求确实穿过了 TypeSafe 的网关并被计量。</p>
+<p>关闭态同样被验证了：在没有配置、没有开启开关的情况下，测试套件断言传输层从未被调用。那是我们最在意的性质，所以它被断言，而不是被描述。</p>
+<h2 id="_8">我们还回答不了的那部分</h2>
+<p>我们的 TypeSafe 控制台对这把凭据显示<strong>零请求</strong>，尽管每一次调用我们都有服务器签发的 request-id。没有可查询的用量 API（<code>/v1/me</code>、<code>/v1/account</code>、<code>/v1/usage</code> 全是 404），而 <code>Spend $0.00</code> 什么都证明不了：325 输入 token 按 $0.042/MTok 算是 $0.0000137。</p>
+<p>最可能的解释是这把 key 属于另一个组织，而不是我们正在看的那个控制台。我们把这一点公开，而不是藏起来，因为"看板显示为零"恰好是那种会被忽略到出事为止的信号。如果你正在把计量型厂商接进自己的工作流：<strong>每一次调用都记下厂商自己的 request id</strong>——那是唯一能在账单争议中活下来的证据。</p>
+<h2 id="_9">升级</h2>
+<div class="highlight"><pre><span></span><code>aios<span class="w"> </span>update
+aios<span class="w"> </span>judgment<span class="w"> </span>status
+</code></pre></div>
+<p>升级之后闸门依然是关的。这正是重点。</p>
+<h2 id="_10">延伸阅读</h2>
+<p>完整参考随文档发布，提供英文、中文、日文、韩文四种语言：</p>
+<ul>
+<li><code>docs-site/integrations.md</code> —— 凭据配置、逐客户端覆盖情况，以及判定闸门参考。</li>
+<li><code>docs-site/workflow-policy.md</code> —— AIOS 如何在 direct / guarded / planned 之间决策。</li>
+</ul></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

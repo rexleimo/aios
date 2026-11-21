@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ko" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v6.5.0: OpenCode 2.x 플러그인 계약, 그리고 AIOS의 위치를 거짓으로 적지 않게 된 설정</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">한국어</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/2026-10-v650-opencode2-contract-config-stops-lying/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/blog/2026-10-v650-opencode2-contract-config-stops-lying/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/blog/2026-10-v650-opencode2-contract-config-stops-lying/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt is-active" href="/ko/blog/2026-10-v650-opencode2-contract-config-stops-lying/" hreflang="ko" lang="ko" aria-current="true">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-10-17</p><h1>v6.5.0: OpenCode 2.x 플러그인 계약, 그리고 AIOS의 위치를 거짓으로 적지 않게 된 설정</h1>
+    <p class="lede" style="font-size:17px">v6.5.0이 고치는 것은 명령줄에 오류를 남기지 않는 고장 유형: 클라이언트는 돌아가지만 통합은 이미 죽어 있다. OpenCode 2.x는 default export만 읽고 { id, effect | setup }을 요구하는데 AIOS는 1.x식 named export를 생성했다——플러그인은 WARN 한 줄만 남긴 채 로드되지 않고, CRG 그래프 갱신과 RTK 명령 재작성이 조용히 멈췄다. 같은 릴리스로 다른 오염 경로도 막았다: 임시 디렉터리를 root로 </p>
+    <div class="meta"><a href="/ko/blog/">← 全部文章</a> · <a href="/ko">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<blockquote>
+<p><strong>요약:</strong> 두 가지 고장, 하나의 형태.<strong>시스템은 계속 돌아가지만 통합은 이미 죽어 있다.</strong> OpenCode 2.x 로더는 모듈의 <code>default</code> export만 읽어 <code>{ id, effect | setup }</code>을 검증하고, named export는 아예 보지 않는다. AIOS가 만들어 온 것은 1.x식 named export였으므로 <code>crg-plugin.ts</code>는 WARN 한 줄만 남고 로드되지 않았다——아무 후크도 발화하지 않는다. 나머지 하나는, 임시 디렉터리를 root로 하는 호출이 그 절대 경로를 장기 클라이언트 MCP 설정에 써 넣고, OS가 디렉터리를 회수한 뒤에도 설정은 남아 클라이언트가 「설치된 채 영구히 접속 불가」가 되는 경로였다. 쓰기 주체는 <strong>테스트 스위트</strong>였다. 이제 AIOS 플러그인은 1.x/2.x <strong>dual export</strong>로 나와 설치 시 기존 파일을 자기 복구하고, <code>aios interception mcp-repair</code>는 이탈한 항목을 안정 runtime root로 되돌리며, 쓰기 경계에는 volatile-root 가드가 걸리고, 두 doctor는 어느 파일이고누구의 물건인지 실명으로 보고한다.</p>
+</blockquote>
+<h2 id="2x-export-1x">플러그인 계약: 2.x는 하나의 export, 1.x는 다른 하나</h2>
+<p>현장 증거는 분명했다.</p>
+<div class="highlight"><pre><span></span><code>PluginModule.LoadError: Effect.SchemaError: Expected object at [&quot;default&quot;]
+PluginModule.LoadError: Effect.SchemaError: Missing key at [&quot;default&quot;]
+</code></pre></div>
+<p>OpenCode 2.x는 <code>default</code>만 읽어 <code>{ id, effect | client | setup }</code>으로 검증하고 named export는 읽지 않는다. 1.x는 정반대로 named export를 훑어 각 <code>(ctx) =&gt; Hooks</code>를 채택한다. 그래서 1.x 플러그인은 2.x에서 오류도 없이 무효화되고, 아무도 보지 않는 로그에 WARN만 남는다. 멈춘 것은 CRG 그래프 갱신과 RTK 명령 재작성——문제의 핵심이 그것이다.</p>
+<p>수정은 <strong>dual export</strong>. 이미 설치한 사용자층이 한 버전이 아니기 때문이다.</p>
+<div class="highlight"><pre><span></span><code><span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">CodeReviewGraphPlugin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">ctx</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* 1.x named export 유지 */</span><span class="w"> </span><span class="p">};</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nx">aiOSMemoryPlugin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">({});</span>
+<span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">id</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;code-review-graph&#39;</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">setup</span><span class="o">:</span><span class="w"> </span><span class="kt">CodeReviewGraphPlugin</span><span class="p">,</span><span class="w">   </span><span class="c1">// 2.x는 여기를 읽는다. setup은 구버전 형태 어댑터</span>
+<span class="p">};</span>
+</code></pre></div>
+<p>한 파일로 두 로더를 통과한다. <code>ensureOpencodePlugin</code>은 쓰기 전에 기존 파일 형태를 판정하고, 계약에 못 미치면 <code>.bak-*</code>를 남기고 다시 쓴다. 기존 사용자는 <code>aios init</code> / <code>codemap install</code>만 다시 돌리면 자기 복구되고, 이상을 스스로 발견할 필요가 없다.</p>
+<p>두 개의 경계를 지켰다. <code>plugin-contract.mjs</code>가 「이 플러그인이 로드되는가」의 단일 판정원이 되었고, verdict은 2.x의 실제 실패 형태(<code>missing-default</code> / <code>default-not-object</code> / <code>default-missing-id</code> / <code>default-missing-handler</code>)와 1:1로 대응한다. 모호한 「실패」가 아니다. 그리고 서드파티 파일은 <strong>보고만 하고 고치지 않는다</strong>: <code>rtk.ts</code>는 <code>missing-default / owned=false</code>로 판정되어 1바이트도 건드리지 않고, 보고에 upstream 수정법이 나온다. v2 네이티브 <code>effect</code> API(Effect runtime, capability ctx, disposal scope)로의 migration은 별개 결정이고, 이 릴리스에 <strong>포함하지 않는다</strong>.</p>
+<p>이 릴리스가 정직하게 말할 수 있는 것은 <strong>로드 호환</strong>까지다: dual export probe가 v2.0.32에서 WARN 없이 로드된다. 말할 수 없는 것은 실제 2.x 세션에서 <code>tool.execute.before/after</code>가 발화하는가——이번 주기의 probe는 모두 모델 계층에서 실패해 tool_call이 한 번도 생성되지 않았으므로, 동작 호환은 명시적으로 미클로지로 남긴다.</p>
+<h2 id="tmp">오염 경로: <code>/tmp</code>에서 돈 한 번이 홈 설정을 영구히 손상한다</h2>
+<p>같은 병의 다른 장기. <code>migrateBrowserMcpConfig</code>는 <code>clientHomes</code>가 주입되지 않으면 <strong>실제 홈</strong>으로 fallback하는데, 설정에 쓰는 절대 경로는 호출자의 <code>rootDir</code>에서 온다. 임시 디렉터리에서 한 번 돌리면 <code>/private/tmp/xxx/mcp-server/dist/index.js</code>가 <code>~/.config/opencode/opencode.json</code>에 들어간다. 디렉터리는 회수되지만 설정은 남고——그 MCP server는 다시 기동하지 않는다.</p>
+<p>불편한 것은 주체: <strong>테스트 스위트</strong>였다. <code>mkdtemp</code>로 작업 복사본을 만들어 실제 migration 함수를 부르는 테스트 하나로 충분했다. macOS에서는 <code>/var/folders/…</code>, Linux에서는 <code>/tmp/…</code>, 같은 실패 형태로 CI도 그대로 맞았다.</p>
+<p>가드는 각 호출자가 아니라 <strong>쓰기 경계</strong>에 앉는다.</p>
+<ul>
+<li>source root가 volatile 아래면 영속 대상은 전부 거부하고 구조화된 <code>skipped: [{ reason: 'volatile-root' }]</code>를 반환한다;</li>
+<li>sandbox→sandbox는 통과시킨다. 그렇지 않으면 테스트가 자기 sandbox를 검증할 수 없다;</li>
+<li>같은 가드를 <strong>두 번째 쓰기 주체</strong> <code>syncCodexHomeConfig</code>에도 걸었다——<code>~/.codex/config.toml</code>의 관리 블록(trust 항목과 <code>aios-memory</code>)은 이쪽이 쓴다. migration만 지키면 그 파일의 stale 경로 5개가 수리되지 않고 남았고, 그렇게 발견했다.</li>
+</ul>
+<p><code>switchBrowserMcpMode</code>에 <code>clientHomes</code> seam을 추가하고, 새던 테스트는 sandbox를 명시 passing 한다. 가드는 이중 안전장치이지, 테스트 실행과 당신 홈 사이를 막는 유일한 것이 아니다.</p>
+<h2 id="mcp-repair"><code>mcp-repair</code>, 그리고 먼저 고쳐야 했던 테스트</h2>
+<p><code>aios interception mcp-repair [--client &lt;name&gt;] [--fix] [--json]</code>는 회수된 경로로 이탈한 AIOS 관리 MCP 항목을 안정 runtime root로 되돌린다. 기본은 preview, <code>--fix</code>부터 쓰기, 파일별 <code>.bak-*</code>, 실제로 stale을 포함한 파일만 건드리고, 사용자 소유 항목은 그대로 두며, 존재하지 않는 파일을 가리키는 <code>plugin[]</code> 항목은 <strong>보고만 하고 만들지 않는다</strong>.</p>
+<p>테스트를 쓰는 동안 CLI의 결함이 드러났다. 기본값은 이제 <code>dryRun = !options.fix</code>다. 그런데 「sandbox화된 <code>/tmp</code> scan root」가 <strong>기본 scan root</strong>를 겸하고 있으면, 「가짜 stale 설정을 짜서 넣고 <code>--fix</code> 없이 CLI를 돌리는」 테스트는 <strong>실제 홈에 대한 실제 쓰기</strong>를 얻는다——harness가 미주입 시 <code>process.env</code>에서 클라이언트 홈을 해석하기 때문. 첫 버전 assertion이 바로 이걸 하고 있었다. 수정은 <code>clientHomes</code>를 sandbox env에서 scan 계층까지 관통시켜 「미주입 = 실제 홈을 건드리지 않는다」를 진짜로 만들고, CLI 테스트를 증거로 삼았다.</p>
+<p>작은 결정 두 개. 안정 root 해석 순서는 고정——non-volatile한 호출자 <code>rootDir</code> → <code>AIOS_ROOT_DIR</code> / <code>AIOS_ROOT</code> / <code>ROOTPATH</code> / <code>AIOS_INSTALL_DIR</code> → <code>null</code>——그리고 <code>null</code>이면 <code>cwd</code>로 fallback하지 않고 <strong>수리를 거부</strong>한다. 여기서 추측하면 설정을 새 구덩이에 쓰는 일이다. 그리고 같은 파일에 쓰기 경로가 두 개다(<code>[mcp_servers.*]</code>는 migration, codex 관리 블록은 emitter). 하나만 돌면 누락 수리가 나므로 둘 다 돈다.</p>
+<h2 id="doctor">두 doctor가 파일을 호명한다</h2>
+<p><code>aios internal codemap doctor</code>는 홈 안 플러그인을 2.x 계약으로 하나씩 판정하고, 없는 파일을 가리키는 <code>plugin[]</code> 항목을 보고한다.</p>
+<div class="highlight"><pre><span></span><code>OK   opencode plugin contract ok: crg-plugin.ts
+WARN opencode plugin not loadable by 2.x (missing-default): ~/.config/opencode/plugins/rtk.ts - third-party, AIOS will not rewrite it
+</code></pre></div>
+<p><code>aios interception doctor</code>에는 경로 위생 구간이 늘었다: stale MCP 경로, 탐지된 OpenCode major, 플러그인 verdict과 항목별 처방. 두 개 모두 <strong>읽기 전용</strong>——진단이 플러그인을 다시 쓰는 일은 없다. AIOS 소유 항목은 자기 복구되는 동작(<code>aios init</code> / <code>codemap install</code> 재실행)을 가리키고, 서드파티는 upstream 수정법이나 1.x pinning을 제시한다.</p>
+<h2 id="_1">뒷정리, 그리고 배선은 필수인 테스트</h2>
+<p>repo root의 <code>opencode.json</code>은 git 추적에서 빠졌다(<code>git rm --cached</code> + ignore). <code>aios init</code> 때 기계별로 만들어지는 projection 산물이고, 커밋하면 한 기계의 절대 경로를everyone에게 뿌리는 일——이 릴리스가 다른 곳에서 고치는 바로 그 형태다.</p>
+<p>새 테스트 파일은 <code>scripts/test-suites.json</code> 배선이 필수이다. 배선 없으면 조용히 도달 불가가 되고, W2/W3/W5 가드가 첫 full regression에서 세 개를 빨갛게 만들며 즉시 증명했다.</p>
+<h2 id="_2">업그레이드 노트</h2>
+<ul>
+<li>업데이트 후 <code>aios init</code>(또는 <code>aios internal codemap install</code>) 재실행——2.x가 읽지 못했던 OpenCode 플러그인 파일이 <code>.bak-*</code>를 남기고 자기 복구된다.</li>
+<li>먼저 <code>aios interception mcp-repair</code>로 preview, 확인 후 <code>--fix</code>. 변경된 파일 옆에 backup이 남고, 당신이 추가한 항목은 무결하다.</li>
+<li>임시 checkout에서 <code>aios doctor --fix</code>를 돌려도 홈을 오염시키지 않는다. 이미 설정에 무효 경로가 들어 있다면 위 명령이 처방이다.</li>
+<li>서드파티 플러그인은 절대 다시 쓰지 않는다. <code>rtk.ts</code> 등이 WARN을 내면 doctor가 소유자와 수정법을 출력한다.</li>
+<li>이번 배치에 포함하지 않음: v2 네이티브 <code>effect</code> API migration. OpenCode 자체의 cold-start 경쟁(<code>Location plugins did not finish activating</code>)과 <code>opencode.db</code> 팽창은 upstream/호스트 운영 과제라 손대지 않았다.</li>
+</ul></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

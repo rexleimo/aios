@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+<title id="title">aios TUI Setup 和 Doctor 示意图</title><desc id="desc">展示 TUI 中先运行 Setup，再运行 Doctor。</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8fbff"/><stop offset="1" stop-color="#eaf4ff"/></linearGradient>
+  <linearGradient id="ink" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1a73e8"/><stop offset="1" stop-color="#00a884"/></linearGradient>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#174ea6" flood-opacity="0.14"/></filter>
+  <style>
+    .title{font:700 30px 'Google Sans','Segoe UI',Arial,sans-serif;fill:#172033}.subtitle{font:500 16px 'Google Sans Text','Segoe UI',Arial,sans-serif;fill:#5f6b7a}.label{font:700 17px 'Google Sans','Segoe UI',Arial,sans-serif;fill:#1f2937}.small{font:500 13px 'Roboto Mono','SFMono-Regular',monospace;fill:#536271}.tiny{font:600 12px 'Google Sans Text','Segoe UI',Arial,sans-serif;fill:#657285}.card{fill:#fff;stroke:#d7e3f3;stroke-width:1.2;filter:url(#shadow)}.terminal{fill:#101820}.termText{font:500 13px 'Roboto Mono','SFMono-Regular',monospace;fill:#dce7f7}.green{fill:#16a34a}.blue{fill:#1a73e8}.amber{fill:#f59e0b}.red{fill:#ef4444}.muted{fill:#edf4fb;stroke:#d7e3f3;stroke-width:1}.line{stroke:#9ab5d5;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}.arrow{marker-end:url(#arrow)}
+  </style>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6c8fb8"/></marker>
+</defs>
+<rect width="1200" height="680" rx="34" fill="url(#bg)"/>
+<text x="70" y="78" class="title">打开 TUI 后先点哪里？</text>
+<text x="70" y="108" class="subtitle">这是示意图：先 Setup 安装组件，再 Doctor 检查关键错误。</text>
+<rect x="130" y="155" width="760" height="410" rx="24" class="terminal" filter="url(#shadow)"/>
+<rect x="130" y="155" width="760" height="42" rx="24" fill="#17212f"/><circle cx="163" cy="177" r="6" fill="#ff5f56"/><circle cx="184" cy="177" r="6" fill="#ffbd2e"/><circle cx="205" cy="177" r="6" fill="#27c93f"/><text x="235" y="183" class="termText">AIOS / aios</text>
+<text x="176" y="250" class="termText" font-size="22">╔══════════════════════════════════════╗</text><text x="176" y="282" class="termText" font-size="22">║           Hello, Rex CLI!            ║</text><text x="176" y="314" class="termText" font-size="22">╚══════════════════════════════════════╝</text>
+<rect x="185" y="350" width="220" height="54" rx="14" fill="#1a73e8"/><text x="236" y="384" class="termText" font-size="18">Setup</text><rect x="185" y="420" width="220" height="54" rx="14" fill="#1f2937" stroke="#3f5168"/><text x="236" y="454" class="termText" font-size="18">Doctor</text><rect x="185" y="490" width="220" height="38" rx="10" fill="#1f2937" stroke="#3f5168"/><text x="242" y="515" class="termText">Update</text>
+<rect x="475" y="350" width="350" height="178" rx="16" fill="#111827" stroke="#324154"/><text x="505" y="386" class="termText">Status</text><text x="505" y="424" class="termText">✓ Node 24 ready</text><text x="505" y="456" class="termText">✓ Skills installed</text><text x="505" y="488" class="termText">✓ Native docs synced</text>
+<g transform="translate(840,265)"><circle cx="36" cy="36" r="26" fill="#ef4444"/><text x="29" y="45" fill="white" font-family="Arial" font-weight="700" font-size="26">1</text><path d="M16 72 C-50 96 -125 110 -220 105" stroke="#ef4444" stroke-width="5" fill="none" marker-end="url(#arrow)"/><rect x="70" y="14" width="245" height="64" rx="14" fill="#fff" stroke="#fecaca"/><text x="92" y="40" class="label">先运行 Setup</text><text x="92" y="62" class="tiny">安装 shell、skills、browser 等组件</text></g>
+<g transform="translate(850,445)"><circle cx="36" cy="36" r="26" fill="#16a34a"/><text x="29" y="45" fill="white" font-family="Arial" font-weight="700" font-size="26">2</text><path d="M16 22 C-40 -8 -130 -12 -222 0" stroke="#16a34a" stroke-width="5" fill="none" marker-end="url(#arrow)"/><rect x="70" y="14" width="250" height="72" rx="14" fill="#fff" stroke="#bbf7d0"/><text x="92" y="40" class="label">再运行 Doctor</text><text x="92" y="62" class="tiny">关键错误为 0 后再开始使用</text></g>
+</svg>

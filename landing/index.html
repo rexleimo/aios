@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIOS — 本地优先的 Graph Engine，让编码 Agent 真正把活干完</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="#how">工作原理</a>
+    <a class="hide" href="#memory">项目记忆</a>
+    <a class="hide" href="#workflow">工作流</a>
+    <a class="hide" href="#guarded">接入矩阵</a>
+    <a class="hide" href="#team">能力配置</a>
+    <a href="#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  <details class="rex-lang-switcher" aria-label="Select language">
+    <summary class="rex-lang-switcher__summary">English</summary>
+    <div class="rex-lang-menu">
+      <a href="/" hreflang="en" lang="en" aria-current="true" class="is-active">English</a>
+      <a href="/zh/docs/" hreflang="zh" lang="zh">中文</a>
+      <a href="/ja/docs/" hreflang="ja" lang="ja">日本語</a>
+      <a href="/ko/docs/" hreflang="ko" lang="ko">한국어</a>
+    </div>
+  </details>
+  <button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+  <header class="hero">
+    <div>
+      <h1>让每个 Agent，<span>把任务真正做完。</span></h1>
+      <p class="lede">AIOS 是本地优先的 Graph Engine。打开控制台，每个客户端用哪个模型、最近请求走到了哪、配置默认是什么——一屏看清。不用改你的工作方式。</p>
+      <div class="chips">
+        <span class="chip"><img src="/assets/media/icons/codex-color.svg" alt=""><b>Codex</b><i>→</i>项目记忆</span>
+        <span class="chip"><img src="/assets/media/icons/claudecode-color.svg" alt=""><b>Claude Code</b><i>→</i>工作流策略</span>
+        <span class="chip"><img src="/assets/media/icons/geminicli-color.svg" alt=""><b>Gemini CLI</b><i>→</i>验证证据</span>
+      </div>
+      <div class="cta">
+        <a class="btn dl" href="#cli">
+          <svg class="os-mac" viewBox="0 0 16 16" fill="currentColor"><path d="M11.2 8.5c0-1.6 1.3-2.4 1.4-2.4-.8-1.1-2-1.3-2.4-1.3-1-.1-2 .6-2.5.6s-1.3-.6-2.2-.6C4.4 4.8 3.3 5.5 2.7 6.6c-1.2 2.1-.3 5.2.9 6.9.6.8 1.2 1.7 2.1 1.7.8 0 1.2-.5 2.2-.5s1.3.5 2.2.5 1.5-.9 2-1.7c.6-.9.9-1.8.9-1.9 0 0-1.8-.7-1.8-3.1ZM9.6 3.6c.5-.6.8-1.3.7-2.1-.7 0-1.5.5-2 1-.4.5-.8 1.3-.7 2.1.8.1 1.5-.4 2-1Z"></path></svg>
+          <svg class="os-windows" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.3 6.7 1.5v5.6H1V2.3Zm6.4-.9L15 .3v6.8H7.4V1.4ZM1 7.9h5.7v5.6L1 12.7V7.9Zm6.4 0H15v6.8l-7.6-1.1V7.9Z"></path></svg>
+          <svg class="os-linux" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8.5M4.5 7 8 10.5 11.5 7M2.5 13.5h11"></path></svg>
+          <span class="dl-label">快速安装</span>
+        </a>
+        <a class="btn ghost" href="/docs/getting-started/">查看文档</a>
+      </div>
+      <div class="meta"><span class="ver">版本 8.0.0</span> · <a href="https://github.com/rexleimo/aios">MIT 开源</a> · <span class="os-note">支持 10 种编码客户端</span> · <a href="#get">macOS · Windows · Linux</a></div>
+    </div>
+    <div class="shot">
+      <img loading="eager" class="pick for-light" src="/assets/media/aios/live-home.png" width="1440" height="900" alt="AIOS 控制台首页：客户端与模型、最近请求与配置默认">
+      <img loading="eager" class="pick for-dark" src="/assets/media/aios/live-home.png" width="1440" height="900" alt="AIOS 控制台首页：客户端与模型、最近请求与配置默认">
+    </div>
+  </header>
+
+  <aside class="sponsor" aria-label="核心能力">
+    <p>核心能力</p>
+    <div class="cards">
+      <div class="card"><span class="cap-glyph"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="19" width="30" height="21" rx="4"></rect><path d="M15 19v-5a9 9 0 0 1 18 0v5"></path><circle cx="24" cy="29" r="2.4"></circle></svg></span><hr><span>本地优先：记忆、日志与验证证据全部留在你的机器上。</span></div>
+      <div class="card"><span class="cap-glyph"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9a5 5 0 0 0-5 5v4a5 5 0 0 0 0 10v4a5 5 0 0 0 5 5"></path><path d="M28 9a5 5 0 0 1 5 5v4a5 5 0 0 1 0 10v4a5 5 0 0 1-5 5"></path><path d="M24 9v30"></path></svg></span><hr><span>跨会话记忆：ContextDB 记住决策、约束与进度。</span></div>
+      <div class="card"><span class="cap-glyph"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><circle cx="36" cy="24" r="4"></circle><circle cx="12" cy="36" r="4"></circle><path d="M16 12h9a5 5 0 0 1 5 5v3M16 36h9a5 5 0 0 0 5-5v-3"></path></svg></span><hr><span>自适应工作流：直接、守护、计划，按任务风险选路径。</span></div>
+      <div class="card"><span class="cap-glyph"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="13" r="5"></circle><circle cx="11" cy="33" r="5"></circle><circle cx="37" cy="33" r="5"></circle><path d="M24 18v7M24 25 13 30M24 25l11 5"></path></svg></span><hr><span>多智能体：把任务图交给 Planner、Builder、Reviewer。</span></div>
+      <div class="card"><span class="cap-glyph"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6 38 11v11c0 9-6 15-14 19-8-4-14-10-14-19V11L24 6Z"></path><path d="m18 24 4 4 8-9"></path></svg></span><hr><span>交付前验证：构建、类型、测试、密钥扫描自动跑一遍。</span></div>
+      <div class="card"><span class="cap-glyph"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10h24v28H12z"></path><path d="M18 17h12M18 24h12M18 31h7"></path><path d="m30 36 3 3 6-8"></path></svg></span><hr><span>上下文压缩：长输出存成本地引用，摘要留在上下文，需要时再召回。</span></div>
+    </div>
+    <br><a class="more" href="/docs/architecture/">了解架构 →</a>
+  </aside>
+
+  <div class="agents">
+    <p>支持的编码客户端</p>
+    <ul>
+      <li><img src="/assets/media/icons/codex-color.svg" alt="">Codex</li>
+      <li><img src="/assets/media/icons/claudecode-color.svg" alt="">Claude Code</li>
+      <li><img src="/assets/media/icons/geminicli-color.svg" alt="">Gemini CLI</li>
+      <li><img class="bird" src="/assets/media/icons/opencode.svg" alt="">OpenCode</li>
+      <li><span class="client-mark">HE</span>Hermes</li>
+      <li><img class="bird" src="/assets/media/icons/xai.svg" alt="">Grok Build</li>
+      <li><img class="bird" src="/assets/media/icons/pi.svg" alt="">Pi</li>
+      <li><img src="/assets/media/icons/zcode.png" alt="">ZCode</li>
+      <li><span class="client-mark">WB</span>WorkBuddy</li>
+      <li><span class="client-mark">QO</span>Qoder</li>
+    </ul>
+    <p style="margin-top:34px">内置能力</p>
+    <ul>
+      <li><img class="bird" src="/assets/media/aios/mark.png" alt="">项目记忆</li>
+      <li><img class="bird" src="/assets/media/aios/mark.png" alt="">自适应路由</li>
+      <li><img class="bird" src="/assets/media/aios/mark.png" alt="">多智能体团队</li>
+      <li><img class="bird" src="/assets/media/aios/mark.png" alt="">交付前验证</li>
+      <li><img class="bird" src="/assets/media/aios/mark.png" alt="">上下文压缩</li>
+    </ul>
+  </div>
+
+  <section id="how">
+    <p class="eyebrow">模型网关</p>
+    <h2>一个网关，通吃所有客户端和模型。</h2>
+    <p class="sub">AIOS 在你本机跑一个网关（127.0.0.1:8686，上游 magpie）。请求先从客户端到本机网关，再经网关落到模型；有条件的账号优先、失败后退避并转移，每一次决策都实时写在请求记录里。下图是控制台里真实的路由视图。</p>
+    <div class="wide">
+      <img class="for-light" loading="eager" src="/assets/media/aios/live-gateway-flow.png" width="1440" height="900" alt="AIOS 网关路由图：默认客户端、Claude Code、Pi 经 AIOS 网关路由到 antigravity、qoder-cn、qwenwork、opencode-go 等模型，显示 37 请求、13 模型、21 错误">
+      <img class="for-dark" loading="eager" src="/assets/media/aios/live-gateway-flow.png" width="1440" height="900" alt="AIOS 网关路由图：默认客户端、Claude Code、Pi 经 AIOS 网关路由到 antigravity、qoder-cn、qwenwork、opencode-go 等模型，显示 37 请求、13 模型、21 错误">
+    </div>
+    <div class="grid" style="margin-top:32px">
+      <div><h3>一次接入，处处可用</h3><p>网关把客户端和模型解耦：客户端只认一个本地地址，模型随时可换。</p></div>
+      <div><h3>按条件路由</h3><p>有条件的账号优先；额度、失败退避和上游优先级都参与选路。</p></div>
+      <div><h3>决策实时可见</h3><p>每条请求的路由、命中的模型与状态写进记录，不靠猜。</p></div>
+      <div><h3>失败自动转移</h3><p>出错的账号退避后再试，换到下一个可用账号，不打断你的 Agent。</p></div>
+      <div><h3>本地运行</h3><p>网关跑在你自己的机器上，密钥与请求记录都不离开这台电脑。</p></div>
+      <div><h3>注册表可见</h3><p>接入了哪些客户端、各自用哪个模型，控制台里逐条列清。</p></div>
+    </div>
+  </section>  <section id="team">
+    <div class="split rev">
+      <div>
+      <img class="for-light" loading="eager" src="/assets/media/aios/live-tools.png" width="1440" height="900" alt="AIOS Agent 客户端页：Claude Code、Codex、Gemini CLI、Grok、Hermes 等客户端的模型分配与接入开关">
+      <img class="for-dark" loading="eager" src="/assets/media/aios/live-tools.png" width="1440" height="900" alt="AIOS Agent 客户端页：Claude Code、Codex、Gemini CLI、Grok、Hermes 等客户端的模型分配与接入开关">
+      </div>
+      <div>
+        <p class="eyebrow">客户端接入</p>
+        <h2>打开「接入」，网关模型就出现在客户端里。</h2>
+        <p class="sub">Agent 客户端页列出本机发现的每个客户端、它的版本与配置落点。给某个客户端选好模型、打开接入，网关的模型就会作为可选项出现在它的列表里。</p>
+        <ul>
+          <li><b>自动发现</b> 从本机读客户端与版本，不靠一份手填清单。</li>
+          <li><b>模型分配</b> 每个客户端单独选「AIOS Auto」或指定模型。</li>
+          <li><b>接入开关</b> 写入后会备份配置，需要时可还原。</li>
+          <li><b>方案</b> 保存当前设置，之后一键切回。</li>
+        </ul>
+      </div>
+    </div>
+  </section>  <section id="verify">
+    <p class="eyebrow">资源库</p>
+    <h2>服务装在哪里、谁的、读没读到。</h2>
+    <p class="sub">MCP 服务、Skills 和 Subagents 在一页里读清楚：服务配置实例数、可读落点数、归属与读取状态都来自本机，不是一份装饰清单。</p>
+    <div class="wide">
+      <img class="for-light" loading="eager" src="/assets/media/aios/live-resources.png" width="1440" height="900" alt="AIOS 资源库 MCP 页：服务实例数、落点、归属与落点验证状态的服务清单">
+      <img class="for-dark" loading="eager" src="/assets/media/aios/live-resources.png" width="1440" height="900" alt="AIOS 资源库 MCP 页：服务实例数、落点、归属与落点验证状态的服务清单">
+    </div>
+    <div class="grid" style="margin-top:32px">
+      <div><h3>一处汇总</h3><p>MCP、Skills、Subagents 三个标签，资源不再散落各处。</p></div>
+      <div><h3>落点可查</h3><p>每个服务从哪份配置读到、归属谁，逐条列出。</p></div>
+      <div><h3>状态诚实</h3><p>已验证、未验证、未覆盖分开标注，不把"读到配置"说成"能连上"。</p></div>
+      <div><h3>只读采集</h3><p>页面只读本机配置，不启动服务、不改你的设置。</p></div>
+      <div><h3>预览再安装</h3><p>添加 MCP 先 dry-run 预览，确认后才写入。</p></div>
+      <div><h3>本机事实</h3><p>所有数字来自当前工作区的一次真实采集，切换工作区会跟着变。</p></div>
+    </div>
+  </section>  <section id="memory">
+    <p class="eyebrow">项目记忆</p>
+    <h2>经验留下来，下一次接着用。</h2>
+    <p class="sub">本机记忆按 space 与 scope 列清：哪些是项目内共享、哪些是常驻，搜索一次真实 memo，上下文就能接着上一次继续。</p>
+    <div class="wide">
+      <img class="for-light" loading="eager" src="/assets/media/aios/live-memory.png" width="1440" height="900" alt="AIOS 项目记忆页：182 条记忆、space 列表、搜索框与一条记忆的详情">
+      <img class="for-dark" loading="eager" src="/assets/media/aios/live-memory.png" width="1440" height="900" alt="AIOS 项目记忆页：182 条记忆、space 列表、搜索框与一条记忆的详情">
+    </div>
+    <div class="subs" style="margin-top:32px">
+      <div><div class="who"><img class="bird" src="/assets/media/aios/mark.png" alt="">按 space 组织</div><p>记忆按命名空间与适用范围列清，项目内共享一目了然。</p></div>
+      <div><div class="who"><img class="bird" src="/assets/media/aios/mark.png" alt="">常驻记忆</div><p>每个会话都会注入的那份事实，字符数与截断状态直接显示。</p></div>
+      <div><div class="who"><img class="bird" src="/assets/media/aios/mark.png" alt="">召回有反馈</div><p>哪条记忆有用可以标记，后续召回更准。</p></div>
+    </div>
+  </section>  <section id="workflow">
+    <p class="eyebrow">自适应工作流</p>
+    <h2>按风险选路径，简单任务不排队。</h2>
+    <p class="sub">直接、守护、计划三条路径，按任务风险自动选，也能显式指定。高风险改动走策略与验证，简单问答直接给答案——每条消息走哪条路、为什么，都写在上下文里。</p>
+    <div class="rt" id="rt">
+      <div class="rt-top">
+        <div class="rt-tabs" role="tablist" aria-label="工作流模式">
+          <button role="tab" data-mode="direct" aria-selected="true">直接</button>
+          <button role="tab" data-mode="guarded" aria-selected="false">守护</button>
+          <button role="tab" data-mode="planned" aria-selected="false">计划</button>
+        </div>
+        <p class="rt-mode">直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。</p>
+      </div>
+      <div class="rt-stage">
+        <svg class="rt-wires" aria-hidden="true" viewBox="0 0 990 265.5625"><path d="M152 132.7734375 L228 132.78125"></path><path d="M378 132.78125 C416 132.78125 416 51.1953125 454 51.1953125"></path><path d="M378 132.78125 C416 132.78125 416 132.78125 454 132.78125"></path><path d="M378 132.78125 C416 132.78125 416 214.3671875 454 214.3671875"></path></svg>
+        <div class="rt-node rt-src"><img src="/assets/media/icons/claudecode-color.svg" alt=""><b>Claude Code</b><small>你的 Agent</small></div>
+        <div class="rt-node rt-hub"><img class="bird" src="/assets/media/aios/mark.png" alt=""><b>AIOS</b><small>本地工作流引擎</small><i>直接</i></div>
+        <ol class="rt-accts models">
+          <li class="nobar on" data-step="0"><i class="dot"></i><b>直接执行 <span>DIRECT</span></b><em>立即给出结果</em><div class="bar"><i></i></div><span class="tag"></span></li>
+          <li class="nobar" data-step="1"><i class="dot"></i><b>策略检查 <span>GUARDED</span></b><em>高风险时启用</em><div class="bar"><i></i></div><span class="tag"></span></li>
+          <li class="nobar" data-step="2"><i class="dot"></i><b>计划执行 <span>PLANNED</span></b><em>按步骤推进</em><div class="bar"><i></i></div><span class="tag"></span></li>
+        </ol>
+      </div>
+      <div class="rt-foot">
+        <p class="rt-cap in" aria-live="polite">Agent 只发一条请求，AIOS 决定走哪条工作流。切换标签看各条路径放大的环节。</p>
+        <div class="rt-stats"><span><b>0</b><span>轮对话</span></span><span><b>0</b><span>次工作流决策</span></span><span><b>0</b><span>条验证证据</span></span></div>
+      </div>
+    </div>
+    <div class="grid rt-points">
+      <div><h3>直接</h3><p>问答、查询、小改动走最短路径，不做额外编排，延迟最低。</p></div>
+      <div><h3>守护</h3><p>涉及边界、外部副作用或凭据的动作，先过策略门，再放行。</p></div>
+      <div><h3>计划</h3><p>多步骤、有依赖的任务先出计划，再按工作项推进并留检查点。</p></div>
+      <div><h3>可回溯</h3><p>每次路由决策和验证证据都写进上下文，事后能查当时为什么这么走。</p></div>
+    </div>
+  </section>
+
+  <section id="guarded">
+    <p class="eyebrow">活动记录</p>
+    <h2>每一次改变，都有迹可循。</h2>
+    <p class="sub">这里列出这台机器上真实存在过的会话记录，来自本地会话库：哪个工作区、哪次任务、跑了什么，用事实回答，而不是一句"我们很透明"。</p>
+    <div class="wide">
+      <img class="for-light" loading="eager" src="/assets/media/aios/live-activity.png" width="1440" height="900" alt="AIOS 活动记录页：真实会话列表，含工作区、客户端、状态与事件数">
+      <img class="for-dark" loading="eager" src="/assets/media/aios/live-activity.png" width="1440" height="900" alt="AIOS 活动记录页：真实会话列表，含工作区、客户端、状态与事件数">
+    </div>
+  </section>  <section id="features">
+    <p class="eyebrow">细节</p>
+    <h2>本地、可验证、不打扰。</h2>
+    <div class="grid" style="margin-top:32px">
+      <div><h3>十种客户端原生接入</h3><p>Codex、Claude Code、Gemini CLI、OpenCode、Hermes 等十种客户端共用同一份项目记忆与工作流。</p></div>
+      <div><h3>数据不出机器</h3><p>记忆、日志、验证证据全部写在本地项目目录里，不上传、不联网。</p></div>
+      <div><h3>策略是声明出来的</h3><p>工作流模式、边界和工具约束写进配置，而不是靠提示词里的一句“记得检查”。</p></div>
+      <div><h3>团队可编排</h3><p><code>aios team</code> 按任务图派发独立工作项，耦合的改动保持串行。</p></div>
+      <div><h3>证据可复核</h3><p>每次验证留下真实命令输出、报告路径与退出码，checked box 不算证据。</p></div>
+      <div><h3>MIT 开源</h3><p>源码与版本发布都在 <a href="https://github.com/rexleimo/aios">GitHub</a>，可自行审查与贡献。</p></div>
+    </div>
+  </section>
+
+  <section id="cli">
+    <p class="eyebrow">终端</p>
+    <h2>一个命令，贯穿整个工作流。</h2>
+    <p class="sub">安装脚本把 <code>aios</code> 放进 <code>~/.local/bin</code>，<code>aios init --all</code> 在你的项目里写好配置与原生指令。之后记忆、团队、验证都从终端发起。</p>
+    <div class="install"><code id="cmd">curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash</code><button class="copy" data-copy="cmd">复制</button></div>
+    <p class="meta" style="margin:12px 0 28px">Windows 用 PowerShell 安装，命令一致；装好后在项目根目录运行 <code>aios init --all</code>。</p>
+<pre><span class="c"># 初始化与体检</span>
+aios init --all                       <span class="c"># 写入配置与十种客户端指令</span>
+aios doctor --native --verbose        <span class="c"># 构建/类型/测试/密钥扫描</span>
+
+<span class="c"># 项目记忆</span>
+aios memo search "工作流策略"          <span class="c"># 召回之前的裁定与约束</span>
+aios session start --json             <span class="c"># 开一个可续做的会话</span>
+
+<span class="c"># 计划与多智能体</span>
+aios plan task &lt;id&gt; --confirm-context  <span class="c"># 确认执行上下文</span>
+aios team dispatch --items work-items <span class="c"># 派发独立工作项</span>
+
+<span class="c"># 日常</span>
+aios work --intent implement          <span class="c"># 让引擎接管一次实现</span>
+aios refs read &lt;ref_id&gt;               <span class="c"># 召回被压缩的完整证据</span></pre>
+  </section>
+
+  <aside class="community" aria-label="社区">
+    <a href="https://github.com/rexleimo/aios" target="_blank" rel="noopener">
+      <span class="glyph"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></span>
+      <div><b>在 GitHub 上关注 AIOS</b><span>源码、Issue、版本发布和贡献指南，都在这里。</span></div>
+      <i aria-hidden="true">→</i>
+    </a>
+  </aside>
+
+  <div class="final">
+    <img class="bird" src="/assets/media/aios/mark.png" alt="">
+    <h2>每个 Agent，都值得一个好用的引擎。</h2>
+    <p class="sub" style="margin:0 auto 32px">本地优先、MIT 开源。支持 macOS、Windows 和 Linux。</p>
+    <div class="cta"><a class="btn dl" href="#cli"><span class="dl-label">快速安装</span></a><a class="btn ghost" href="https://github.com/rexleimo/aios"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg> <span>在 GitHub 上查看</span></a></div>
+    <div class="chan" role="group" aria-label="版本"><button type="button" data-ch="latest" aria-pressed="true"><b>最新版</b><span class="v">8.0.0</span></button><button type="button" data-ch="stable" aria-pressed="false"><b>稳定版</b><span class="v">8.0.0</span></button></div>
+    <div class="plats" id="get">
+      <div><b>macOS</b><span>11 及以上</span><a href="https://github.com/rexleimo/aios/releases/latest">Apple Silicon</a><a href="https://github.com/rexleimo/aios/releases/latest">Intel</a></div>
+      <div><b>Windows</b><span>10 及以上</span><a href="https://github.com/rexleimo/aios/releases/latest">x64</a><a href="https://github.com/rexleimo/aios/releases/latest">ARM</a></div>
+      <div><b>Linux</b><span>原生支持</span><a href="https://github.com/rexleimo/aios/releases/latest">x86-64</a><a href="https://github.com/rexleimo/aios/releases/latest">ARM64</a></div>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

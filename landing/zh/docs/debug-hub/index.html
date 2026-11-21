@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="zh" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>debug-hub</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">中文</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/docs/debug-hub/" hreflang="en" lang="en">English</a><a class="rex-lang-opt is-active" href="/zh/docs/debug-hub/" hreflang="zh" lang="zh" aria-current="true">中文</a><a class="rex-lang-opt" href="/ja/docs/debug-hub/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/docs/debug-hub/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+<div class="rex-doc-layout">
+  <aside class="rex-doc-sidebar">
+    <a class="rex-doc-sidebar__home" href="/zh/docs/">全部文档</a>
+    <div class="rex-doc-search"><input type="search" id="rex-doc-search-input" placeholder="搜索文档…" aria-label="搜索文档…" autocomplete="off"></div>
+    <div id="rex-doc-nav"><details class="rex-doc-nav-group"><summary>快速上手</summary><div class="rex-doc-nav-items"><a href="/zh/docs/getting-started/" class="rex-doc-nav-link" data-title="快速开始：安装并验证 aios">快速开始：安装并验证 AIOS</a><a href="/zh/docs/windows-guide/" class="rex-doc-nav-link" data-title="windows 指南：powershell 安装与恢复">Windows 指南：PowerShell 安装与恢复</a><a href="/zh/docs/troubleshooting/" class="rex-doc-nav-link" data-title="aios 故障排查">AIOS 故障排查</a><a href="/zh/docs/windows-ai-coding-agent-setup/" class="rex-doc-nav-link" data-title="windows 上搭建 ai 编码 agent：10 分钟安装与验证">Windows 上搭建 AI 编码 Agent：10 分钟安装与验证</a></div></details><details class="rex-doc-nav-group"><summary>问题优先指南</summary><div class="rex-doc-nav-items"><a href="/zh/docs/why-agents-forget-context/" class="rex-doc-nav-link" data-title="为什么你的 ai 编码 agent 会跨会话失忆（以及怎么修）">为什么你的 AI 编码 Agent 会跨会话失忆（以及怎么修）</a><a href="/zh/docs/reduce-agent-token-cost/" class="rex-doc-nav-link" data-title="降低 ai 编码 agent 的 token 成本：claude code 与 codex 预算控制">降低 AI 编码 Agent 的 Token 成本：Claude Code 与 Codex 预算控制</a><a href="/zh/docs/claude-code-vs-codex-vs-gemini/" class="rex-doc-nav-link" data-title="claude code vs codex vs gemini cli：ai 编码 agent 该怎么选？">Claude Code vs Codex vs Gemini CLI：AI 编码 Agent 该怎么选？</a><a href="/zh/docs/overnight-agent-runs/" class="rex-doc-nav-link" data-title="怎么让编码 agent 跑一整夜不崩、不漂移">怎么让编码 Agent 跑一整夜不崩、不漂移</a><a href="/zh/docs/multi-agent-code-review/" class="rex-doc-nav-link" data-title="多 agent 代码评审：真正有用的并行编码 agent">多 Agent 代码评审：真正有用的并行编码 Agent</a><a href="/zh/docs/use-cases/" class="rex-doc-nav-link" data-title="按场景找命令：选择 aios 路径">按场景找命令：选择 AIOS 路径</a></div></details><details class="rex-doc-nav-group"><summary>核心能力</summary><div class="rex-doc-nav-items"><a href="/zh/docs/contextdb/" class="rex-doc-nav-link" data-title="contextdb：按需读取的项目记忆">ContextDB：按需读取的项目记忆</a><a href="/zh/docs/token-compression/" class="rex-doc-nav-link" data-title="token intelligence 与压缩边界">Token Intelligence 与压缩边界</a><a href="/zh/docs/workflow-policy/" class="rex-doc-nav-link" data-title="工作流策略">工作流策略</a><a href="/zh/docs/model-router/" class="rex-doc-nav-link" data-title="模型路由器">模型路由器</a><a href="/zh/docs/codemap/" class="rex-doc-nav-link" data-title="代码审查图谱 (codemap)">代码审查图谱 (Codemap)</a><a href="/zh/docs/team-ops/" class="rex-doc-nav-link" data-title="agent team：带证据的并行工作">Agent Team：带证据的并行工作</a><a href="/zh/docs/solo-harness/" class="rex-doc-nav-link" data-title="solo harness：可恢复长任务">Solo Harness：可恢复长任务</a><a href="/zh/docs/superpowers/" class="rex-doc-nav-link" data-title="rex 工作流迁移">Rex 工作流迁移</a><a href="/zh/docs/integrations/" class="rex-doc-nav-link" data-title="aios 中用 typesafe jev——安装、开启判定闸门、后台运行">AIOS 中用 TypeSafe Jev——安装、开启判定闸门、后台运行</a><a href="/zh/docs/perception/" class="rex-doc-nav-link" data-title="perception">Perception</a></div></details><details class="rex-doc-nav-group" open><summary>参考手册</summary><div class="rex-doc-nav-items"><a href="/zh/docs/architecture/" class="rex-doc-nav-link" data-title="aios 架构">AIOS 架构</a><a href="/zh/docs/route-concurrency-profiles/" class="rex-doc-nav-link" data-title="路由与并发档位">路由与并发档位</a><a href="/zh/docs/advanced-design-skills/" class="rex-doc-nav-link" data-title="高级设计技能">高级设计技能</a><a href="/zh/docs/hud-guide/" class="rex-doc-nav-link" data-title="hud 用户指南">HUD 用户指南</a><a href="/zh/docs/debug-hub/" aria-current="page" class="rex-doc-nav-link is-active" data-title="debug-hub">debug-hub</a><a href="/zh/docs/cli-comparison/" class="rex-doc-nav-link" data-title="cli 对比">CLI 对比</a><a href="/zh/docs/engineering-standards/" class="rex-doc-nav-link" data-title="工程标准——aios 构建软件，而不只是生成代码">工程标准——AIOS 构建软件，而不只是生成代码</a></div></details><details class="rex-doc-nav-group"><summary>实战案例</summary><div class="rex-doc-nav-items"><a href="/zh/docs/case-library/" class="rex-doc-nav-link" data-title="案例库：可复现的 aios 工作流">案例库：可复现的 AIOS 工作流</a><a href="/zh/docs/case-auth-wall-browser/" class="rex-doc-nav-link" data-title="案例 - 浏览器认证墙流程">案例 - 浏览器认证墙流程</a><a href="/zh/docs/case-cross-cli-handoff/" class="rex-doc-nav-link" data-title="案例 - 跨 cli 接力">案例 - 跨 CLI 接力</a><a href="/zh/docs/case-privacy-guard/" class="rex-doc-nav-link" data-title="案例 - privacy guard 配置读取">案例 - Privacy Guard 配置读取</a></div></details><details class="rex-doc-nav-group"><summary>项目</summary><div class="rex-doc-nav-items"><a href="/zh/docs/changelog/" class="rex-doc-nav-link" data-title="更新日志">更新日志</a><a href="/zh/docs/friends/" class="rex-doc-nav-link" data-title="友情链接">友情链接</a><a href="/zh/docs/skill-candidates/" class="rex-doc-nav-link" data-title="skill candidates 指南">Skill Candidates 指南</a></div></details></div>
+    <p class="rex-doc-search-empty" id="rex-doc-search-empty" hidden>没有匹配的文档</p>
+    <div class="rex-doc-sidebar__status">AIOS · v8.0.0 · 本地优先</div>
+  </aside>
+  <article class="rex-doc-article">
+    <p class="eyebrow">文档 · 中文</p>
+    <h1>debug-hub</h1>
+    <p class="lede" style="font-size:17px">MCP 原生的调试日志服务：让 coding agent 自己查询运行时日志、追踪执行路径、定位失败原因并给出修复建议。装上之后，排查问题不再需要你手动贴日志、来回描述现象，Agent 能先自我诊断一轮再找你确认，历史日志可按会话、时间范围与关键字检索。</p>
+    <div class="rex-doc-content md-body">
+<blockquote>
+<p>让 coding agent 学会自己查日志。</p>
+</blockquote>
+<p>debug-hub 是专为 coding agent 设计的 MCP 原生调试日志服务。它将日志和调用链暴露为 agent 可直接调用的 MCP 工具——这样它们就可以 <code>search_logs</code>、<code>get_trace</code> 和 <code>get_stats</code>，而无需你去 grep 终端输出。</p>
+<p><a href="/blog/zh/2026-05-debug-hub-mcp/">阅读博客文章</a>{ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="blog_post" }
+<a href="#quick-start">快速开始</a>{ .md-button data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="quick_start" }</p>
+<hr />
+<h2 id="debug-hub_1">为什么需要 debug-hub</h2>
+<p>当 coding agent 遇到错误循环、决策停滞或产生意外输出时，调试流程总是<strong>人类优先</strong>的：</p>
+<ol>
+<li>你注意到出问题了</li>
+<li>你翻阅终端历史记录或打开日志文件</li>
+<li>你手动关联时间戳、错误信息和调用链跨度</li>
+<li>你把相关内容粘贴回 agent 的上下文</li>
+<li>agent 终于获得足够的信号来恢复</li>
+</ol>
+<p>这种模式在长时间运行的 harness 任务、过夜运行和无人值守的多 agent 编排中就会失效。</p>
+<p><strong>核心洞察</strong>：agent 应该能够自检其执行轨迹。它们已经有工具访问权限（MCP）。它们只需要一个可查询的运行时状态接口。</p>
+<hr />
+<h2 id="_1">核心功能</h2>
+<div class="feature-grid">
+  <div class="feature-card feature-card--debug">
+    <div class="feature-card__icon">🔧</div>
+    <div class="feature-card__title">Agent 可用的 MCP 工具</div>
+    <div class="feature-card__desc">
+      日志/Trace 工具加上 <code>start_session</code>、<code>record_event</code>、<code>instrument</code>、<code>cleanup_instruments</code> 等 — agent 可以注入调试代码，修完 bug 后自动清理。
+    </div>
+  </div>
+  <div class="feature-card feature-card--tool">
+    <div class="feature-card__icon">📦</div>
+    <div class="feature-card__title">三种 SDK</div>
+    <div class="feature-card__desc">
+      Node.js、Browser 和 Go — 跨所有运行时的一致 API 模式。
+    </div>
+  </div>
+  <div class="feature-card feature-card--memory">
+    <div class="feature-card__icon">📁</div>
+    <div class="feature-card__title">零依赖</div>
+    <div class="feature-card__desc">
+      基于 <code>~/.debug-hub/</code> 的文件存储 — 可直接用 <code>cat</code>/<code>grep</code> 读取。
+    </div>
+  </div>
+  <div class="feature-card feature-card--workflow">
+    <div class="feature-card__icon">🖥️</div>
+    <div class="feature-card__title">内嵌 Web UI</div>
+    <div class="feature-card__desc">
+      暗色主题仪表盘，包含日志搜索、调用链查看器和 SSE 实时推送。
+    </div>
+  </div>
+</div>
+
+<hr />
+<h2 id="quick-start">快速开始 {#quick-start}</h2>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>packages/debug-hub
+npm<span class="w"> </span>install
+npm<span class="w"> </span>run<span class="w"> </span>dev
+</code></pre></div>
+<ul>
+<li><strong>HTTP API + Web UI</strong>: http://localhost:39200</li>
+<li><strong>MCP</strong>: stdio 模式（在你的 agent 的 MCP 设置中配置）</li>
+</ul>
+<h3 id="_2">发送测试日志</h3>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:39200/api/logs/single<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{</span>
+<span class="s1">    &quot;id&quot;: &quot;1&quot;,</span>
+<span class="s1">    &quot;timestamp&quot;: 1714500000000,</span>
+<span class="s1">    &quot;level&quot;: &quot;info&quot;,</span>
+<span class="s1">    &quot;message&quot;: &quot;hello from debug-hub&quot;,</span>
+<span class="s1">    &quot;source&quot;: {},</span>
+<span class="s1">    &quot;trace&quot;: {&quot;traceId&quot;: &quot;t1&quot;, &quot;spanId&quot;: &quot;s1&quot;},</span>
+<span class="s1">    &quot;sdk&quot;: {&quot;name&quot;: &quot;test&quot;, &quot;version&quot;: &quot;0.2.0&quot;, &quot;runtime&quot;: &quot;node&quot;}</span>
+<span class="s1">  }&#39;</span>
+</code></pre></div>
+<p><code>trace</code> 字段为可选 — 无需追踪的日志可省略。批量 POST 中无效条目会被跳过（响应包含 <code>written</code>/<code>skipped</code> 计数）；单条 POST 对畸形负载返回 HTTP 400。</p>
+<p>然后打开 <code>http://localhost:39200</code> 即可在 Dashboard 中查看。</p>
+<hr />
+<h2 id="sdk">SDK 使用</h2>
+<h3 id="nodejs">Node.js</h3>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">DebugHub</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@debug-hub/node&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">debug</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">DebugHub</span><span class="p">({</span><span class="w"> </span><span class="nx">service</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;my-agent&#39;</span><span class="w"> </span><span class="p">});</span>
+<span class="nx">debug</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;Tool call started&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">tool</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;search&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">args</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">query</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;...&#39;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">});</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">trace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">debug</span><span class="p">.</span><span class="nx">startTrace</span><span class="p">(</span><span class="s1">&#39;agent-turn&#39;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">span</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">trace</span><span class="p">.</span><span class="nx">span</span><span class="p">(</span><span class="s1">&#39;llm-call&#39;</span><span class="p">);</span>
+<span class="nx">span</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;Prompt sent&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">model</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;claude-opus-4-7&#39;</span><span class="w"> </span><span class="p">});</span>
+<span class="nx">span</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="nx">trace</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+</code></pre></div>
+<h3 id="browser">Browser</h3>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">DebugHub</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;@debug-hub/browser&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">debug</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">DebugHub</span><span class="p">({</span><span class="w"> </span><span class="nx">service</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;web-ui&#39;</span><span class="w"> </span><span class="p">});</span>
+<span class="nx">debug</span><span class="p">.</span><span class="nx">warn</span><span class="p">(</span><span class="s1">&#39;API latency spike&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">endpoint</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;/api/chat&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">p99</span><span class="o">:</span><span class="w"> </span><span class="kt">3200</span><span class="w"> </span><span class="p">});</span>
+</code></pre></div>
+<h3 id="go">Go</h3>
+<div class="highlight"><pre><span></span><code><span class="nx">debug</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">debughub</span><span class="p">.</span><span class="nx">New</span><span class="p">(</span><span class="nx">debughub</span><span class="p">.</span><span class="nx">Config</span><span class="p">{</span><span class="nx">Service</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;harness-runner&quot;</span><span class="p">})</span>
+<span class="nx">trace</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">debug</span><span class="p">.</span><span class="nx">StartTrace</span><span class="p">(</span><span class="s">&quot;iteration-42&quot;</span><span class="p">)</span>
+<span class="nx">span</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">trace</span><span class="p">.</span><span class="nx">Span</span><span class="p">(</span><span class="s">&quot;checkpoint-write&quot;</span><span class="p">)</span>
+<span class="nx">span</span><span class="p">.</span><span class="nx">Info</span><span class="p">(</span><span class="s">&quot;Checkpoint saved&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}{</span><span class="s">&quot;bytes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12400</span><span class="p">})</span>
+<span class="nx">span</span><span class="p">.</span><span class="nx">End</span><span class="p">()</span>
+<span class="nx">trace</span><span class="p">.</span><span class="nx">End</span><span class="p">()</span>
+</code></pre></div>
+<hr />
+<h2 id="mcp">MCP 工具参考</h2>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>debug_hub.list_traces</code></td>
+<td>列出最近的执行调用链，支持过滤</td>
+</tr>
+<tr>
+<td><code>debug_hub.get_trace</code></td>
+<td>获取特定调用链的完整跨度树</td>
+</tr>
+<tr>
+<td><code>debug_hub.search_logs</code></td>
+<td>大小写不敏感，按关键词、级别、时间范围、模块或 traceId 搜索日志</td>
+</tr>
+<tr>
+<td><code>debug_hub.get_stats</code></td>
+<td>聚合计数、错误摘要、级别分布</td>
+</tr>
+<tr>
+<td><code>debug_hub.clear_logs</code></td>
+<td>根据保留规则清理旧日志</td>
+</tr>
+<tr>
+<td><code>debug_hub.start_session</code></td>
+<td>创建带目标和工作区元数据的 agent 调试会话</td>
+</tr>
+<tr>
+<td><code>debug_hub.record_event</code></td>
+<td>记录结构化证据（无效 level 默认 <code>info</code>，无效 kind 默认 <code>note</code>）</td>
+</tr>
+<tr>
+<td><code>debug_hub.get_session</code></td>
+<td>读取会话及其证据事件</td>
+</tr>
+<tr>
+<td><code>debug_hub.timeline</code></td>
+<td>返回紧凑的时间线证据流</td>
+</tr>
+<tr>
+<td><code>debug_hub.health</code></td>
+<td>返回采集/存储健康状态和 schema version</td>
+</tr>
+<tr>
+<td><code>debug_hub.compact_context</code></td>
+<td>为 agent 恢复/交接生成受限上下文包</td>
+</tr>
+<tr>
+<td><code>debug_hub.instrument</code></td>
+<td>记录被注入调试日志的文件信息</td>
+</tr>
+<tr>
+<td><code>debug_hub.list_instruments</code></td>
+<td>列出已记录的注入记录，可按 session 过滤</td>
+</tr>
+<tr>
+<td><code>debug_hub.cleanup_instruments</code></td>
+<td>删除所有带 <code>DH:&lt;sessionId&gt;</code> 标记的调试代码（支持 <code>dryRun</code>）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_3">调试注入流程</h3>
+<p>Agent 在为项目注入调试代码时可以：</p>
+<ol>
+<li><strong>启动会话</strong>：<code>debug_hub.start_session { objective: "调试支付超时" }</code></li>
+<li><strong>注入 reporter</strong> 到首个修改文件的顶部：
+   <div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">__dh</span><span class="o">=</span><span class="k">async</span><span class="p">(</span><span class="nx">m</span><span class="p">,</span><span class="nx">d</span><span class="p">)=&gt;{</span><span class="k">try</span><span class="p">{</span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="s1">&#39;http://127.0.0.1:39200/api/logs/single&#39;</span><span class="p">,{</span><span class="nx">method</span><span class="o">:</span><span class="s1">&#39;POST&#39;</span><span class="p">,</span><span class="nx">headers</span><span class="o">:</span><span class="p">{</span><span class="s1">&#39;Content-Type&#39;</span><span class="o">:</span><span class="s1">&#39;application/json&#39;</span><span class="p">},</span><span class="nx">body</span><span class="o">:</span><span class="nb">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span><span class="nx">id</span><span class="o">:</span><span class="nx">crypto</span><span class="p">.</span><span class="nx">randomUUID</span><span class="p">(),</span><span class="nx">timestamp</span><span class="o">:</span><span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">(),</span><span class="nx">level</span><span class="o">:</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span><span class="nx">message</span><span class="o">:</span><span class="nx">m</span><span class="p">,</span><span class="nx">data</span><span class="o">:</span><span class="nx">d</span><span class="p">,</span><span class="nx">sdk</span><span class="o">:</span><span class="p">{</span><span class="nx">name</span><span class="o">:</span><span class="s1">&#39;dh&#39;</span><span class="p">,</span><span class="nx">version</span><span class="o">:</span><span class="s1">&#39;1&#39;</span><span class="p">,</span><span class="nx">runtime</span><span class="o">:</span><span class="s1">&#39;node&#39;</span><span class="p">}})})}</span><span class="k">catch</span><span class="p">{}}</span>
+</code></pre></div></li>
+<li><strong>标记调试调用</strong>，使用 <code>DH:&lt;sessionId&gt;</code>：
+   <div class="highlight"><pre><span></span><code><span class="nx">__dh</span><span class="p">(</span><span class="s1">&#39;DH:sess-abc 用户状态&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="nx">user</span><span class="p">});</span>
+</code></pre></div></li>
+<li><strong>记录注入信息</strong>：<code>debug_hub.instrument { sessionId, files: [{path, lineCount}] }</code></li>
+<li><strong>复现并分析</strong>：<code>debug_hub.search_logs { keyword: "sess-abc" }</code></li>
+<li><strong>修复后清理</strong>：<code>debug_hub.cleanup_instruments { sessionId }</code></li>
+</ol>
+<h3 id="_4">自我诊断示例</h3>
+<p>一个遇到重复错误的 agent 现在可以：</p>
+<ol>
+<li>调用 <code>search_logs</code>，参数为 <code>{ level: "error", since: &lt;5 分钟前&gt; }</code></li>
+<li>获取准确的错误信息和它们的 trace ID</li>
+<li>在相关调用链上调用 <code>get_trace</code> 查看完整的跨度树</li>
+<li>自我诊断其流水线中哪个步骤失败了</li>
+<li>无需人工干预即可自我纠正</li>
+</ol>
+<hr />
+<h2 id="_5">架构</h2>
+<p>debug-hub 是一个 Node.js 二进制文件，整合了四个组件：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HTTP API</strong></td>
+<td>接收来自 SDK 的日志，提供搜索/统计端点</td>
+</tr>
+<tr>
+<td><strong>MCP Server</strong></td>
+<td>为 coding agent 暴露日志/Trace、会话、事件、健康、时间线和紧凑上下文工具</td>
+</tr>
+<tr>
+<td><strong>内嵌 Web UI</strong></td>
+<td>暗色主题仪表盘，包含日志搜索、调用链查看器、SSE 实时推送</td>
+</tr>
+<tr>
+<td><strong>文件存储</strong></td>
+<td><code>~/.debug-hub/</code> 下的 JSONL 文件 — 可直接读取</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_6">设计决策</h3>
+<p><strong>无数据库依赖。</strong> 存储是磁盘上的 JSONL 文件。这意味着：
+- <code>npm install</code> 之外零配置
+- Agent 可以绕过 API 直接读取文件
+- 无守护进程、无 Docker、无连接字符串</p>
+<p><strong>MCP 优先，HTTP 其次。</strong> MCP 工具定义与 HTTP API 共享同一存储层并协同设计。</p>
+<p><strong>Dashboard 使用 SSE。</strong> 新日志条目通过 Server-Sent Events 广播 — 无 WebSocket 复杂性，无轮询开销。</p>
+<hr />
+<h2 id="_7">使用场景</h2>
+<h3 id="_8">自我诊断错误循环</h3>
+<p>当 agent 陷入重试循环时，它可以查询自己的近期错误日志、识别模式，并调整策略 — 全程无需叫醒你。</p>
+<h3 id="_9">长时间运行任务监控</h3>
+<p>过夜的 harness 运行、数据处理作业或训练流水线可以记录结构化的调用链。如果出了问题，第二天早上的诊断 agent 可以从调用链历史中拉取确切的失败点。</p>
+<h3 id="agent">多 Agent 执行追踪</h3>
+<p>分布式编排器/工作器模式可以跨 agent 边界关联调用链，为你提供复杂多步骤工作流的统一视图。</p>
+<hr />
+<h2 id="_10">路线图</h2>
+<p>debug-hub 当前为 0.3.0 版本。v0.3 新增注入追踪和自动清理：agent 注入零依赖调试代码并带上会话级标记，debug-hub 追踪修改了哪些文件，修完 bug 后 <code>cleanup_instruments</code> 一键清理。路线图包括：</p>
+<ul>
+<li><strong>Python SDK</strong> — 面向更广泛的 AI/ML agent 生态系统</li>
+<li><strong>多 agent 关联</strong> — 编排器/工作器模式的跨 agent 调用链链接</li>
+<li><strong>持久告警规则</strong> — agent 可配置的监控条件，在日志模式触发时告警</li>
+<li><strong>Go SDK</strong> — 面向 Go 编写的 agent 运行时</li>
+</ul>
+<hr />
+<h2 id="_11">资源</h2>
+<ul>
+<li><strong>深度博客文章</strong>: <a href="/blog/zh/2026-05-debug-hub-mcp/">debug-hub：MCP 原生调试日志服务</a></li>
+<li><strong>源代码</strong>: rex-ai-boot 单体仓库中的 <code>packages/debug-hub</code></li>
+<li><strong>系统要求</strong>: Node.js ≥ 22</li>
+</ul>
+<hr />
+<h2 id="_12">相关功能</h2>
+<ul>
+<li><a href="/zh/docs/solo-harness/">单 Agent 夜跑</a> — 长时间运行的单 agent 任务与日志</li>
+<li><a href="/zh/docs/team-ops/">多 Agent 实战</a> — 多 agent 协作与协调</li>
+<li><a href="/zh/docs/troubleshooting/">故障排查</a> — 常规调试和诊断</li>
+</ul></div>
+    <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+    <nav class="rex-doc-pager"><a href="/zh/docs/contextdb/">← 上一篇</a><a href="/zh/docs/engineering-standards/">下一篇 →</a></nav>
+    <a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  </article>
+</div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

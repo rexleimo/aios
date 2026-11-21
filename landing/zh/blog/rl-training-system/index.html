@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="zh" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIOS RL 训练系统：从合成 BUG 修复到多环境联合学习</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">中文</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/blog/rl-training-system/" hreflang="en" lang="en">English</a><a class="rex-lang-opt is-active" href="/zh/blog/rl-training-system/" hreflang="zh" lang="zh" aria-current="true">中文</a><a class="rex-lang-opt" href="/ja/blog/rl-training-system/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/blog/rl-training-system/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+  <header class="hero" style="grid-template-columns:1fr; padding-top:56px; gap:0">
+    <div><p class="eyebrow">博客 · 2026-03-27</p><h1>AIOS RL 训练系统：从合成 BUG 修复到多环境联合学习</h1>
+    <p class="lede" style="font-size:17px">我们如何构建一个跨 shell、浏览器与编排器任务训练共享学生策略的多环境强化学习系统，共用同一个统一控制平面。文章给出环境抽象、奖励设计与训练稳定性处理，并分享早期失败的排查经验。文章适合对多环境强化学习与统一控制平面感兴趣的工程师通读一遍。</p>
+    <div class="meta"><a href="/zh/blog/">← 全部文章</a> · <a href="/zh">首页</a></div></div>
+  </header>
+  <section style="padding-top:16px"><div class="md-body rex-article">
+<p>自推出 <code>aios orchestrate</code> 实时执行以来，我们在底层构建了一个更深层的东西：一个<strong>多环境强化学习系统</strong>，能在 shell、浏览器和编排器任务中持续改进学生策略——所有环境共用一个统一的训练控制平面。</p>
+<p>这篇文章解释我们构建了什么、为什么这样构建，以及它解锁了什么能力。</p>
+<p><img alt="RL 训练系统架构" src="/../assets/rl-training/rl-architecture-hero.png" /></p>
+<h2 id="rl">单环境 RL 的问题</h2>
+<p>在 RL 之前，系统只有一个隐式的"学生"——存在于技能提示词、分发策略和脚线（harness）启发式规则中的行为先验。每个新功能都需要手动调优。从"演示可用"到"生产可靠"的路径很长、很手动。</p>
+<p>做 RL 是显而易见的方向。但我们很快发现：</p>
+<p>如果分别复制修改 shell RL、browser RL、orchestrator RL 的控制平面，最终会得到<strong>三个相似但不兼容的 RL 实现</strong>。后果是：
+- 回滚语义分叉
+- 重放路由不可比较
+- 检查点谱系变成环境专属而非系统级
+- 多个不兼容的教师/裁判集成层
+- 调试被"等等，为什么 browser RL 做法不一样？"主导</p>
+<p>正确的架构是：<strong>先抽取共享控制平面</strong>，再把环境接入它。</p>
+<h2 id="1-3">架构：1 个核心 + 3 个环境</h2>
+<div class="highlight"><pre><span></span><code>scripts/lib/rl-core/               ← 共享控制平面
+├── campaign-controller.mjs        ← 采集/监控 epoch 编排
+├── checkpoint-registry.mjs         ← active / pre_update_ref / last_stable 谱系
+├── comparison-engine.mjs           ← better / same / worse / comparison_failed
+├── control-state-store.mjs         ← 重启安全的控制快照
+├── epoch-ledger.mjs               ← epoch 状态 + 降级连续记录
+├── replay-pool.mjs                ← 四车道路由（正/中/负/诊断）
+├── reward-engine.mjs               ← 环境奖励 + 教师塑形融合
+├── teacher-gateway.mjs             ← 标准化教师输出（Codex/Claude/Gemini/opencode）
+├── schema.mjs                      ← 所有共享契约验证
+└── trainer.mjs                     ← PPO 入口（在线 + 离线）
+
+scripts/lib/rl-shell-v1/           ← Shell 环境（合成 BUG 修复任务）
+scripts/lib/rl-browser-v1/         ← 浏览器环境（受控真实网页流程）
+scripts/lib/rl-orchestrator-v1/   ← 编排器环境（控制决策）
+scripts/lib/rl-mixed-v1/           ← 混合环境训练
+</code></pre></div>
+<p><strong>RL Core</strong> 拥有通用训练控制平面。它定义 episode 契约、batch 语义、对比和降级跟踪、检查点谱系、回滚规则、重放路由和训练器入口。</p>
+<p><strong>环境适配器</strong> 拥有所有执行相关的事：任务采样、episode 执行、证据收集和环境专属验证输入。它们实现一个薄薄的适配器接口——没有 RL 逻辑泄漏进来。</p>
+<h2 id="episode">共享 Episode 契约</h2>
+<p>每个 episode——无论 shell、browser 还是 orchestrator——产生相同结构化的输出：</p>
+<div class="highlight"><pre><span></span><code><span class="nx">Episode</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">episodeId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">environment</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;shell&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;browser&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;orchestrator&#39;</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">taskId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">trajectory</span><span class="o">:</span><span class="w"> </span><span class="kt">TrajectoryStep</span><span class="p">[];</span><span class="w">    </span><span class="c1">// 智能体动作 + 观察</span>
+<span class="w">  </span><span class="nx">outcome</span><span class="o">:</span><span class="w"> </span><span class="s1">&#39;success&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;partial&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;failure&#39;</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">&#39;blocked&#39;</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">reward</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">teacherSignal?</span><span class="o">:</span><span class="w"> </span><span class="kt">TeacherSignal</span><span class="p">;</span><span class="w">  </span><span class="c1">// 失败 + 边界 episode 时出现</span>
+<span class="w">  </span><span class="nx">comparison?</span><span class="o">:</span><span class="w"> </span><span class="kt">ComparisonResult</span><span class="p">;</span><span class="w"> </span><span class="c1">// 与上一策略对比</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>这种统一性使得跨环境对比和重放路由有意义。</p>
+<h2 id="_1">检查点谱系：三指针模型</h2>
+<div class="highlight"><pre><span></span><code>active ────────────── 当前使用的策略
+  │
+  ├── pre_update_ref ── 上次 PPO 更新前的快照（回滚目标）
+  │
+  └── last_stable ───── 上次经对比确认的稳定策略
+</code></pre></div>
+<ul>
+<li>每次 PPO 更新创建新的 <code>active</code> 检查点。</li>
+<li>应用更新前，前一个 <code>active</code> 成为 <code>pre_update_ref</code>。</li>
+<li>如果下次对比显示降级，系统回滚到 <code>pre_update_ref</code>。</li>
+<li>经过足够多次稳定对比后，<code>active</code> 被提升为 <code>last_stable</code>。</li>
+</ul>
+<p>这给了我们<strong>带自动回滚的安全探索</strong>——这是让在线学习可控的核心保证。</p>
+<p><img alt="检查点谱系：三指针模型" src="/../assets/rl-training/rl-checkpoint-lineage.png" /></p>
+<h2 id="_2">重放池：四个车道</h2>
+<p>不存储每个 episode，而是按对比结果路由到车道：</p>
+<table>
+<thead>
+<tr>
+<th>车道</th>
+<th>条件</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>positive</code></td>
+<td>比上一策略更好</td>
+<td>PPO + 蒸馏</td>
+</tr>
+<tr>
+<td><code>neutral</code></td>
+<td>与上一策略相同</td>
+<td>多样性采样</td>
+</tr>
+<tr>
+<td><code>negative</code></td>
+<td>比上一策略更差</td>
+<td>KL 正则化目标</td>
+</tr>
+<tr>
+<td><code>diagnostic_only</code></td>
+<td>教师裁判判定为边界案例</td>
+<td>分析，不参与训练</td>
+</tr>
+</tbody>
+</table>
+<p>路由是确定性的——基于对比结果，而非学习型路由器。这保持系统简单可调试。</p>
+<p><img alt="重放池：四个车道" src="/../assets/rl-training/rl-replay-pool.png" /></p>
+<h2 id="_3">联合环境训练</h2>
+<p>最强大的能力是<strong>联合环境训练</strong>（<code>rl-mixed-v1</code>）。一个实时 batch 可以包含 shell + browser + orchestrator episode。训练控制器：</p>
+<ol>
+<li>按平衡比例跨环境采样任务。</li>
+<li>并发运行 episodes。</li>
+<li>聚合奖励和对比结果。</li>
+<li>为整个学生做一个回滚决策——而非每个环境单独决策。</li>
+</ol>
+<p>这意味着 shell BUG 修复和 orchestrator 分发决策都能改进同一个学生策略。共享奖励信号是"这是否有助于智能体成功完成端到端任务？"</p>
+<h2 id="_4">训练阶段</h2>
+<ul>
+<li><strong>Phase 1 (V1)</strong>：合成 shell BUG 修复任务 + 教师塑形。可复现，快速迭代。</li>
+<li><strong>Phase 2</strong>：真实 shell 仓库任务。同一个学生，更难分布。</li>
+<li><strong>Phase 3</strong>：在线监控 + 晋升。受回滚保护的实时更新。</li>
+<li><strong>Phase B</strong>：浏览器适配器——受控真实网页流程（认证墙、表单提交、滚动模式）。</li>
+<li><strong>Phase C</strong>：编排器适配器——高价值控制决策（预检门控、分发路由、质量信号）。</li>
+<li><strong>Phase D/E</strong>：联合环境验证——三个环境一起验证。</li>
+</ul>
+<h2 id="_5">这解锁了什么</h2>
+<p>有了跨环境的共享学生策略，我们可以：</p>
+<ul>
+<li><strong>改进分发路由</strong>：通过编排器决策训练——哪些任务应该给 subagent vs. dry-run vs. 人工门控？</li>
+<li><strong>减少 clarity-gate 误报</strong>：通过 blocked-checkpoint episode 训练——真正的"需要人工"信号长什么样 vs. 噪声？</li>
+<li><strong>提升浏览器自动化精度</strong>：通过网页交互模式训练——哪些点击序列可靠地完成认证、表单提交或内容创建？</li>
+<li><strong>跨环境学习迁移</strong>：shell RL 对错误恢复的改进也能帮助遇到错误的浏览器任务。</li>
+</ul>
+<h2 id="_6">如何运行</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Shell RL：基准生成 → 训练 → 评估</span>
+node<span class="w"> </span>scripts/rl-shell-v1.mjs<span class="w"> </span>benchmark-generate<span class="w"> </span>--count<span class="w"> </span><span class="m">20</span>
+node<span class="w"> </span>scripts/rl-shell-v1.mjs<span class="w"> </span>train<span class="w"> </span>--epochs<span class="w"> </span><span class="m">5</span>
+node<span class="w"> </span>scripts/rl-shell-v1.mjs<span class="w"> </span><span class="nb">eval</span>
+
+<span class="c1"># 联合环境训练</span>
+node<span class="w"> </span>scripts/rl-mixed-v1.mjs<span class="w"> </span>mixed<span class="w"> </span>--browser-only
+node<span class="w"> </span>scripts/rl-mixed-v1.mjs<span class="w"> </span>mixed<span class="w"> </span>--orchestrator-only
+node<span class="w"> </span>scripts/rl-mixed-v1.mjs<span class="w"> </span>mixed<span class="w"> </span>--mixed
+
+<span class="c1"># 评估联合训练</span>
+node<span class="w"> </span>scripts/rl-mixed-v1.mjs<span class="w"> </span>mixed-eval
+</code></pre></div>
+<h2 id="_7">当前状态</h2>
+<ul>
+<li>RL Core：<strong>稳定</strong> — 所有共享契约已验证，40+ 测试通过</li>
+<li>Shell RL V1：<strong>稳定</strong> — Phase 1 + 2 已实现，Phase 3 在线监控进行中</li>
+<li>Browser RL V1：<strong>Beta</strong> — 适配器 + 评估线束已实现</li>
+<li>Orchestrator RL V1：<strong>Beta</strong> — 适配器 + 评估线束已实现</li>
+<li>联合环境训练：<strong>实验性</strong> — 在留出任务上完成了端到端验证</li>
+</ul>
+<p>下一个里程碑是 <strong>Phase D/E 验证</strong>：确认联合环境训练能在所有三个环境的留出任务上产生优于单环境训练的学生。</p>
+<h2 id="_8">延伸阅读</h2>
+<ul>
+<li><a href="/zh/architecture/">AIOS 架构</a> — 脚线、分发器和 RL 模块布局</li>
+<li><a href="https://github.com/rexleimo/aios/blob/main/docs/superpowers/specs/2026-03-22-aios-rl-core-design.md">RL Core 设计规范</a> — 完整技术规格</li>
+<li><a href="https://github.com/rexleimo/aios/blob/main/docs/superpowers/specs/2026-03-23-aios-browser-orchestrator-rl-design.md">浏览器 + 编排器 RL 设计</a> — 联合环境详情</li>
+</ul></div><a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

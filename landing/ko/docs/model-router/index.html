@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="ko" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모델 라우터</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">한국어</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/docs/model-router/" hreflang="en" lang="en">English</a><a class="rex-lang-opt" href="/zh/docs/model-router/" hreflang="zh" lang="zh">中文</a><a class="rex-lang-opt" href="/ja/docs/model-router/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt is-active" href="/ko/docs/model-router/" hreflang="ko" lang="ko" aria-current="true">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+<div class="rex-doc-layout">
+  <aside class="rex-doc-sidebar">
+    <a class="rex-doc-sidebar__home" href="/ko/docs/">모든 문서</a>
+    <div class="rex-doc-search"><input type="search" id="rex-doc-search-input" placeholder="문서 검색…" aria-label="문서 검색…" autocomplete="off"></div>
+    <div id="rex-doc-nav"><details class="rex-doc-nav-group"><summary>시작하기</summary><div class="rex-doc-nav-items"><a href="/ko/docs/getting-started/" class="rex-doc-nav-link" data-title="빠른 시작: aios 설치와 검증">빠른 시작: AIOS 설치와 검증</a><a href="/ko/docs/windows-guide/" class="rex-doc-nav-link" data-title="windows 가이드: powershell 설정과 복구">Windows 가이드: PowerShell 설정과 복구</a><a href="/ko/docs/troubleshooting/" class="rex-doc-nav-link" data-title="aios 문제 해결">AIOS 문제 해결</a><a href="/ko/docs/windows-ai-coding-agent-setup/" class="rex-doc-nav-link" data-title="windows ai 코딩 에이전트 설정: 10분 안에 설치하고 검증하기">Windows AI 코딩 에이전트 설정: 10분 안에 설치하고 검증하기</a></div></details><details class="rex-doc-nav-group"><summary>문제별 가이드</summary><div class="rex-doc-nav-items"><a href="/ko/docs/why-agents-forget-context/" class="rex-doc-nav-link" data-title="ai 코딩 에이전트가 세션 사이에 컨텍스트를 잊어버리는 이유 (그리고 해결 방법)">AI 코딩 에이전트가 세션 사이에 컨텍스트를 잊어버리는 이유 (그리고 해결 방법)</a><a href="/ko/docs/reduce-agent-token-cost/" class="rex-doc-nav-link" data-title="ai 코딩 에이전트 토큰 비용 줄이기: claude code와 codex 예산 관리">AI 코딩 에이전트 토큰 비용 줄이기: Claude Code와 Codex 예산 관리</a><a href="/ko/docs/claude-code-vs-codex-vs-gemini/" class="rex-doc-nav-link" data-title="claude code vs codex vs gemini cli: 어떤 코딩 에이전트 cli를 선택해야 할까?">Claude Code vs Codex vs Gemini CLI: 어떤 코딩 에이전트 CLI를 선택해야 할까?</a><a href="/ko/docs/overnight-agent-runs/" class="rex-doc-nav-link" data-title="코딩 에이전트를 밤새 크래시나 이탈 없이 실행하는 방법">코딩 에이전트를 밤새 크래시나 이탈 없이 실행하는 방법</a><a href="/ko/docs/multi-agent-code-review/" class="rex-doc-nav-link" data-title="멀티 에이전트 코드 리뷰: 실제로 도움이 되는 병렬 코딩 에이전트">멀티 에이전트 코드 리뷰: 실제로 도움이 되는 병렬 코딩 에이전트</a><a href="/ko/docs/use-cases/" class="rex-doc-nav-link" data-title="사용 사례: aios route 선택">사용 사례: AIOS route 선택</a></div></details><details class="rex-doc-nav-group" open><summary>기능</summary><div class="rex-doc-nav-items"><a href="/ko/docs/contextdb/" class="rex-doc-nav-link" data-title="contextdb: pull-based 프로젝트 기억">ContextDB: pull-based 프로젝트 기억</a><a href="/ko/docs/token-compression/" class="rex-doc-nav-link" data-title="token intelligence와 압축 경계">Token Intelligence와 압축 경계</a><a href="/ko/docs/workflow-policy/" class="rex-doc-nav-link" data-title="워크플로 정책">워크플로 정책</a><a href="/ko/docs/model-router/" aria-current="page" class="rex-doc-nav-link is-active" data-title="모델 라우터">모델 라우터</a><a href="/ko/docs/codemap/" class="rex-doc-nav-link" data-title="코드 리뷰 그래프 (codemap)">코드 리뷰 그래프 (Codemap)</a><a href="/ko/docs/team-ops/" class="rex-doc-nav-link" data-title="agent team: 증거를 남기는 병렬 작업">Agent Team: 증거를 남기는 병렬 작업</a><a href="/ko/docs/solo-harness/" class="rex-doc-nav-link" data-title="solo harness: 재개 가능한 장기 작업">Solo Harness: 재개 가능한 장기 작업</a><a href="/ko/docs/superpowers/" class="rex-doc-nav-link" data-title="rex 워크플로 마이그레이션">Rex 워크플로 마이그레이션</a><a href="/ko/docs/integrations/" class="rex-doc-nav-link" data-title="aios에서 typesafe jev 쓰기——설치·판단 게이트 켜기·백그라운드 실행">AIOS에서 TypeSafe Jev 쓰기——설치·판단 게이트 켜기·백그라운드 실행</a><a href="/ko/docs/perception/" class="rex-doc-nav-link" data-title="perception(인지 레이어)">Perception(인지 레이어)</a></div></details><details class="rex-doc-nav-group"><summary>레퍼런스</summary><div class="rex-doc-nav-items"><a href="/ko/docs/architecture/" class="rex-doc-nav-link" data-title="aios 아키텍처">AIOS 아키텍처</a><a href="/ko/docs/route-concurrency-profiles/" class="rex-doc-nav-link" data-title="라우팅/병렬 프로필">라우팅/병렬 프로필</a><a href="/ko/docs/advanced-design-skills/" class="rex-doc-nav-link" data-title="고급 디자인 스킬">고급 디자인 스킬</a><a href="/ko/docs/hud-guide/" class="rex-doc-nav-link" data-title="hud 사용자 가이드">HUD 사용자 가이드</a><a href="/ko/docs/debug-hub/" class="rex-doc-nav-link" data-title="debug-hub">debug-hub</a><a href="/ko/docs/cli-comparison/" class="rex-doc-nav-link" data-title="cli 비교">CLI 비교</a><a href="/ko/docs/engineering-standards/" class="rex-doc-nav-link" data-title="엔지니어링 표준 — aios는 코드를 생성할 뿐만 아니라 소프트웨어를 구축한다">엔지니어링 표준 — AIOS는 코드를 생성할 뿐만 아니라 소프트웨어를 구축한다</a></div></details><details class="rex-doc-nav-group"><summary>사례 연구</summary><div class="rex-doc-nav-items"><a href="/ko/docs/case-library/" class="rex-doc-nav-link" data-title="사례 라이브러리: 재현 가능한 aios workflow">사례 라이브러리: 재현 가능한 AIOS workflow</a><a href="/ko/docs/case-auth-wall-browser/" class="rex-doc-nav-link" data-title="케이스 - 브라우저 인증벽 플로우">케이스 - 브라우저 인증벽 플로우</a><a href="/ko/docs/case-cross-cli-handoff/" class="rex-doc-nav-link" data-title="케이스 - 크로스 cli 핸드오프">케이스 - 크로스 CLI 핸드오프</a><a href="/ko/docs/case-privacy-guard/" class="rex-doc-nav-link" data-title="케이스 - privacy guard 설정 읽기">케이스 - Privacy Guard 설정 읽기</a></div></details><details class="rex-doc-nav-group"><summary>프로젝트</summary><div class="rex-doc-nav-items"><a href="/ko/docs/changelog/" class="rex-doc-nav-link" data-title="변경 로그">변경 로그</a><a href="/ko/docs/friends/" class="rex-doc-nav-link" data-title="추천 링크">추천 링크</a><a href="/ko/docs/skill-candidates/" class="rex-doc-nav-link" data-title="skill candidates 가이드">Skill Candidates 가이드</a></div></details></div>
+    <p class="rex-doc-search-empty" id="rex-doc-search-empty" hidden>일치하는 문서 없음</p>
+    <div class="rex-doc-sidebar__status">AIOS · v8.0.0 · 로컬 우선</div>
+  </aside>
+  <article class="rex-doc-article">
+    <p class="eyebrow">文档 · 한국어</p>
+    <h1>모델 라우터</h1>
+    <p class="lede" style="font-size:17px">모델 라우터는 작업 유형, 라우팅 프로파일, capability registry, 폴백 규칙에 따라 적절한 AI 모델을 자동으로 고릅니다. 각 모델의 장단점이나 사용 한도를 외울 필요가 없습니다. 왜 그렇게 골랐는지는 --explain으로 확인하고 필요하면 직접 덮어쓸 수 있습니다.</p>
+    <div class="rex-doc-content md-body">
+<blockquote>
+<p><strong>Quick Answer:</strong> Model Router는 작업 유형, routing profile, 능력 레지스트리, 설정된 fallback 규칙을 바탕으로 모델을 선택합니다. 선택 이유가 필요하면 <code>--explain</code>을 사용하고, 비용·지연·능력의 절충이 맞지 않으면 profile이나 명시적 override를 사용하세요.</p>
+</blockquote>
+<h2 id="explain">먼저 explain 가능한 라우트부터</h2>
+<p><code>--explain</code>를 붙여 라우팅하고, 선택된 모델과 판단 근거를 반드시 검토하세요.</p>
+<p><strong>AI 모델마다 잘하는 분야가 다릅니다.</strong> 모델 라우터는 작업 유형과 capability 레지스트리를 대조해 가장 잘하는 모델로 보냅니다. 프론트엔드는 <strong>Claude Sonnet 5</strong>, 보안 감사는 <strong>Claude Opus 5</strong>, 브라우저 자동화는 <strong>GPT-6-Astra</strong>. 이 대응은 레지스트리가 기억하므로 외울 필요가 없습니다.</p>
+<h2 id="_2">심플 버전</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># 작업 유형을 명시 선언해서 최적 모델로 라우팅</span>
+node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>route<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task<span class="w"> </span><span class="s2">&quot;아름다운 랜딩 페이지 컴포넌트 구축&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task-type<span class="w"> </span>frontend<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--explain
+
+<span class="c1"># 결과: frontend → claude-sonnet-5 (클라이언트 claude / --model)</span>
+</code></pre></div>
+<p>이게 전부입니다. 라우터는 레지스트리를 대조하고, 클라이언트 계약으로 좁히고, CLI 인수를 만듭니다.</p>
+<p>작업 텍스트에서 키워드를 추론해 작업 유형을 <strong>결정하지 않습니다</strong>. <code>signals.mjs</code>의 North Star 제약대로 라우팅 입력(<code>taskType</code> / <code>intent</code>)은 호출자가 명시 선언합니다. 선언이 없으면 <code>general</code>으로 떨어지고 <code>--explain</code>의 <code>why</code>에 "Explicit task type selected: ..." 또는 "No explicit task type or intent..."가 기록됩니다. 상류(solo / phase job / team role / CLI)에서 어떻게 선언하느냐가 실제 설계 포인트입니다.</p>
+<h2 id="_3">왜 중요한가</h2>
+<p>모델 라우터가 없다면 다음이 필요합니다:</p>
+<ol>
+<li>각 작업 유형에 가장 적합한 모델을 파악</li>
+<li><code>codex</code>, <code>claude</code>, <code>gemini</code> 명령 수동 전환</li>
+<li>각 CLI의 올바른 모델 플래그 기억</li>
+</ol>
+<p>모델 라우터가 있으면 작업만 설명하면 나머지는 처리됩니다.</p>
+<h2 id="_4">동작 원리</h2>
+<div class="highlight"><pre><span></span><code>명시 선언（--task-type / phase role / team role / 환경 변수）
+    ↓
+작업 유형 해석（선언 없으면 general）
+    ↓
+routing profile 조정（balanced / premium / budget）+ role override
+    ↓
+레지스트리 대조（primary + fallback 체인）
+    ↓
+클라이언트 계약（모델 프로토콜 ∩ 실행 클라이언트）
+    ↓
+채널 가용성 필터（활성화 시, 런타임 파일 출처）
+    ↓
+CLI 명령 생성（codex / claude / gemini 올바른 플래그）
+    ↓
+실행 + 결과를 model.dispatch로 기록
+</code></pre></div>
+<h2 id="cli">CLI 프로토콜</h2>
+<p>프로토콜 어휘는 4 종. 모델이 선언한 프로토콜과 실행 클라이언트가 말할 수 있는 프로토콜이 교차해야 해당 경로를 실제로 쓸 수 있습니다 (아래 「클라이언트 모델 라우팅 계약」 참조):</p>
+<table>
+<thead>
+<tr>
+<th>프로토콜</th>
+<th>릴레이 엔드포인트</th>
+<th>실행 가능 클라이언트</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>openai-response</code></td>
+<td><code>https://coding.rexai.top/openai/v1/responses</code></td>
+<td>codex, opencode</td>
+</tr>
+<tr>
+<td><code>openai-chat</code></td>
+<td><code>https://coding.rexai.top/openai/v1/chat/completions</code></td>
+<td>hermes, opencode, pi</td>
+</tr>
+<tr>
+<td><code>claude</code></td>
+<td><code>https://coding.rexai.top/claude/v1/messages</code></td>
+<td>claude, hermes, opencode, pi</td>
+</tr>
+<tr>
+<td><code>gemini</code></td>
+<td><code>https://coding.rexai.top/gemini/v1beta/models/&lt;model&gt;:generateContent</code></td>
+<td>opencode</td>
+</tr>
+</tbody>
+</table>
+<p>Codex live worker는 <code>--dangerously-bypass-approvals-and-sandbox</code>（구 <code>--yolo</code>에 해당）를 기본 부여해 백그라운드 subagent가 approval/sandbox 프롬프트에서 대기하는 것을 방지합니다. 수동 디버그 때만 <code>AIOS_SUBAGENT_CODEX_UNATTENDED=0</code>으로 비활성화하세요.</p>
+<h2 id="_5">모델 능력 레지스트리</h2>
+<p>레지스트리는 라우팅 규칙이 쓰는 모델과 구조화된 능력을 담습니다. 전체 목록은 <code>node scripts/aios.mjs model-router</code>에서 확인하세요.</p>
+<table>
+<thead>
+<tr>
+<th>모델</th>
+<th>사용 가능한 프로토콜</th>
+<th>잘하는 분야</th>
+<th>비용</th>
+<th>컨텍스트</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Claude Opus 5</strong></td>
+<td><code>claude</code></td>
+<td>코드 리뷰, 아키텍처 설계, 보안 감사</td>
+<td>가장 높음</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>Claude Opus 4.8</strong></td>
+<td><code>claude</code></td>
+<td>코드 리뷰, 보안 감사, 장문 작성</td>
+<td>높음</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>GPT-6-Astra</strong></td>
+<td><code>openai-response</code></td>
+<td>만능, 범용 추론, 브라우저 자동화</td>
+<td>가장 높음</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>Claude Sonnet 4.6</strong></td>
+<td><code>claude</code></td>
+<td>일상 개발, 빠른 프로토타이핑, RAG</td>
+<td>보통</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>GLM-5.2</strong></td>
+<td><code>claude</code>, <code>openai-chat</code></td>
+<td>자율 루프, 장시간 플래닝, 수학 추론</td>
+<td>낮음</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>Claude Opus 4.7</strong></td>
+<td><code>claude</code></td>
+<td>코드 리뷰, 아키텍처 설계, 보안 감사</td>
+<td>가장 높음</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>DeepSeek-V4-Pro</strong></td>
+<td><code>claude</code></td>
+<td>알고리즘 구현, 코어 로직, 장 로그 분석</td>
+<td>가장 낮음</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>Claude Sonnet 5</strong></td>
+<td><code>claude</code></td>
+<td>일상 개발, 빠른 프로토타이핑, 프론트엔드 UI</td>
+<td>보통</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>DeepSeek-V4-Flash</strong></td>
+<td><code>openai-chat</code>, <code>claude</code></td>
+<td>알고리즘 구현, 배치 처리, 장 로그 분석</td>
+<td>가장 낮음</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>GPT-5.5</strong></td>
+<td><code>openai-response</code></td>
+<td>범용 추론, 브라우저 자동화, 데스크톱 자동화</td>
+<td>가장 높음</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>Gemini-3.8-Flash</strong></td>
+<td><code>gemini</code></td>
+<td>멀티모달 분석, 장문 문서 연구, 영상 분석</td>
+<td>보통</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>GPT-5.6-Sol</strong></td>
+<td><code>openai-response</code></td>
+<td>범용 추론, 장시간 실행, 코드 실행</td>
+<td>높음</td>
+<td>1M</td>
+</tr>
+<tr>
+<td><strong>Claude Haiku 4.5</strong></td>
+<td><code>claude</code></td>
+<td>분류, 요약, 배치 처리</td>
+<td>낮음</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>GLM-5.3-Flash</strong></td>
+<td><code>openai-chat</code></td>
+<td>분류, 문서 작성, 테스트 실행</td>
+<td>가장 낮음</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>Kimi K2.6</strong></td>
+<td><code>claude</code></td>
+<td>멀티 에이전트 오케스트레이션, 장시간 실행, 프론트엔드 UI</td>
+<td>낮음</td>
+<td>200K</td>
+</tr>
+<tr>
+<td><strong>MiniMax-M2.7</strong></td>
+<td><code>claude</code></td>
+<td>자가 복구, 운영 복구, 지속 최적화</td>
+<td>낮음</td>
+<td>200K</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_6">라우팅 규칙</h2>
+<table>
+<thead>
+<tr>
+<th>작업 유형</th>
+<th>우선 모델</th>
+<th>폴백 체인</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code-review</code></td>
+<td><strong>Claude Opus 5</strong></td>
+<td>Claude Opus 4.8 → GPT-6-Astra → Claude Sonnet 4.6</td>
+</tr>
+<tr>
+<td><code>security-review</code></td>
+<td><strong>Claude Opus 5</strong></td>
+<td>Claude Opus 4.8 → GPT-6-Astra → GLM-5.2</td>
+</tr>
+<tr>
+<td><code>architecture</code></td>
+<td><strong>Claude Opus 5</strong></td>
+<td>GPT-6-Astra → GLM-5.2 → Claude Opus 4.7</td>
+</tr>
+<tr>
+<td><code>implementation</code></td>
+<td><strong>DeepSeek-V4-Pro</strong></td>
+<td>GPT-6-Astra → Claude Sonnet 5 → DeepSeek-V4-Flash</td>
+</tr>
+<tr>
+<td><code>browser-automation</code></td>
+<td><strong>GPT-6-Astra</strong></td>
+<td>GPT-5.5 → Claude Sonnet 5</td>
+</tr>
+<tr>
+<td><code>research</code></td>
+<td><strong>Gemini-3.8-Flash</strong></td>
+<td>DeepSeek-V4-Pro → Claude Sonnet 5 → GPT-5.6-Sol</td>
+</tr>
+<tr>
+<td><code>planning</code></td>
+<td><strong>GLM-5.2</strong></td>
+<td>GPT-6-Astra → Claude Opus 5 → Claude Opus 4.7</td>
+</tr>
+<tr>
+<td><code>testing</code></td>
+<td><strong>Claude Haiku 4.5</strong></td>
+<td>Claude Sonnet 5 → GLM-5.3-Flash → DeepSeek-V4-Flash</td>
+</tr>
+<tr>
+<td><code>docs</code></td>
+<td><strong>Claude Sonnet 5</strong></td>
+<td>GLM-5.3-Flash → GPT-5.5 → Kimi K2.6</td>
+</tr>
+<tr>
+<td><code>frontend</code></td>
+<td><strong>Claude Sonnet 5</strong></td>
+<td>GPT-5.6-Sol → Kimi K2.6 → GPT-5.5</td>
+</tr>
+<tr>
+<td><code>self-healing</code></td>
+<td><strong>GLM-5.2</strong></td>
+<td>GPT-6-Astra → MiniMax-M2.7 → DeepSeek-V4-Pro</td>
+</tr>
+<tr>
+<td><code>general</code></td>
+<td><strong>GPT-6-Astra</strong></td>
+<td>Claude Sonnet 5 → GLM-5.2 → DeepSeek-V4-Pro</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_7">라우팅 프로파일</h2>
+<p>모델 선택의 적극성을 제어합니다:</p>
+<table>
+<thead>
+<tr>
+<th>프로파일</th>
+<th>사용 시점</th>
+<th>동작</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>balanced</code>（기본）</td>
+<td>대부분의 작업</td>
+<td>능력이 강하게 겹칠 때만 상위 모델로 올리고, 일반 코딩은 저렴하게 유지</td>
+</tr>
+<tr>
+<td><code>premium</code></td>
+<td>위험하거나 불분명한 작업</td>
+<td>Opus 나 GPT-6-Astra 같은 상위 모델을 더 적극 사용</td>
+</tr>
+<tr>
+<td><code>budget</code></td>
+<td>비용 중시 작업</td>
+<td>작업이 정말 상위 모델을 필요로 하는 경우를 제외하고 최저가 모델 우선</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="c1"># 명령마다 지정</span>
+node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>route<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="w"> </span>--profile<span class="w"> </span>premium<span class="w"> </span>--explain
+
+<span class="c1"># 또는 세션에 설정</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_ROUTER_PROFILE</span><span class="o">=</span>premium
+</code></pre></div>
+<h2 id="_8">빠른 시작</h2>
+<h3 id="_9">레지스트리와 규칙 보기</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router
+</code></pre></div>
+<h3 id="_10">설명과 함께 작업 라우팅</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>route<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task<span class="w"> </span><span class="s2">&quot;아름다운 랜딩 페이지 컴포넌트 구축&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task-type<span class="w"> </span>frontend<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profile<span class="w"> </span>balanced<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--explain
+</code></pre></div>
+<h3 id="_11">작업 유형 명시 선언</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>route<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task<span class="w"> </span><span class="s2">&quot;데이터베이스 연결 리팩터링&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task-type<span class="w"> </span>implementation
+</code></pre></div>
+<h3 id="_12">디스패치 이력 보기</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>stats
+</code></pre></div>
+<h3 id="_13">채널 가용성 상태 보기</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>model-router<span class="w"> </span>availability
+</code></pre></div>
+<h2 id="_14">왜 이 모델이 선택되었는가</h2>
+<p>아무 route 명령이나 <code>--explain</code>를 붙여 근거를 확인하세요:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;resolvedType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;implementation&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;modelId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek-v4&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DeepSeek-V4-Pro&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;clientId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;claude-code&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;primary match for taskType=\&quot;implementation\&quot;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;profile&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;premium&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;matchedSignals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">  </span><span class="nt">&quot;why&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Explicit task type selected: implementation&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;contractMode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;modelProtocols&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;claude&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;requestedModelId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deepseek-v4&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;skippedForCapability&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="p">}</span>
+</code></pre></div>
+<ul>
+<li><strong><code>resolvedType</code></strong> = 선언에서 해석한 작업 유형. 키워드 추론의 증거가 아님</li>
+<li><strong><code>matchedSignals: []</code></strong> = 라우터는 자유 텍스트에서 작업 유형을 추측하지 않음（<code>signals.mjs</code>의 North Star 제약）</li>
+<li><strong><code>why</code></strong> = 명시 선언인지, 선언이 없는 결정적 <code>general</code> 폴백인지 설명</li>
+<li><strong><code>requestedModelId</code> / <code>skippedForCapability</code> / <code>contractMode</code></strong> = 클라이언트 계약으로 좁힌 흔적</li>
+</ul>
+<h2 id="_15">모델 선택 오버라이드</h2>
+<p>특정 모델을 강제하려면:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 역할별（planner / implementer / reviewer / security-reviewer）</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_PLANNER</span><span class="o">=</span>claude-opus
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_IMPLEMENTER</span><span class="o">=</span>deepseek-v4
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_REVIEWER</span><span class="o">=</span>claude-opus
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_SECURITY_REVIEWER</span><span class="o">=</span>claude-opus
+
+<span class="c1"># 프로파일별</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_ROUTER_PROFILE</span><span class="o">=</span>budget
+
+<span class="c1"># 라우팅 자체를 비활성화（각 클라이언트 기본 모델 사용）</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIOS_MODEL_ROUTER</span><span class="o">=</span><span class="m">0</span>
+</code></pre></div>
+<p>오버라이드를 지정하면 라우터는 모델을 통과시키지 않고, 그 모델을 말할 수 있는 클라이언트로 전환합니다. 클라이언트에 맞춰 모델을 바꾸는 것은 자동 라우팅만 가능합니다.</p>
+<h2 id="_16">설정 파일</h2>
+<table>
+<thead>
+<tr>
+<th>파일</th>
+<th>용도</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/lib/specs/model-registry.json</code></td>
+<td>모델 능력, 라우팅 규칙, CLI 프로토콜 구성</td>
+</tr>
+<tr>
+<td><code>scripts/lib/specs/orchestrator-agents.json</code></td>
+<td>Agent 역할 → preferredModel 매핑（schema v2）</td>
+</tr>
+<tr>
+<td><code>.claude/skills/model-router/SKILL.md</code></td>
+<td>Agent 셀프 서비스 라우팅 skill</td>
+</tr>
+<tr>
+<td><code>.claude/agents/*.md</code></td>
+<td>preferredModel frontmatter가 들어간 Agent 역할 카드</td>
+</tr>
+<tr>
+<td><code>scripts/lib/model-router.mjs</code></td>
+<td>라우터 로직: 대조, fallback, CLI 빌드, 통계</td>
+</tr>
+</tbody>
+</table>
+<h2 id="agent">Agent 통합</h2>
+<h3 id="_17">작업 라우팅을 통한 유도</h3>
+<p>모델 라우터는 AIOS Task Router를 통해 Agent 컨텍스트에 주입됩니다. <code>ctx-agent</code>에서 실행되는 Agent는 모델 디스패치 지침을 자동으로 얻습니다. 서브태스크를 디스패치할 때 Agent는 <code>model-router</code> skill을 호출해 최적 모델을 결정할 수 있습니다.</p>
+<h3 id="_18">오케스트레이터에 의한 해석</h3>
+<p>Agent 역할 카드（<code>.claude/agents/*.md</code>）의 <code>preferredModel</code>을 오케스트레이터가 디스패치 시에 해석합니다:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># .claude/agents/rex-reviewer.md</span>
+<span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sonnet</span>
+<span class="nt">preferredModel</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">claude-opus</span>
+</code></pre></div>
+<p>모델 해석 우선순위: <strong>환경 변수</strong> &gt; <strong>preferredModel</strong> &gt; <strong>model</strong>（폴백）.</p>
+<h2 id="_19">인식 피드백 루프</h2>
+<p>모든 디스패치는 ContextDB의 <code>model.dispatch</code> 이벤트로 기록되고, 작업 유형별 성공 확률을 집계합니다. 향후 판단은 <strong>능력 적합 × 역사 성공률 × 비용</strong>을 함께 반영합니다.</p>
+<h2 id="_20">클라이언트 모델 라우팅 계약</h2>
+<p>실제로 기동되는 클라이언트가 그 프로토콜을 말할 수 없으면 라우팅에 의미가 없습니다. AIOS는 추측하지 않고 클라이언트 등록표（<code>scripts/lib/clients/core/definitions.mjs</code>）에서 읽습니다:</p>
+<table>
+<thead>
+<tr>
+<th>클라이언트</th>
+<th><code>modelRouting</code></th>
+<th>말할 수 있는 프로토콜</th>
+<th>모델 인수</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>codex</td>
+<td><code>relay</code></td>
+<td><code>openai-response</code></td>
+<td><code>-m</code></td>
+</tr>
+<tr>
+<td>claude</td>
+<td><code>relay</code></td>
+<td><code>claude</code></td>
+<td><code>--model</code></td>
+</tr>
+<tr>
+<td>gemini</td>
+<td><code>own</code></td>
+<td><em>미공개</em></td>
+<td><code>-m</code></td>
+</tr>
+<tr>
+<td>opencode</td>
+<td><code>relay</code></td>
+<td><code>openai-chat</code>, <code>openai-response</code>, <code>claude</code>, <code>gemini</code></td>
+<td><code>-m</code></td>
+</tr>
+<tr>
+<td>hermes</td>
+<td><code>relay</code></td>
+<td><code>claude</code>, <code>openai-chat</code></td>
+<td><code>--model</code></td>
+</tr>
+<tr>
+<td>grok</td>
+<td><code>own</code></td>
+<td><em>미공개</em></td>
+<td><code>-m</code></td>
+</tr>
+<tr>
+<td>workbuddy</td>
+<td><code>own</code></td>
+<td><em>미공개</em></td>
+<td><code>--model</code></td>
+</tr>
+<tr>
+<td>pi</td>
+<td><code>relay</code></td>
+<td><code>openai-chat</code>, <code>claude</code></td>
+<td><code>--model</code></td>
+</tr>
+<tr>
+<td>zcode</td>
+<td><code>own</code></td>
+<td><em>미공개</em></td>
+<td><code>—</code></td>
+</tr>
+<tr>
+<td>qoder</td>
+<td><code>own</code></td>
+<td><em>미공개</em></td>
+<td><code>—</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>relay</code>: 네이티브 프로토콜 게이트웨이형 CLI. <code>coding.rexai.top</code>으로 향하면 큐레이션된 모델을 모두 쓸 수 있습니다.</li>
+<li><code>own</code>: 모델 인수를 전혀 넘기지 않고 클라이언트 자체 기본 모델을 씁니다. AIOS는 설정을 고치지 않습니다.</li>
+<li><code>hermes</code>는 <code>openai-chat</code> 상류를 종단할 수 있지만 기동은 Anthropic 호환 채널만 쓰므로 <code>claude</code> + <code>openai-chat</code>을 선언합니다.</li>
+<li><code>qoder</code>는 <code>own</code>이며 zcode·grok·workbuddy와 같은 상태입니다. 모델이 계정에 묶여 대화형 <code>/model</code>로 고르고, 검증된 headless <code>--model</code> 플래그가 없어서 AIOS는 현재 Qoder로 모델을 중계하지 않습니다.</li>
+</ul>
+<p>프로토콜과 엔드포인트 대응은 <code>scripts/lib/model-router/protocols.mjs</code>: <code>openai-chat -&gt; /openai/v1/chat/completions</code>, <code>openai-response -&gt; /openai/v1/responses</code>, <code>claude -&gt; /claude/v1/messages</code>, <code>gemini -&gt; /gemini/v1beta/models/&lt;model&gt;:generateContent</code>.</p>
+<p>여기서 두 규칙이 나옵니다:</p>
+<ul>
+<li><strong>명시 선언 우선.</strong> <code>-m</code>, <code>AIOS_MODEL_*</code>, 작업 모델이 설정되면 클라이언트가 모델을 따라갑니다（provider 클라이언트 + 그 <code>--model</code> 채널）. 워커 클라이언트에 맞춰 모델을 바꾸는 것은 자동 라우팅만 허용됩니다.</li>
+<li><strong>자동 라우팅은 클라이언트를 바꾸지 않는다.</strong> team role, subagent, phase job은 작업이 지정한 클라이언트로 기동합니다. 그 클라이언트가 최적 모델을 말할 수 없으면 쓸 수 있는 최강 모델까지 폴백 체인을 내려갑니다.</li>
+</ul>
+<p>판단은 모두 라우트 결과에 남습니다: <code>requestedModelId</code>（원래 요구）, <code>skippedForCapability</code>（후보를 건너뛴 이유）, <code>modelProtocols</code>, <code>contractMode</code>.</p>
+<h2 id="_21">채널 가용성（런타임 계층）</h2>
+<p>레지스트리가 모델의 잘하는 분야를 나타낸다면, 또 다른 상태 기계는 중계소가 <strong>지금</strong> 무엇을 제공할 수 있는지 기록합니다. 학습 출처는 실제 디스패치 결과뿐입니다:</p>
+<table>
+<thead>
+<tr>
+<th>현상</th>
+<th>기록 내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>model_not_found</code>, <code>no available channel</code>, 게이트웨이 응답 절단, 프로브 HTTP 404</td>
+<td>채널 <code>down</code>（404는 즉시 죽음 판정）</td>
+</tr>
+<tr>
+<td>연결·타임아웃·reset, 5xx, 첫 바이트 이전 단절</td>
+<td><code>network</code> 실패</td>
+</tr>
+<tr>
+<td>실제 모델과 다른 id가 반환</td>
+<td><code>degraded</code>（채널이 불안정）</td>
+</tr>
+<tr>
+<td>첫 바이트가 지연 예산 초과</td>
+<td><code>degraded</code></td>
+</tr>
+<tr>
+<td>연속 2 회 실패</td>
+<td><code>down</code></td>
+</tr>
+<tr>
+<td>성공</td>
+<td>복구 경로를 통해 <code>ok</code>로 복귀</td>
+</tr>
+</tbody>
+</table>
+<p>Agent 쪽 실패（<code>tool</code>, <code>provider-output</code>, <code>timeout-after-output</code>）는 채널 증거로 기록하지 <strong>않습니다</strong>. worker가 도구를 잘못 썼다고 모델을 식히지 않습니다.</p>
+<p>확인: <code>node scripts/aios.mjs model-router availability</code>. 라우팅은 기본으로 이 캐시를 읽지 않습니다（오프라인 결정성 유지）. <code>AIOS_MODEL_AVAILABILITY=1</code>일 때만 사용 불가 채널을 제외하고, 적용 결과는 <code>orchestrate plan preview</code>와 phase dispatch 이벤트의 <code>channelDown</code> / <code>degradedChannel</code>에 나타납니다. <code>down</code>은 <code>cooldownMs</code>（기본 300 초）후 자동 복귀, <code>ok</code>는 <code>ttlMs</code>（기본 600 초）초과 시 만료. 캐시는 <code>memory/specs/model-availability.json</code>（<code>AIOS_MODEL_AVAILABILITY_PATH</code>로 덮어쓰기, <code>AIOS_MODEL_AVAILABILITY_FEEDBACK=0</code>으로 쓰기 중단）.</p>
+<h2 id="_22">다음 단계</h2>
+<ul>
+<li><a href="/ko/docs/team-ops/">Agent Team</a> — 자동 라우팅이 있는 멀티 에이전트 협업</li>
+<li><a href="/ko/docs/contextdb/">ContextDB</a> — 프로젝트 메모리</li>
+<li><a href="/ko/docs/solo-harness/">Solo Harness</a> — 장시간 실행 단일 에이전트 작업</li>
+</ul>
+<h2 id="faq">FAQ</h2>
+<h3 id="_23">모델을 고르기 전에 모델을 호출합니까?</h3>
+<p>아닙니다. 라우터는 작업 메타데이터와 설정된 능력 레지스트리로 client/model 경로를 고르고, 이후 선택된 클라이언트가 작업을 실행합니다.</p>
+<h3 id="_24">추천 결과를 덮어쓸 수 있습니까?</h3>
+<p>가능합니다. 비용, 지연, 능력 요구에 따라 routing profile 이나 역할별 명시 override를 사용하세요.</p>
+<h3 id="_25">왜 구현 작업은 늘 저렴한 모델로 갑니까?</h3>
+<p><code>balanced</code>에서 <code>implementation</code>은 저렴한 DeepSeek-V4 로 결정됩니다. 상류가 더 강한 능력 합류를 보거나 <code>--profile premium</code>을 쓰면 상위 모델로 올라갑니다.</p>
+<h3 id="_26">작업에 여러 부분이 있는데 모델 하나만 나옵니다</h3>
+<p>복합 작업은 현재 모델 하나입니다. explain 출력의 <code>recommendedPhases</code>를 확인하고, 여러 유형이면 개별 작업으로 나누세요.</p>
+<h3 id="agent-team">Agent Team에서도 쓸 수 있습니까?</h3>
+<p>됩니다. Agent Team은 기본으로 모델 라우터를 사용하고 팀의 각 phase가 자동으로 최적 모델로 라우팅됩니다.</p>
+<h2 id="_27">공식 문서</h2>
+<p>완전한 실행 계약을 보려면 <a href="/ko/docs/team-ops/">Agent Team</a>, <a href="/ko/docs/workflow-policy/">워크플로 전략</a>, <a href="/ko/docs/contextdb/">ContextDB</a>를 함께 읽으세요.</p></div>
+    <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+    <nav class="rex-doc-pager"><a href="/ko/docs/integrations/">← 上一篇</a><a href="/ko/docs/multi-agent-code-review/">下一篇 →</a></nav>
+    <a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  </article>
+</div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>

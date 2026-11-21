@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<!-- AIOS landing page — reference visual language, AIOS content. Pristine clone kept at reference-clone.html. -->
+<html lang="zh" data-gen-lang="zh-CN" data-theme="light"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工作流策略</title>
+<meta name="description" content="AIOS 在本地给编码 Agent 装上跨会话项目记忆、自适应工作流、多智能体协作和交付前验证。支持 Codex、Claude Code、Gemini CLI 等十种客户端，工作方式不变。">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fafafa">
+<script>
+// Theme is resolved before first paint: system → light → dark.
+window.LANG = document.documentElement.lang.slice(0, 2);
+window.T = (en, zh, ja, de) => ({ zh, ja, de })[LANG] ?? en;
+window.themeTitle = (m) => T("Theme: " + m, "主题：" + { system: "跟随系统", light: "浅色", dark: "深色" }[m], "テーマ：" + m, "Farbschema: " + m);
+(() => {
+  let mode = "system";
+  try { mode = localStorage.getItem("theme") || "system"; } catch {}
+  const q = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    const t = mode === "system" ? (q.matches ? "dark" : "light") : mode;
+    document.documentElement.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]').content = t === "dark" ? "#0b0b0c" : "#fafafa";
+    document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => { b.dataset.mode = mode; b.title = themeTitle(mode); });
+  };
+  q.addEventListener("change", () => mode === "system" && apply());
+  window.setTheme = (m) => { mode = m; try { m === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", m); } catch {} apply(); };
+  window.themeMode = () => mode;
+  apply();
+})();
+</script>
+<link rel="icon" href="/assets/media/aios/mark.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/media/aios/mark.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIOS">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="AIOS — 本地优先的 Graph Engine">
+<meta property="og:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta property="og:image" content="/assets/media/aios/og.png">
+<meta property="og:image:width" content="1800">
+<meta property="og:image:height" content="945">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AIOS — 本地优先的 Graph Engine">
+<meta name="twitter:description" content="给每个编码 Agent 装上记忆、路由、协作与验证。">
+<meta name="twitter:image" content="/assets/media/aios/og.png">
+<link rel="canonical" href="/">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"AIOS","url":"/","description":"A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams and verification.","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Windows, Linux","downloadUrl":"https://github.com/rexleimo/aios/releases/latest","image":"/assets/media/aios/og.png","license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"sameAs":["https://github.com/rexleimo/aios"]},
+{"@type":"WebSite","name":"AIOS","url":"/","inLanguage":"zh-CN"}
+]}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.sponsor .cards { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.sponsor .card { gap: 14px; padding: 18px; }
+.cap-glyph { flex: none; display: grid; place-items: center; width: 76px; height: 76px; color: var(--ink); }
+.cap-glyph svg { width: 44px; height: 44px; }
+.client-mark { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--code); color: var(--ink2); font-size: 9px; font-weight: 700; letter-spacing: -.02em; }
+@media (max-width: 860px) { .sponsor .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .sponsor .cards { grid-template-columns: 1fr; } .cap-glyph { width: 88px; height: 60px; } .cap-glyph svg { width: 48px; height: 48px; } }
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img class="bird" src="/assets/media/aios/mark.png" alt="">AIOS</a>
+  <div class="links" id="links">
+    <a class="hide" href="/#how">工作原理</a>
+    <a class="hide" href="/#memory">项目记忆</a>
+    <a class="hide" href="/#workflow">工作流</a>
+    <a class="hide" href="/#guarded">接入矩阵</a>
+    <a class="hide" href="/#team">能力配置</a>
+    <a href="/#cli">CLI</a>
+    <a class="hide-sm" data-doc-link href="/docs/">文档</a>
+    <a class="hide-sm" data-blog-link href="/blog/">博客</a>
+    <a class="hide-sm" href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a class="in-menu" data-doc-link href="/docs/">文档</a>
+    <a class="in-menu" data-blog-link href="/blog/">博客</a>
+    <a class="in-menu" href="https://github.com/rexleimo/aios">GitHub</a>
+    <a class="in-menu" href="/">项目主页</a>
+  </div>
+  <a class="theme gh" href="https://github.com/rexleimo/aios" aria-label="AIOS on GitHub" title="在 GitHub 上查看"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg></a>
+  
+  <details class="rex-lang-switcher" aria-label="Select language">
+      <summary class="rex-lang-switcher__summary">中文</summary>
+      <div class="rex-lang-menu"><a class="rex-lang-opt" href="/docs/workflow-policy/" hreflang="en" lang="en">English</a><a class="rex-lang-opt is-active" href="/zh/docs/workflow-policy/" hreflang="zh" lang="zh" aria-current="true">中文</a><a class="rex-lang-opt" href="/ja/docs/workflow-policy/" hreflang="ja" lang="ja">日本語</a><a class="rex-lang-opt" href="/ko/docs/workflow-policy/" hreflang="ko" lang="ko">한국어</a></div>
+    </details><button class="theme" type="button" aria-label="主题" title="主题：跟随系统" data-mode="system"><svg class="i-system" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.75" y="2.75" width="12.5" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11.25V14"></path></svg><svg class="i-light" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"></circle><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"></path></svg><svg class="i-dark" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z"></path></svg></button>
+  <a class="btn small dl" href="/#cli">快速安装</a>
+  <button class="theme menu" type="button" aria-label="菜单" aria-expanded="false" aria-controls="links"><svg class="i-open" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"></path></svg><svg class="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg></button>
+</div></nav>
+
+<main class="wrap">
+
+<div class="rex-doc-layout">
+  <aside class="rex-doc-sidebar">
+    <a class="rex-doc-sidebar__home" href="/zh/docs/">全部文档</a>
+    <div class="rex-doc-search"><input type="search" id="rex-doc-search-input" placeholder="搜索文档…" aria-label="搜索文档…" autocomplete="off"></div>
+    <div id="rex-doc-nav"><details class="rex-doc-nav-group"><summary>快速上手</summary><div class="rex-doc-nav-items"><a href="/zh/docs/getting-started/" class="rex-doc-nav-link" data-title="快速开始：安装并验证 aios">快速开始：安装并验证 AIOS</a><a href="/zh/docs/windows-guide/" class="rex-doc-nav-link" data-title="windows 指南：powershell 安装与恢复">Windows 指南：PowerShell 安装与恢复</a><a href="/zh/docs/troubleshooting/" class="rex-doc-nav-link" data-title="aios 故障排查">AIOS 故障排查</a><a href="/zh/docs/windows-ai-coding-agent-setup/" class="rex-doc-nav-link" data-title="windows 上搭建 ai 编码 agent：10 分钟安装与验证">Windows 上搭建 AI 编码 Agent：10 分钟安装与验证</a></div></details><details class="rex-doc-nav-group"><summary>问题优先指南</summary><div class="rex-doc-nav-items"><a href="/zh/docs/why-agents-forget-context/" class="rex-doc-nav-link" data-title="为什么你的 ai 编码 agent 会跨会话失忆（以及怎么修）">为什么你的 AI 编码 Agent 会跨会话失忆（以及怎么修）</a><a href="/zh/docs/reduce-agent-token-cost/" class="rex-doc-nav-link" data-title="降低 ai 编码 agent 的 token 成本：claude code 与 codex 预算控制">降低 AI 编码 Agent 的 Token 成本：Claude Code 与 Codex 预算控制</a><a href="/zh/docs/claude-code-vs-codex-vs-gemini/" class="rex-doc-nav-link" data-title="claude code vs codex vs gemini cli：ai 编码 agent 该怎么选？">Claude Code vs Codex vs Gemini CLI：AI 编码 Agent 该怎么选？</a><a href="/zh/docs/overnight-agent-runs/" class="rex-doc-nav-link" data-title="怎么让编码 agent 跑一整夜不崩、不漂移">怎么让编码 Agent 跑一整夜不崩、不漂移</a><a href="/zh/docs/multi-agent-code-review/" class="rex-doc-nav-link" data-title="多 agent 代码评审：真正有用的并行编码 agent">多 Agent 代码评审：真正有用的并行编码 Agent</a><a href="/zh/docs/use-cases/" class="rex-doc-nav-link" data-title="按场景找命令：选择 aios 路径">按场景找命令：选择 AIOS 路径</a></div></details><details class="rex-doc-nav-group" open><summary>核心能力</summary><div class="rex-doc-nav-items"><a href="/zh/docs/contextdb/" class="rex-doc-nav-link" data-title="contextdb：按需读取的项目记忆">ContextDB：按需读取的项目记忆</a><a href="/zh/docs/token-compression/" class="rex-doc-nav-link" data-title="token intelligence 与压缩边界">Token Intelligence 与压缩边界</a><a href="/zh/docs/workflow-policy/" aria-current="page" class="rex-doc-nav-link is-active" data-title="工作流策略">工作流策略</a><a href="/zh/docs/model-router/" class="rex-doc-nav-link" data-title="模型路由器">模型路由器</a><a href="/zh/docs/codemap/" class="rex-doc-nav-link" data-title="代码审查图谱 (codemap)">代码审查图谱 (Codemap)</a><a href="/zh/docs/team-ops/" class="rex-doc-nav-link" data-title="agent team：带证据的并行工作">Agent Team：带证据的并行工作</a><a href="/zh/docs/solo-harness/" class="rex-doc-nav-link" data-title="solo harness：可恢复长任务">Solo Harness：可恢复长任务</a><a href="/zh/docs/superpowers/" class="rex-doc-nav-link" data-title="rex 工作流迁移">Rex 工作流迁移</a><a href="/zh/docs/integrations/" class="rex-doc-nav-link" data-title="aios 中用 typesafe jev——安装、开启判定闸门、后台运行">AIOS 中用 TypeSafe Jev——安装、开启判定闸门、后台运行</a><a href="/zh/docs/perception/" class="rex-doc-nav-link" data-title="perception">Perception</a></div></details><details class="rex-doc-nav-group"><summary>参考手册</summary><div class="rex-doc-nav-items"><a href="/zh/docs/architecture/" class="rex-doc-nav-link" data-title="aios 架构">AIOS 架构</a><a href="/zh/docs/route-concurrency-profiles/" class="rex-doc-nav-link" data-title="路由与并发档位">路由与并发档位</a><a href="/zh/docs/advanced-design-skills/" class="rex-doc-nav-link" data-title="高级设计技能">高级设计技能</a><a href="/zh/docs/hud-guide/" class="rex-doc-nav-link" data-title="hud 用户指南">HUD 用户指南</a><a href="/zh/docs/debug-hub/" class="rex-doc-nav-link" data-title="debug-hub">debug-hub</a><a href="/zh/docs/cli-comparison/" class="rex-doc-nav-link" data-title="cli 对比">CLI 对比</a><a href="/zh/docs/engineering-standards/" class="rex-doc-nav-link" data-title="工程标准——aios 构建软件，而不只是生成代码">工程标准——AIOS 构建软件，而不只是生成代码</a></div></details><details class="rex-doc-nav-group"><summary>实战案例</summary><div class="rex-doc-nav-items"><a href="/zh/docs/case-library/" class="rex-doc-nav-link" data-title="案例库：可复现的 aios 工作流">案例库：可复现的 AIOS 工作流</a><a href="/zh/docs/case-auth-wall-browser/" class="rex-doc-nav-link" data-title="案例 - 浏览器认证墙流程">案例 - 浏览器认证墙流程</a><a href="/zh/docs/case-cross-cli-handoff/" class="rex-doc-nav-link" data-title="案例 - 跨 cli 接力">案例 - 跨 CLI 接力</a><a href="/zh/docs/case-privacy-guard/" class="rex-doc-nav-link" data-title="案例 - privacy guard 配置读取">案例 - Privacy Guard 配置读取</a></div></details><details class="rex-doc-nav-group"><summary>项目</summary><div class="rex-doc-nav-items"><a href="/zh/docs/changelog/" class="rex-doc-nav-link" data-title="更新日志">更新日志</a><a href="/zh/docs/friends/" class="rex-doc-nav-link" data-title="友情链接">友情链接</a><a href="/zh/docs/skill-candidates/" class="rex-doc-nav-link" data-title="skill candidates 指南">Skill Candidates 指南</a></div></details></div>
+    <p class="rex-doc-search-empty" id="rex-doc-search-empty" hidden>没有匹配的文档</p>
+    <div class="rex-doc-sidebar__status">AIOS · v8.0.0 · 本地优先</div>
+  </aside>
+  <article class="rex-doc-article">
+    <p class="eyebrow">文档 · 中文</p>
+    <h1>工作流策略</h1>
+    <p class="lede" style="font-size:17px">工作流策略说明：AIOS 如何用自适应策略在 direct、guarded、planned 之间选择最小正确路径，既不过度流程化简单问题，也不放过需要证据与评审的改动。文档给出判定条件、升级路径和每一档的验收要求，必要时可用 --explain 查看决策依据。</p>
+    <div class="rex-doc-content md-body">
+<h2 id="_2">快速答案</h2>
+<p>AIOS 使用基于风险的工作流策略。在 adaptive 模式下，只读问题保持 direct，小型代码修改进入 guarded，多步骤或明确指定路由的工作进入持久化 plan。strict 模式会让实质性工作进入 planned，但不会把空消息或只读问题变成 plan。策略只决定当前 turn 应如何处理，并不证明实现已经完成。</p>
+<h2 id="_3">现在就做</h2>
+<p>在项目根目录预览或应用策略：</p>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>plan<span class="w"> </span>auto-gate<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;Refactor the auth boundary and add tests&quot;</span><span class="w"> </span>--json
+node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>plan<span class="w"> </span>auto-gate<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;Refactor the auth boundary and add tests&quot;</span><span class="w"> </span>--dry-run<span class="w"> </span>--json
+</code></pre></div>
+<p>第一条命令在 decision 为 <code>planned</code> 时可能创建 plan。第二条命令只评估同一个请求，不持久化 planned artifact。如果项目根目录不是当前目录，可以使用 <code>--workspace &lt;path&gt;</code>。</p>
+<h2 id="disposition">四种 disposition</h2>
+<table>
+<thead>
+<tr>
+<th>Disposition</th>
+<th>适用场景</th>
+<th>Persistence</th>
+<th>Verification scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>noop</code></td>
+<td>空输入或明确的 no-op</td>
+<td><code>none</code></td>
+<td><code>none</code></td>
+</tr>
+<tr>
+<td><code>direct</code></td>
+<td>问题、解释、状态检查、确认或 resume 决策</td>
+<td><code>none</code> 或 <code>reuse</code></td>
+<td><code>none</code></td>
+</tr>
+<tr>
+<td><code>guarded</code></td>
+<td>adaptive 模式下的小型实质性修改</td>
+<td><code>none</code></td>
+<td><code>focused</code></td>
+</tr>
+<tr>
+<td><code>planned</code></td>
+<td>多步骤、明确计划、Team/Harness、设计工作或 strict 实质性工作</td>
+<td><code>create</code></td>
+<td><code>full</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>direct</code> 不等于跳过所有安全措施。如果 direct 请求后来变成文件修改，仍然必须执行正常的编辑和验证门禁。<code>guarded</code> 只表示策略没有要求持久化 plan；修改文件前仍需执行 <code>pre-edit-safety-gate</code>，之后进行 focused verification。</p>
+<h2 id="adaptive-strict">Adaptive 与 Strict</h2>
+<p>Adaptive 是默认模式。像“修改这个 label 并运行 focused test”这样的小型实现请求通常保持 <code>guarded</code>；包含多个步骤、迁移、team 路由或 harness 路由的请求会进入 <code>planned</code>。Strict 会让实质性工作进入 <code>planned</code>，以便在实现前记录 owner、tasks 和 evidence。两种模式都会让只读问题、空输入以及没有 active plan 的 resume 请求保持 direct。</p>
+<p>策略是分类器，不是对“小修改”的万能定义。最终 decision 会包含 <code>reason</code>、<code>routeHint</code>、<code>requiredSkills</code>、<code>requiresPreEditSafety</code> 和 <code>verificationScope</code>；边界不清时请查看 JSON。</p>
+<h2 id="plan">Plan 持久化</h2>
+<p>Adapter 会返回三种 persistence 指令之一：</p>
+<ul>
+<li><code>none</code>：不要创建或更新 plan artifact。<code>noop</code>、普通 direct 问题和 adaptive guarded 修改都会得到它。</li>
+<li><code>reuse</code>：使用已有的非 terminal active plan。有效的同会话确认或显式 resume 会使用它。</li>
+<li><code>create</code>：按照选定 route 和 required skills 创建新的 work-item plan。Dry run 只返回 decision，不写入它。</li>
+</ul>
+<p><code>done</code>、<code>blocked</code>、<code>cancelled</code>、<code>completed</code>、<code>failed</code> 和 <code>abandoned</code> 等 terminal status 不能继续。Plan decision 不是实现结果：关闭 plan 前仍需更新 task、记录 evidence、执行编辑门禁和完成验证。</p>
+<h2 id="continuation">Continuation 规则</h2>
+<p>有两条刻意不同的继续路径：</p>
+<ol>
+<li><strong>同会话 acknowledgement。</strong> <code>ok</code> 或 <code>approved</code> 这样的简短确认，只有在 client 和 session identity 都与 plan 匹配且 plan 非 terminal 时，才能复用 plan。来自其他 client 或 session 的确认会被视为 continuation 缺失的 direct 请求。</li>
+<li><strong>显式 resume。</strong> <code>resume</code> 或 <code>continue</code> 可以跨 client 复用非 terminal plan。如果没有可用 active plan，结果是 <code>direct</code> 且 <code>continuation=missing</code>，不会意外创建 plan。</li>
+</ol>
+<p>如果 acknowledgement 或 resume 后面还包含新的 actionable objective，它会被当作新工作重新分类，不会静默挂到旧 plan 上。</p>
+<h2 id="route-hints-skills">Route Hints 与 Skills</h2>
+<p>Decision 可以建议 route 和最小 process skill 集合：</p>
+<table>
+<thead>
+<tr>
+<th>Route hint</th>
+<th>典型触发</th>
+<th>Planned skills</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>implement</code></td>
+<td>功能或文件修改</td>
+<td><code>writing-plans</code>、<code>test-driven-development</code></td>
+</tr>
+<tr>
+<td><code>debug</code></td>
+<td>Bug、失败或崩溃</td>
+<td><code>systematic-debugging</code></td>
+</tr>
+<tr>
+<td><code>verify</code></td>
+<td>Test、typecheck、CI 或回归验证</td>
+<td><code>verification-before-completion</code></td>
+</tr>
+<tr>
+<td><code>ops</code></td>
+<td>安装、配置、升级、部署或发布</td>
+<td><code>writing-plans</code></td>
+</tr>
+<tr>
+<td><code>team</code></td>
+<td>并行或委派工作</td>
+<td><code>writing-plans</code>、<code>dispatching-parallel-agents</code></td>
+</tr>
+<tr>
+<td><code>harness</code></td>
+<td>长任务或过夜任务</td>
+<td><code>writing-plans</code>、<code>aios-long-running-harness</code></td>
+</tr>
+<tr>
+<td><code>design</code></td>
+<td>架构、设计或 brainstorming</td>
+<td><code>brainstorming</code>、<code>writing-plans</code></td>
+</tr>
+</tbody>
+</table>
+<p>策略不会替代选中的 skill，也不会替代 <code>pre-edit-safety-gate</code>。后者会在任何文件修改前检查影响范围、依赖、风格和测试覆盖。</p>
+<h2 id="_4">示例</h2>
+<h3 id="_5">只读问题</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>plan<span class="w"> </span>auto-gate<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;Why is this request classified as direct?&quot;</span><span class="w"> </span>--json
+</code></pre></div>
+<p>预期是 <code>disposition=direct</code>、<code>persistence=none</code>，并且不会创建新的 plan artifact。</p>
+<h3 id="adaptive">Adaptive 下的小型实现</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>plan<span class="w"> </span>auto-gate<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;Update the button label and run its focused test&quot;</span><span class="w"> </span>--json
+</code></pre></div>
+<p>这通常是 <code>guarded</code>，使用 focused verification 且不持久化 plan。如果请求扩展到多个文件或多个阶段，请重新分类扩展后的请求。</p>
+<h3 id="_6">多步骤实现</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>plan<span class="w"> </span>auto-gate<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;First update the schema, then migrate callers, and finally add regression tests&quot;</span><span class="w"> </span>--json
+</code></pre></div>
+<p>预期是 <code>planned</code>、<code>persistence=create</code>、full verification scope 和实现相关 skills。</p>
+<h3 id="team">Team 任务</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>plan<span class="w"> </span>auto-gate<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;Use an Agent Team to audit the API and docs in parallel&quot;</span><span class="w"> </span>--json
+</code></pre></div>
+<p>Route hint 是 <code>team</code>。策略 decision 不会自行启动 provider；完成 plan 和安全门禁后，再使用 Agent Team 的 preflight 与执行控制。</p>
+<h3 id="resume">显式 resume</h3>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>scripts/aios.mjs<span class="w"> </span>plan<span class="w"> </span>auto-gate<span class="w"> </span>--task<span class="w"> </span><span class="s2">&quot;resume&quot;</span><span class="w"> </span>--json
+</code></pre></div>
+<p>存在可用 active plan 时，预期是 <code>continuation=explicit-resume</code> 和 <code>persistence=reuse</code>。没有 active plan 时，预期是 direct 的 continuation 缺失结果，并且不会创建新的 plan。</p>
+<h2 id="faq">FAQ</h2>
+<h3 id="plan_1">每条消息都会创建 plan 吗？</h3>
+<p>不会。空输入是 <code>noop</code>；问题和解释是 <code>direct</code>；adaptive 下的小型修改通常是 <code>guarded</code>。Plan 留给需要持久化 task 和 evidence 的工作。</p>
+<h3 id="strict-plan">Strict 会给只读问题创建 plan 吗？</h3>
+<p>不会。只读分类发生在 strict 的实质性工作规则之前。Strict 改变的是实质性工作，不是普通解释。</p>
+<h3 id="client-ok-plan">另一个 client 可以用 "ok" 继续我的 plan 吗？</h3>
+<p>不能用弱确认直接继续。同会话 acknowledgement 要求原 client 和 session。若要有意把工作交给另一个 client，请使用显式 <code>resume</code>。</p>
+<h3 id="dry-run-live-provider">Dry run 能证明 live provider 可用吗？</h3>
+<p>不能。Dry run 只证明本地 decision 或 preview 路径。Live Agent Team、Harness 和 Orchestrate 仍需要各自的 capability、human-gate 和 verification evidence。</p>
+<h3 id="planned-decision">Planned decision 就等于修改完成吗？</h3>
+<p>不等于。它只是路由和持久化 decision。实现仍需执行选定的 process skill、pre-edit 检查、tests 和最终验证。</p>
+<h2 id="_7">下一步</h2>
+<ul>
+<li><a href="/zh/docs/getting-started/">快速开始</a>：初始化项目并运行 <code>aios doctor</code>。</li>
+<li><a href="/zh/docs/architecture/">架构</a>：了解策略、记忆、agents 和浏览器运行时的边界。</li>
+<li><a href="/zh/docs/contextdb/">ContextDB</a>：理解 pull-based 项目记忆和显式召回。</li>
+<li><a href="/zh/docs/team-ops/">Agent Team</a> 与 <a href="/zh/docs/solo-harness/">Solo Harness</a>：选择并行或长时间执行。</li>
+<li><a href="/blog/zh/2026-07-v400-adaptive-workflow-policy/">Workflow Policy 发布文章</a>：阅读 v4.0 的原因与示例。</li>
+</ul></div>
+    <a class="rex-ad rex-ad--leader" href="https://imklom.im" target="_blank" rel="noopener">
+  <img src="/assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy">
+  <span><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+    <nav class="rex-doc-pager"><a href="/zh/docs/windows-guide/">← 上一篇</a></nav>
+    <a class="rex-ad rex-ad--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+  <img src="/assets/ads/relay.png" alt="RexAI 工具站" loading="lazy">
+  <span><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+  <em>赞助 · Sponsor</em>
+</a>
+  </article>
+</div>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 AIOS · MIT</span>
+  <span>本地优先的 Graph Engine，为编码 Agent 提供记忆、工作流与验证。</span>
+  <div class="links">
+    <a href="/docs/getting-started/">快速上手</a>
+    <a href="/">文档</a>
+    <a href="https://github.com/rexleimo/aios">GitHub</a>
+    <a href="https://github.com/rexleimo/aios/releases">版本发布</a>
+    <a href="/docs/engineering-standards/">工程标准</a>
+    <a href="https://github.com/rexleimo/aios/graphs/contributors">贡献墙</a>
+  </div>
+</div></footer>
+<script>
+(() => {
+  const nav = document.getElementById("nav");
+  const next = { system: "light", light: "dark", dark: "system" };
+  document.querySelectorAll("button.theme:not(.menu):not(.lang)").forEach((b) => {
+    b.dataset.mode = themeMode(); b.title = themeTitle(themeMode());
+    b.addEventListener("click", () => setTheme(next[themeMode()]));
+  });
+  const menu = nav.querySelector(".menu");
+  const open = (on) => { nav.classList.toggle("open", on); menu.setAttribute("aria-expanded", String(on)); };
+  menu.addEventListener("click", () => open(!nav.classList.contains("open")));
+  nav.querySelectorAll(".links a").forEach((a) => a.addEventListener("click", () => open(false)));
+  document.addEventListener("click", (e) => { if (!nav.contains(e.target)) open(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { open(false); menu.focus(); } });
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = "已复制"; setTimeout(() => (b.textContent = "复制"), 1400);
+    } catch {}
+  }));
+  const chan = document.querySelector(".chan");
+  if (chan) chan.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    chan.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+
+  // Language-aware Docs / Blog nav links: send the reader to the docs/blog of
+  // the language they are currently in. Path prefix wins, then <html lang>.
+  (() => {
+    const pathLocale = (location.pathname.match(/^\/(zh|ja|ko)\//) || [])[1];
+    const browserLocale = (navigator.language || "").slice(0, 2).toLowerCase();
+    const locale = pathLocale || (["zh", "ja", "ko"].includes(browserLocale) ? browserLocale : "en");
+    const prefix = locale === "en" ? "" : "/" + locale;
+    document.querySelectorAll("[data-doc-link]").forEach((a) => (a.href = prefix + "/docs/"));
+    document.querySelectorAll("[data-blog-link]").forEach((a) => (a.href = prefix + "/blog/"));
+  })();
+
+  // Docs sidebar live filter.
+  const docSearch = document.getElementById("rex-doc-search-input");
+  if (docSearch) {
+    const nav = document.getElementById("rex-doc-nav");
+    const empty = document.getElementById("rex-doc-search-empty");
+    const links = [...nav.querySelectorAll(".rex-doc-nav-link")];
+    docSearch.addEventListener("input", () => {
+      const q = docSearch.value.trim().toLowerCase();
+      let shown = 0;
+      links.forEach((a) => {
+        const hit = !q || (a.textContent || "").toLowerCase().includes(q) || (a.dataset.title || "").includes(q);
+        a.hidden = !hit;
+        if (hit) shown++;
+      });
+      nav.querySelectorAll(".rex-doc-nav-group").forEach((g) => {
+        const any = [...g.querySelectorAll(".rex-doc-nav-link")].some((a) => !a.hidden);
+        g.hidden = !!q && !any;
+        if (q && any) g.open = true;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    });
+  }
+})();
+</script>
+<script>
+// Lightweight AIOS workflow switcher. Keeps the visual language of the
+// reference demo but speaks AIOS: Direct / Guarded / Planned.
+(() => {
+  const rt = document.getElementById("rt");
+  if (!rt) return;
+  const $ = (s) => rt.querySelector(s);
+  const tabs = [...rt.querySelectorAll(".rt-tabs button")];
+  const desc = $(".rt-mode"), chip = $(".rt-hub i"), rows = [...rt.querySelectorAll(".rt-accts li")];
+  const cap = $(".rt-cap"), stats = [...rt.querySelectorAll(".rt-stats b")];
+  const M = {
+    direct: {
+      label: "直接",
+      desc: "直接：最快路径。适合问答、查询和一次性小改动，不做额外编排，直接给出结果。",
+      cap: "简单任务走最短路径——直接回答，不做多余的编排。",
+      active: 0,
+    },
+    guarded: {
+      label: "守护",
+      desc: "守护：涉及边界或外部副作用的动作先过策略门。工具约束、目录白名单和敏感动作都在这里拦一道。",
+      cap: "高风险动作先经策略检查，再放行——约束写在配置里，不靠提示词自觉。",
+      active: 1,
+    },
+    planned: {
+      label: "计划",
+      desc: "计划：多步骤、有依赖的任务先出计划，拆成工作项按图推进，每个检查点都留证据。",
+      cap: "复杂任务先有计划再动手，按工作项推进并留检查点。",
+      active: 2,
+    },
+  };
+  const select = (mode) => {
+    const m = M[mode];
+    tabs.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mode === mode)));
+    desc.textContent = m.desc;
+    chip.textContent = m.label;
+    rows.forEach((r, i) => r.classList.toggle("on", i === m.active));
+    cap.textContent = m.cap;
+    cap.classList.remove("in"); void cap.offsetWidth; cap.classList.add("in");
+  };
+  tabs.forEach((b) => b.addEventListener("click", () => select(b.dataset.mode)));
+  let n = 0;
+  setInterval(() => {
+    n++;
+    stats[0].textContent = n;
+    stats[1].textContent = n;
+    if (n % 3 === 0) stats[2].textContent = Number(stats[2].textContent) + 1;
+    const on = rows.find((r) => r.classList.contains("on"));
+    if (on) { on.classList.remove("hit"); void on.offsetWidth; on.classList.add("hit"); }
+  }, 2200);
+  select("direct");
+})();
+</script>
+</body></html>
