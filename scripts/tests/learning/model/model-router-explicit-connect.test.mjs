@@ -546,7 +546,8 @@ test('in-place partial disconnect and zero-model cleanup preserve gateway proces
   registry.providers = {};
   fs.writeFileSync(f.registryFile, JSON.stringify(registry));
   const partial = await runDisconnect(options(f, { clients: ['claude'] }));
-  assert.deepEqual(partial.remainingClients.sort(), ['codex', 'pi']);
+  // All ten clients connect in-place; disconnecting claude leaves the other nine.
+  assert.deepEqual(partial.remainingClients.sort(), ['codex', 'gemini', 'grok', 'hermes', 'opencode', 'pi', 'qoder', 'workbuddy', 'zcode']);
   assert.equal(JSON.parse(fs.readFileSync(f.registryFile, 'utf8')).clientDefaults.codex, 'actual-response');
   assert.equal((await runDisconnect(options(f))).exitCode, 0);
   assert.equal(JSON.parse(fs.readFileSync(f.registryFile, 'utf8')).clientDefaults?.codex, undefined);

@@ -17,6 +17,9 @@ import { parseConnectState } from './config/journals.mjs';
 
 const STATE_FILE = 'connect-state.json';
 const DEFAULT_CLIENTS = CONNECT_CLIENTS;
+// Only these clients have an isolated config artifact (claude-settings.json,
+// codex config.toml, pi models.json). See isolatedArtifactPath().
+const ISOLATED_ARTIFACT_CLIENTS = Object.freeze(['claude', 'codex', 'pi']);
 const CLIENT_MODEL_ALIAS = 'gateway-default';
 
 function readRegistryDocument(registryFile, baseRegistry) {
@@ -230,7 +233,11 @@ async function connectIsolatedUnderLock(options) {
     gatewayUrl, stateDir, registryFile, baseRegistry = null,
     clients = DEFAULT_CLIENTS, codexModel: requestedCodexModel = '', piModel = CLIENT_MODEL_ALIAS, io = console,
   } = options;
-  const selected = validateConnect(gatewayUrl, clients, io);
+  // Isolated mode writes per-client config artifacts; only claude/codex/pi have
+  // an isolated artifact (see isolatedArtifactPath). Other clients connect
+  // in-place, so filter them here rather than building a null artifact.
+  const isolatedClients = clients.filter((client) => ISOLATED_ARTIFACT_CLIENTS.includes(client));
+  const selected = validateConnect(gatewayUrl, isolatedClients, io);
   if (!selected) return { exitCode: 1 };
   const readiness = connectReadiness({ ...options, selected, codexModel: requestedCodexModel, piModel });
   const preview = previewOrReject(readiness, { dryRun: options.dryRun, io });

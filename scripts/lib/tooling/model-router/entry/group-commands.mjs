@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { saveRegistryDocument } from './registry.mjs';
 import { normalizeId } from './shared.mjs';
-import { addGroup, removeGroup, loadGroups, orderedGroupMembers } from '../routing/groups.mjs';
+import { addGroup, removeGroup, loadGroups, orderedGroupMembers, GROUP_ROUTING_MODES } from '../routing/groups.mjs';
 import { assignmentReferences, parseTargetRef } from '../routing/targets.mjs';
 
 function groupReferences(registry, id) {
@@ -25,6 +25,10 @@ export const GROUP_COMMAND_HANDLERS = Object.freeze({
     const models = String(rawOptions.models || '').split(',').map(normalizeId).filter(Boolean);
     const routing = normalizeId(rawOptions.routing || 'ordered');
     if (!id) { io.error('Missing --id'); return { exitCode: 1 }; }
+    if (!GROUP_ROUTING_MODES.has(routing)) {
+      io.error(`Unsupported routing mode "${routing}"; expected one of ${[...GROUP_ROUTING_MODES].join(', ')}`);
+      return { exitCode: 1 };
+    }
     if (Object.hasOwn(loadGroups(registry), id)) throw new Error(`Routing group "${id}" already exists; refusing to overwrite it`);
     const next = addGroup(registry, id, { models, routing });
     orderedGroupMembers(next, id);

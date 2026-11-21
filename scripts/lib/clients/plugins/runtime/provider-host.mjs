@@ -26,6 +26,7 @@ export function callProviderHost({ entry, method, params = {}, timeoutMs = DEFAU
     const child = spawnImpl(process.execPath, [String(entry)], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, AIOS_PLUGIN_RPC: '1' },
+      windowsHide: true,
     });
     let settled = false;
     let stdout = '';

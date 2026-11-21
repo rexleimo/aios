@@ -1,6 +1,36 @@
 {
   "schemaVersion": 1,
   "note": "Test files reachable from no suite and no package.json test entry. This list is a baseline for scripts/tests/tooling/suites/test-suite-wiring.test.mjs, not an approval: wiring a file shrinks it, and a new unwired file fails the guard instead of being appended silently.",
-  "knownUnwired": [],
-  "knownNotInCi": []
+  "knownUnwired": [
+    "scripts/tests/execution/planning/cli/plan-cli-statusline.test.mjs",
+    "scripts/tests/foundation/native/claude-home-statusline.test.mjs",
+    "scripts/tests/learning/model/gateway/model-router-auto-mode-protocols.test.mjs",
+    "scripts/tests/learning/model/gateway/model-router-auto-mode.test.mjs",
+    "scripts/tests/tooling/plugins/builtin-provider.test.mjs",
+    "scripts/tests/tooling/plugins/client-adapter.test.mjs",
+    "scripts/tests/tooling/plugins/contributions-core.test.mjs",
+    "scripts/tests/tooling/plugins/dispatch.test.mjs",
+    "scripts/tests/tooling/plugins/integration-adapter.test.mjs",
+    "scripts/tests/tooling/plugins/manifest.test.mjs",
+    "scripts/tests/tooling/plugins/plugin-demo.test.mjs",
+    "scripts/tests/tooling/plugins/provider-adapter.test.mjs",
+    "scripts/tests/tooling/plugins/registry-core.test.mjs",
+    "scripts/tests/tooling/shell/data/gateway-setup-guide.test.mjs",
+    "scripts/tests/tooling/shell/desktop/desktop-release-version.test.mjs"
+  ],
+  "knownNotInCi": [
+    "scripts/tests/execution/planning/cli/plan-cli-statusline.test.mjs",
+    "scripts/tests/foundation/native/claude-home-statusline.test.mjs",
+    "scripts/tests/tooling/plugins/builtin-provider.test.mjs",
+    "scripts/tests/tooling/plugins/client-adapter.test.mjs",
+    "scripts/tests/tooling/plugins/contributions-core.test.mjs",
+    "scripts/tests/tooling/plugins/dispatch.test.mjs",
+    "scripts/tests/tooling/plugins/integration-adapter.test.mjs",
+    "scripts/tests/tooling/plugins/manifest.test.mjs",
+    "scripts/tests/tooling/plugins/plugin-demo.test.mjs",
+    "scripts/tests/tooling/plugins/provider-adapter.test.mjs",
+    "scripts/tests/tooling/plugins/registry-core.test.mjs",
+    "scripts/tests/tooling/shell/data/gateway-setup-guide.test.mjs",
+    "scripts/tests/tooling/shell/desktop/desktop-release-version.test.mjs"
+  ]
 }

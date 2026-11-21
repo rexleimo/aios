@@ -95,7 +95,8 @@ test('raw legacy group-looking IDs and concrete/classifier metadata do not block
 });
 
 test('CLI rejects unsupported group routing and accidental overwrite without writing', async (t) => {
-  for (const options of [{ id: 'new', routing: 'rotate' }, { id: 'x', routing: 'ordered' }]) {
+  // "rotate"/"usage" became supported routing modes; a bogus mode must be rejected.
+  for (const options of [{ id: 'new', routing: 'bogus' }, { id: 'x', routing: 'ordered' }]) {
     const f = await fixture(t);
     const result = await runModelRouterCommand({ subcommand: 'group-add', models: 'concrete', ...options }, { registryRoot: f.rootDir, io: f.io });
     assert.equal(result.exitCode, 1);

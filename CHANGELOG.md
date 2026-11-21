@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+
+## [8.0.0] - 2026-11-21
+
+- feat(site): magpie-style official site with localized docs/blog and gateway workspace
+
 ## [7.2.0] - 2026-11-07
 
 - Added: `aios workspaces list|resolve [--json]` — one owned answer to "which projects on this machine are actually used by AIOS". The list merges the registry (`~/.aios/workspaces/<key>.json`) with filesystem evidence (a child directory carrying its own `.aios/memo/file/events.jsonl`), because the registry shipped with a reader and tests but **zero writers** and could therefore only ever be empty. Measured on this machine: **18 workspaces**, e.g. `harness-cli memo 637 / 会话 18 / 最后活动 2026-11-07T14:41`, `xsapp 365/8`, `rex-ai-tools 333/15`.

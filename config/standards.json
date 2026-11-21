@@ -626,6 +626,120 @@
         "path": "scripts/tests/tooling/workspace/pack-manifest.test.mjs",
         "count": 410
       }
+    ],
+    "directoryEntries": [
+      {
+        "path": "apps/shell/ui/public/icons",
+        "count": 12
+      },
+      {
+        "path": "apps/shell/ui/src/components/console",
+        "count": 13
+      },
+      {
+        "path": "apps/shell/ui/src/components/console/gateway",
+        "count": 9
+      },
+      {
+        "path": "apps/shell/ui/src/components/console/model-routing",
+        "count": 12
+      },
+      {
+        "path": "apps/shell/ui/src/lib",
+        "count": 9
+      },
+      {
+        "path": "apps/shell/ui/src/lib/data",
+        "count": 11
+      },
+      {
+        "path": "scripts/lib/clients/native/distribution/emitters",
+        "count": 9
+      },
+      {
+        "path": "scripts/lib/tooling",
+        "count": 9
+      },
+      {
+        "path": "scripts/lib/tooling/model-router",
+        "count": 9
+      },
+      {
+        "path": "scripts/tests/foundation/native",
+        "count": 9
+      },
+      {
+        "path": "scripts/tests/learning/model/gateway",
+        "count": 13
+      },
+      {
+        "path": "scripts/tests/learning/model",
+        "count": 20
+      },
+      {
+        "path": "scripts/tests/tooling/plugins",
+        "count": 9
+      },
+      {
+        "path": "scripts/tests/tooling/shell/data",
+        "count": 15
+      },
+      {
+        "path": "scripts/tests/tooling/shell/interface",
+        "count": 9
+      },
+      {
+        "path": "scripts/tests/tooling/shell",
+        "count": 12
+      },
+      {
+        "path": "landing/assets/media/aios",
+        "count": 25
+      },
+      {
+        "path": "landing/assets/media/icons",
+        "count": 49
+      },
+      {
+        "path": "landing/assets/media/img",
+        "count": 21
+      },
+      {
+        "path": "landing/blog",
+        "count": 89
+      },
+      {
+        "path": "landing/docs",
+        "count": 36
+      },
+      {
+        "path": "landing/ja/blog",
+        "count": 81
+      },
+      {
+        "path": "landing/ja/docs",
+        "count": 36
+      },
+      {
+        "path": "landing/ko/blog",
+        "count": 81
+      },
+      {
+        "path": "landing/ko/docs",
+        "count": 36
+      },
+      {
+        "path": "landing/scripts",
+        "count": 16
+      },
+      {
+        "path": "landing/zh/blog",
+        "count": 81
+      },
+      {
+        "path": "landing/zh/docs",
+        "count": 36
+      }
     ]
   },
   "layers": {

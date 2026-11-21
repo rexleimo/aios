@@ -30,7 +30,6 @@ export const UNKNOWN_OPTION_STRICTNESS_DEFERRED = new Set([
   'integration',
   'interception',
   'judgment',
-  'model-router',
   'perception',
   'refs',
   'skill',
