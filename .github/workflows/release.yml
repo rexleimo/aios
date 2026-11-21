@@ -51,6 +51,13 @@ jobs:
         run: |
           npm ci --prefix packages/debug-hub
 
+      # Console hydration tests bundle apps/shell/ui with esbuild (react-dom,
+      # lucide-react, radix). ci-main has these via its workspace setup; the
+      # release job installs them explicitly so the same suite resolves.
+      - name: Install shell UI deps
+        run: |
+          npm ci --prefix apps/shell/ui
+
       # Match ci-main: harness dry-run readiness treats missing provider CLIs as blocked.
       - name: Install test CLI shims
         run: |
