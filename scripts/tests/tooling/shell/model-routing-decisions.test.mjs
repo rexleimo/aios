@@ -85,7 +85,7 @@ test('summarizeDecisions builds client→model edges for the routing graph', () 
 
 test('summarizeDecisions on empty input returns zeroed counters', () => {
   const summary = summarizeDecisions([]);
-  assert.deepEqual(summary, { requests: 0, errors: 0, autoRouted: 0, byModel: {}, byClient: {}, edges: [] });
+  assert.deepEqual(summary, { requests: 0, errors: 0, autoRouted: 0, fallbacks: 0, byModel: {}, byClient: {}, edges: [] });
 });
 
 test('parseLimit clamps to 1..100 and defaults to 20', () => {

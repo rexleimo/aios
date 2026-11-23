@@ -42,6 +42,12 @@ afterEach(() => {
 
 function fixtureRepo({ withMemoFile = true, withCapabilities = true } = {}) {
   const root = tempRoot('aios-console-facts-');
+  // resolveCapabilityCli only recognises a root carrying scripts/aios.mjs (the
+  // marker that replaced the old cwd/../../.. guess). Without it every capability
+  // read short-circuits to { ok:false } and the injected runImpl is never called,
+  // so the "which commands does the first screen spawn" assertions see nothing.
+  fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'scripts', 'aios.mjs'), '// fixture capability entry\n');
   if (withCapabilities) {
     fs.mkdirSync(path.join(root, 'config'), { recursive: true });
     fs.writeFileSync(

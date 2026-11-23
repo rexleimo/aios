@@ -175,7 +175,7 @@ test('the current route uses the same navigation owner and preserves unknown-rou
   const source = readFileSync(ui('src/app/(console)/[section]/page.tsx'), 'utf8');
   assert.match(source, /legacyDestination\(pathname\)/u);
   assert.match(source, /viewForPath\(pathname\)/u);
-  assert.match(source, /if \(!view\) notFound\(\)/u);
+  assert.match(source, /if \(!initialView\) notFound\(\)/u, 'unknown route (builtin or plugin) must 404');
   assert.doesNotMatch(source, /components\/sections|PAGES|sectionById/u);
 });
 

@@ -7,6 +7,8 @@ import {
 } from '../../../../../apps/shell/ui/src/lib/config/model-routing.mjs';
 import { resolveGatewayRoute } from '../../../../lib/tooling/model-router/gateway/router.mjs';
 import { CLIENT_DEFINITIONS } from '../../../../lib/foundation/clients/selection/core/definitions.mjs';
+import { getClientModelRouting } from '../../../../lib/foundation/clients/registry.mjs';
+import { CONNECT_CLIENTS } from '../../../../lib/tooling/model-router/connect/config/clients.mjs';
 
 const ui = new URL('../../../../../apps/shell/ui/', import.meta.url);
 const protocols = ['openai-chat', 'openai-response', 'claude', 'gemini'];
@@ -223,13 +225,22 @@ test('client eligibility and runtime aliases stay aligned without importing the 
         const document = registry();
         const preview = projectPolicyAssignment(document, { role, clientId });
         for (const { protocol, modelId } of preview.byProtocol) {
-          if (definition.modelRouting === 'relay') {
-            assert.equal(modelId, resolveGatewayRoute({ registry: document, role, clientId, clientProtocol: protocol, env: {}, context: {} }).modelId, `${clientId}/${role}`);
-          } else {
-            assert.throws(() => resolveGatewayRoute({ registry: document, role, clientId, clientProtocol: protocol, env: {}, context: {} }), /native model/u);
-            assert.equal(modelId, '', `${clientId} is not assigned a gateway model`);
+          // Gateway eligibility is a closed fact: the runtime routes a client when it is
+          // relay-mode OR in the connect whitelist. The UI mirror must agree. A client
+          // declared "own" can still be connectable, so the declaration alone is not the
+          // deciding fact.
+          const gatewayEligible = CONNECT_CLIENTS.includes(clientId) || getClientModelRouting(clientId) === 'relay';
+          if (!gatewayEligible) {
+            assert.throws(
+              () => resolveGatewayRoute({ registry: document, role, clientId, clientProtocol: protocol, env: {}, context: {} }),
+              /native model/u,
+              `non-connectable client ${clientId} (id=${id}) must keep its native model`,
+            );
+            assert.equal(modelId, '', `${clientId} (id=${id}, routing=${definition.modelRouting}, connectable=${CONNECT_CLIENTS.includes(clientId)}) is not assigned a gateway model`);
             assert.equal(preview.modelId, '');
             assert.equal(preview.source, '客户端不参与网关分配');
+          } else {
+            assert.equal(modelId, resolveGatewayRoute({ registry: document, role, clientId, clientProtocol: protocol, env: {}, context: {} }).modelId, `${clientId}/${role} (id=${id}, source=${preview.source})`);
           }
         }
       }

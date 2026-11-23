@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 import { browserRuntime, choose, noPageOverflow } from './gateway-fixture.mjs';
 
@@ -19,8 +20,8 @@ const fixtureMarkup = '<meta name="viewport" content="width=device-width,initial
 async function assets() {
   const { build } = await import('esbuild');
   const require = createRequire(path.join(ui, 'package.json'));
-  const { default: postcss } = await import(require.resolve('postcss'));
-  const { default: tailwind } = await import(require.resolve('@tailwindcss/postcss'));
+  const { default: postcss } = await import(pathToFileURL(require.resolve('postcss')).href);
+  const { default: tailwind } = await import(pathToFileURL(require.resolve('@tailwindcss/postcss')).href);
   const stylesheet = path.join(ui, 'src/app/globals.css');
   const [bundle, css] = await Promise.all([
     build({

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { isolatedConsoleFacts } from './console-facts.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../../../../..');
@@ -51,7 +52,11 @@ export async function startIsolatedConsole(t) {
     fs.cpSync(path.join(originalUi, entry), path.join(ui, entry), { recursive: true });
   }
   fs.symlinkSync(path.join(originalUi, 'node_modules'), path.join(ui, 'node_modules'), 'dir');
-  fs.writeFileSync(path.join(ui, 'next.config.mjs'), `import config from ${JSON.stringify(path.join(originalUi, 'next.config.mjs'))};\nexport default { ...config, turbopack: { ...config.turbopack, root: ${JSON.stringify(ROOT)} } };\n`);
+  // ESM import specifiers need file:// URLs: a bare Windows path like E:\... is
+  // parsed as protocol "e:" and next.config.mjs fails to load. pathToFileURL is
+  // a no-op shape change on POSIX, so CI behaviour is identical.
+  const originalConfigUrl = pathToFileURL(path.join(originalUi, 'next.config.mjs')).href;
+  fs.writeFileSync(path.join(ui, 'next.config.mjs'), `import config from ${JSON.stringify(originalConfigUrl)};\nexport default { ...config, turbopack: { ...config.turbopack, root: ${JSON.stringify(ROOT)} } };\n`);
   // Substitute only the copied server-side facts boundary, not any rendered component.
   fs.writeFileSync(path.join(ui, 'src/lib/console-facts-request.mjs'), `const facts = ${JSON.stringify(isolatedConsoleFacts(sandbox))};\nexport async function collectForRequest(searchParams = {}) { return { facts: structuredClone(facts), selection: { requested: searchParams.ws || '', ok: true } }; }\n`);
   const port = await freePort();

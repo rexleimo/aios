@@ -66,7 +66,10 @@ async function request(port, pathname, { cookie, headers, method, body } = {}) {
   return { status: response.status, headers: response.headers, body: response.status === 200 ? await response.text() : '' };
 }
 
-test('the development server serves the current Console through the token gate', { timeout: 300_000 }, async t => {
+// The two browser suites this drives take ~5-6 minutes on a clean CI runner
+// (measured 316s locally with a warm cache); 300s was too tight and made every
+// downstream subtest report a misleading "browser has been closed" cascade.
+test('the development server serves the current Console through the token gate', { timeout: 600_000 }, async t => {
   if (!fs.existsSync(NEXT_BIN)) {
     t.skip('ui dependencies are not installed (run: npm run ui:setup)');
     return;

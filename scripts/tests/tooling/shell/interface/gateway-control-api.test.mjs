@@ -77,7 +77,7 @@ test('接入命令构造是单一事实源：connect 与 lifecycle 读回均复�
 
 test('就地接入：API 客户端闭合校验 + 卡 per-client 接入/还原 + 外科编辑器原子写/备份/内联 token', () => {
   const route = read(ui('src/app/api/model-routing/gateway/route.ts'));
-  assert.match(route, /new Set\(\['claude', 'codex', 'pi'\]\)/u, '客户端必须是闭合集合');
+  assert.match(route, /new Set\(\['claude', 'codex', 'pi', 'opencode', 'zcode', 'qoder', 'gemini', 'hermes', 'grok', 'workbuddy'\]\)/u, '客户端必须是闭合集合');
   assert.match(route, /invalid-client/u, '非法客户端必须 400');
   const card = read(ui('src/components/console/model-routing/gateway-control.tsx'));
   assert.match(card, /runConnectAction/u, 'per-client 接入/还原走确认门');

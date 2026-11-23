@@ -2,8 +2,16 @@
 import { assignmentReferences, orderedGroupMembers, parseTargetRef, toModelCatalog, validateDocument } from './model-routing.mjs';
 
 const PROTOCOLS = Object.freeze(['openai-chat', 'openai-response', 'claude', 'gemini']);
-// UI-safe mirror of client modelRouting eligibility; parity tests pin every definition and alias.
-const GATEWAY_CLIENTS = new Set(['codex', 'codex-cli', 'claude', 'claude-code', 'opencode', 'opencode-cli', 'hermes', 'hermes-agent', 'pi', 'pi-coding-agent']);
+// UI-safe mirror of client gateway eligibility; parity tests pin every definition and alias.
+// Once a client can be connected in place (CONNECT_CLIENTS in the runtime), even an
+// "own" modelRouting client routes through the gateway — keep this set in lockstep
+// with the runtime's connect whitelist plus each runtime client id / command alias.
+const GATEWAY_CLIENTS = new Set([
+  // Connectable base ids (includes clients declared "own" that can now connect in place).
+  'codex', 'claude', 'pi', 'opencode', 'hermes', 'grok', 'workbuddy', 'zcode', 'qoder', 'gemini',
+  // Relay-mode runtime aliases: relay eligibility applies to the alias too.
+  'codex-cli', 'claude-code', 'opencode-cli', 'hermes-agent', 'pi-coding-agent',
+]);
 const lower = (value) => String(value || '').trim().toLowerCase();
 const isRecord = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 

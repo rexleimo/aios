@@ -131,7 +131,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
   if ((action === 'connect' || action === 'disconnect') && body.client !== undefined && body.client !== null) {
     const client = typeof body.client === 'string' ? body.client : '';
-    if (!CLIENTS.has(client)) return json(400, { error: 'invalid-client', detail: 'client must be claude, codex or pi' });
+    if (!CLIENTS.has(client)) return json(400, { error: 'invalid-client', detail: `client must be one of: ${[...CLIENTS].join(', ')}` });
     argv.push('--client', client);
   }
   if (action === 'connect') {

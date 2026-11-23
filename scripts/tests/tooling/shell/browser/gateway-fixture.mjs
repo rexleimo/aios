@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { toModelBindings, toModelCatalog } from '../../../../../apps/shell/ui/src/lib/config/model-routing.mjs';
 import { clientResourceState, handleClientResourceRequest } from './clients-resources/api-fixture.mjs';
 
@@ -11,7 +12,9 @@ export async function browserRuntime() {
   for (const directory of ['node_modules/playwright-core', 'mcp-server/node_modules/playwright-core']) {
     const entry = path.join(ROOT, directory, 'index.js');
     if (fs.existsSync(entry)) {
-      const module = await import(entry);
+      // A bare Windows absolute path is parsed as protocol "e:" by ESM; POSIX
+      // absolute paths import fine, so use a file URL for both.
+      const module = await import(pathToFileURL(entry).href);
       const { chromium } = module.default || module;
       const executablePath = process.env.AIOS_FILM_BROWSER || [
         '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
