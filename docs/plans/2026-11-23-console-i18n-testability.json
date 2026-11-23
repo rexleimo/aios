@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-11-23-console-i18n-testability.json",
+  "redCandidate": {
+    "publicEntry": "node --test apps/shell/ui/tests/i18n-catalogs.test.mjs (catalog parity seam for the Console language switcher)",
+    "setup": "Fresh worktree at HEAD 8993d777 with plan/test-scope docs only; apps/shell/ui/src/i18n/catalogs/ does not exist yet, so zh-CN/en/ja catalog files are absent.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "apps/shell/ui/tests/i18n-catalogs.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Test passes: all three locale catalogs exist, have identical key sets, and contain non-empty strings.",
+    "observed": "Test exits 1 with ENOENT on src/i18n/catalogs/zh-CN.json; no i18n catalog behavior exists.",
+    "failureReason": "Locale catalogs have not been introduced; the new user-visible behavior (switching between en / zh-CN / ja) cannot exist yet.",
+    "receiptRef": "receipt:ddaad121-ff86-4e5d-9057-85bd31e5a636"
+  }
+}

@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+import { LOCALE_COOKIE, LOCALE_HEADER, resolveLocale } from './i18n/locales.mjs';
 import { TOKEN_COOKIE, decide } from './lib/trust.mjs';
 
 const TOKEN = process.env.AIOS_UI_TOKEN ?? '';
@@ -57,5 +58,14 @@ export function proxy(request: NextRequest): NextResponse {
     return response;
   }
 
-  return NextResponse.next();
+  // 语言随请求走，不改 URL：桌面壳的深链、旧书签跳转和 ws=<key> 都依赖现有路径。
+  const locale = resolveLocale({
+    cookie: request.cookies.get(LOCALE_COOKIE)?.value,
+    acceptLanguage: request.headers.get('accept-language'),
+  });
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(LOCALE_HEADER, locale);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set(LOCALE_HEADER, locale);
+  return response;
 }

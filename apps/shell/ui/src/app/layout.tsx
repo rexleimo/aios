@@ -1,15 +1,24 @@
 import type { Metadata } from 'next';
+
+import { I18nAppProvider } from '../i18n/provider';
+import { getServerLocale, getServerTranslate } from '../i18n/server';
 import './globals.css';
 
-export const metadata: Metadata = {
-  title: 'AIOS 控制台',
-  description: '本机 AI 工具管理、项目记忆与 MCP 服务工作空间',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerTranslate();
+  return {
+    title: t('meta.title'),
+    description: t('meta.description'),
+  };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getServerLocale();
   return (
-    <html lang="zh-CN" data-rex-theme="light">
-      <body>{children}</body>
+    <html lang={locale} data-rex-theme="light">
+      <body>
+        <I18nAppProvider initialLocale={locale}>{children}</I18nAppProvider>
+      </body>
     </html>
   );
 }

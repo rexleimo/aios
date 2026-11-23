@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '../../i18n/provider';
 import { clientLabel, landingTokenLabel, LANDING_TOKEN_EXPLANATION, type ConsoleFacts } from '../../lib/console-facts';
 import type { NavId } from '../../lib/console-navigation';
 import { Badge, Button, Heading, Modal, Panel, SmallTitle } from './console-ui';
@@ -15,16 +16,17 @@ export function HomeWorkspace({
   navigate: (view: NavId) => void;
   active: boolean;
 }) {
+  const t = useT();
   return (
     <>
       <Heading
-        eyebrow="本机客户端 · 路由观测"
-        title="最近请求与配置默认，分开看清。"
-        description="查看客户端配置落点、最近请求的模型与时间，以及实现角色的配置默认。计数来自当前保留的网关日志，不代表客户端在线或网关运行状态。"
+        eyebrow={t('home.eyebrow')}
+        title={t('home.title')}
+        description={t('home.description')}
       />
       {facts.degraded.length > 0 && (
         <Panel className="mb-7 border-rex-danger/40 p-5">
-          <SmallTitle action={<Badge tone="danger">{facts.degraded.length} 项</Badge>}>有东西没读到</SmallTitle>
+          <SmallTitle action={<Badge tone="danger">{t('home.degradedCount', { count: facts.degraded.length })}</Badge>}>{t('home.degradedTitle')}</SmallTitle>
           <ul className="space-y-2 text-xs leading-5 text-rex-text-muted">
             {facts.degraded.map((entry) => (
               <li key={entry.item}>
@@ -50,6 +52,7 @@ export function ToolsWorkspace({
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 }) {
+  const t = useT();
   const selected = facts.clients.find((client) => client.clientId === selectedId);
   return (
     <>
@@ -59,19 +62,19 @@ export function ToolsWorkspace({
         onOpenChange={(open) => {
           if (!open) onSelect(null);
         }}
-        title={`${selected ? clientLabel(selected.clientId).name : 'Agent 客户端'} · 配置与落点详情`}
-        description="配置读取、服务数量与落点验证是三条不同的事实，下面分开列出。"
+        title={`${selected ? clientLabel(selected.clientId).name : t('nav.tools')} · ${t('home.detailsTitle')}`}
+        description={t('home.detailsDesc')}
       >
         {selected && (
           <div className="space-y-5">
             <dl className="grid grid-cols-[90px_1fr] gap-3 text-sm">
-              <dt className="text-rex-text-muted">配置落点</dt>
-              <dd>{selected.installed ? `${selected.scopes.length} 个（${selected.scopes.map((s) => s.scope).join('、')}）` : '本机没有'}</dd>
-              <dt className="text-rex-text-muted">配置文件</dt>
-              <dd className="break-all">{selected.configFiles.join('\n') || '无'}</dd>
-              <dt className="text-rex-text-muted">服务数量</dt>
-              <dd>{selected.services} 个配置实例</dd>
-              <dt className="text-rex-text-muted">落点验证</dt>
+              <dt className="text-rex-text-muted">{t('home.configLanding')}</dt>
+              <dd>{selected.installed ? `${selected.scopes.length} (${selected.scopes.map((s) => s.scope).join('、')})` : t('home.noneHere')}</dd>
+              <dt className="text-rex-text-muted">{t('home.configFile')}</dt>
+              <dd className="break-all">{selected.configFiles.join('\n') || t('home.none')}</dd>
+              <dt className="text-rex-text-muted">{t('home.serviceCount')}</dt>
+              <dd>{selected.services} {t('shell.serviceInstances')}</dd>
+              <dt className="text-rex-text-muted">{t('home.landingCheck')}</dt>
               <dd>
                 <ul className="space-y-1">
                   {selected.landingTokens.map((entry) => (
@@ -82,14 +85,14 @@ export function ToolsWorkspace({
                       </span>
                     </li>
                   ))}
-                  {selected.landingTokens.length === 0 && <li>没有可显示的落点状态。</li>}
+                  {selected.landingTokens.length === 0 && <li>{t('home.noLanding')}</li>}
                 </ul>
               </dd>
-              <dt className="text-rex-text-muted">连接测试</dt>
-              <dd>未做——配置接入不代表客户端会话或上游生成已经验证。</dd>
+              <dt className="text-rex-text-muted">{t('home.connectionTest')}</dt>
+              <dd>{t('home.connectionTestDesc')}</dd>
             </dl>
             <div className="rounded-xl bg-rex-panel p-4 text-xs leading-6 text-rex-text-muted">
-              读取配置成功，只说明文件可读取。服务连接结果需要独立测试后才能确认。
+              {t('home.readSuccessNote')}
             </div>
             <Button
               onClick={() => {
@@ -97,7 +100,7 @@ export function ToolsWorkspace({
                 onMcp();
               }}
             >
-              打开 MCP 服务工作区
+              {t('home.openMcp')}
             </Button>
           </div>
         )}

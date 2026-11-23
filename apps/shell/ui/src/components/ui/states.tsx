@@ -7,15 +7,17 @@
 // the interaction contract; panels import these instead of re-spelling the classes.
 import { Loader2 } from 'lucide-react';
 
+import { useT } from '../../i18n/provider';
 import { cn } from '../../lib/cn';
 import { Button } from './button';
 import { Panel } from './primitives';
 
-export function Loading({ label = '正在读取…', className = '' }: { label?: string; className?: string }) {
+export function Loading({ label, className = '' }: { label?: string; className?: string }) {
+  const t = useT();
   return (
     <Panel className={cn('flex items-center gap-2.5 p-6 text-sm text-rex-text-muted', className)}>
       <Loader2 size={16} aria-hidden className="shrink-0 animate-spin motion-reduce:animate-none" />
-      {label}
+      {label ?? t('common.loading')}
     </Panel>
   );
 }
@@ -29,12 +31,13 @@ export function ErrorState({
   onRetry?: () => void;
   className?: string;
 }) {
+  const t = useT();
   return (
     <Panel className={cn('p-6', className)}>
       <p className="text-sm text-rex-text-muted">{message}</p>
       {onRetry && (
         <Button variant="outline" className="mt-4" onClick={onRetry}>
-          重试
+          {t('common.retry')}
         </Button>
       )}
     </Panel>

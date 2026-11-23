@@ -1,0 +1,81 @@
+{
+  "kind": "rex.delivery-ticket.v1",
+  "workItemKey": "console-ui-i18n-lingui-2026-11-23",
+  "decisionTicketRef": "artifact:docs/plans/2026-11-23-console-i18n-lingui-decision.md",
+  "objective": "Add Lingui i18n (en / zh-CN / ja) to the desktop Console UI without changing route URLs.",
+  "completionClaim": "soft",
+  "workItems": [
+    {
+      "id": "work-1",
+      "outcome": "Lingui runtime installed and wired: deps in apps/shell/ui/package.json, i18n config, per-locale domain catalogs, LocaleProvider/I18nProvider in root layout, proxy reads locale cookie, language switcher component exists.",
+      "completionCriteria": ["typecheck passes", "catalog keys identical across locales", "<html lang> reflects active locale"],
+      "verification": ["npm run ui:typecheck", "node --test i18n catalog parity test"],
+      "evidenceRefs": ["artifact:apps/shell/ui/src/i18n/"],
+      "dependsOn": []
+    },
+    {
+      "id": "work-2",
+      "outcome": "Shell/navigation strings externalized: console-navigation.ts, console-workspace.tsx, console-ui.tsx, ui/states.tsx, layout metadata.",
+      "completionCriteria": ["no hardcoded Chinese in these files", "catalog shell domain covers them"],
+      "verification": ["npm run ui:typecheck"],
+      "evidenceRefs": ["artifact:apps/shell/ui/src/lib/console-navigation.ts"],
+      "dependsOn": ["work-1"]
+    },
+    {
+      "id": "work-3",
+      "outcome": "Primary workspace strings externalized: home, memory, resources, mcp, gateway, model-routing-panel, clients/*.",
+      "completionCriteria": ["no hardcoded Chinese in these files", "catalog console domain covers them"],
+      "verification": ["npm run ui:typecheck"],
+      "evidenceRefs": ["artifact:apps/shell/ui/src/components/console/home-workspace.tsx"],
+      "dependsOn": ["work-1"]
+    },
+    {
+      "id": "work-4",
+      "outcome": "Secondary panel strings externalized: gateway/*, model-routing/*, flows/* resource/*.",
+      "completionCriteria": ["no hardcoded Chinese in these files", "catalog panels domain covers them"],
+      "verification": ["npm run ui:typecheck"],
+      "evidenceRefs": ["artifact:apps/shell/ui/src/components/console/gateway/"],
+      "dependsOn": ["work-1"]
+    },
+    {
+      "id": "work-5",
+      "outcome": "English and Japanese translations authored for every externalized key; parity check passes.",
+      "completionCriteria": ["key sets identical", "no empty translations", "ja/en differ from zh-CN"],
+      "verification": ["node --test catalog parity test"],
+      "evidenceRefs": ["artifact:apps/shell/ui/src/i18n/catalogs/"],
+      "dependsOn": ["work-2", "work-3", "work-4"]
+    },
+    {
+      "id": "work-6",
+      "outcome": "Verification: typecheck, production build, focused tests, standards check and smoke evidence recorded.",
+      "completionCriteria": ["exit 0 on all commands", "evidence pasted real output"],
+      "verification": ["npm run ui:typecheck", "npm run ui:build", "node --test", "aios standards check --root . --rule directoryEntries"],
+      "evidenceRefs": ["artifact:docs/plans/2026-11-23-console-i18n-verification.md"],
+      "dependsOn": ["work-5"]
+    }
+  ],
+  "frontier": {
+    "ready": ["work-1"],
+    "blocked": [],
+    "note": "work-2/3/4 touch disjoint file sets and write disjoint catalog domains; they can run in parallel after work-1."
+  },
+  "parallelGroups": [
+    ["work-2", "work-3", "work-4"]
+  ],
+  "convergenceGate": {
+    "condition": "work-5 requires work-2, work-3 and work-4 complete; work-6 requires work-5 complete",
+    "verification": ["catalog parity test", "npm run ui:typecheck", "npm run ui:build"],
+    "requiredEvidenceRefs": ["artifact:docs/plans/2026-11-23-console-i18n-verification.md"]
+  },
+  "ledger": {
+    "is_complete": false,
+    "in_progress": [],
+    "facts": [
+      "next 16 docs present locally; proxy.ts replaces middleware.ts",
+      "lingui 6.6.0 cached in apps/desktop/node_modules; npm registry reachable",
+      "source UI language is zh-CN; en and ja are targets",
+      "CRG status ok, risk low, head matches build"
+    ],
+    "assignment": { "work-1": "implementer" }
+  }
+}
