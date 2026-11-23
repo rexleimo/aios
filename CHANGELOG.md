@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
 
+## [8.1.0] - 2026-11-23
+
+- feat(ui): full Console internationalization — every UI-authored string in the gateway, model-routing, resources, flows and clients panels now resolves through `t()` in `zh-CN` / `en` / `ja`. Catalogs grew from 83 to 1100 identical keys per locale; a new source guard test fails on any remaining hard-coded source-language literal with zero allowlist.
+- Changed: switching locale now writes the `aios-locale` cookie and reloads, so module-level translated constants also follow the chosen language; routes and `?ws=` deep links are unchanged.
+- fix(desktop): repair Windows startup and installed-runtime resolution (already on `main` since `desktop-v8.0.2`).
+- Verified: `node --test apps/shell/ui/tests/*.test.mjs` 10/10 pass; `npm run ui:typecheck` and `npm run ui:build` exit 0; rex-harness submodule pinned at published `v1.0.0`.
+
 ## [8.0.0] - 2026-11-21
 
 - feat(site): magpie-style official site with localized docs/blog and gateway workspace
