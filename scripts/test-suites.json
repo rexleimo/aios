@@ -351,6 +351,7 @@
       "scripts/tests/tooling/shell/desktop/shell-sidecar.test.mjs",
       "scripts/tests/tooling/shell/interface/shell-tokens.test.mjs",
       "scripts/tests/tooling/shell/desktop/shell-trust.test.mjs",
+      "scripts/tests/tooling/shell/desktop/desktop-bundle-staging.test.mjs",
       "scripts/tests/tooling/shell/interface/ui-launcher.test.mjs",
       "scripts/tests/learning/model/gateway/protocol/runtime/affinity.test.mjs",
       "scripts/tests/learning/model/gateway/protocol/runtime/attempts.test.mjs",
