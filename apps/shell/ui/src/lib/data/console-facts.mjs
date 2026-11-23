@@ -1,3 +1,4 @@
+import { t } from '../../i18n/t.mjs';
 // apps/shell/ui/src/lib/data/console-facts.mjs — 首屏真实事实的唯一装配点（服务端）。
 //
 // 为什么需要这一个文件：实测 `aios status --json` 要 2.7s，而它 64% 的时间花在把 29 MB 的
@@ -114,7 +115,7 @@ function buildIssues({ mcp, summary }) {
         kind: 'config-unreadable',
         clientId: String(landing.clientId ?? ''),
         scope: String(landing.scope ?? ''),
-        detail: String(landing.reason ?? '配置文件读取失败'),
+        detail: String(landing.reason ?? t("配置文件读取失败")),
         source: 'aios mcp list --json → landings[].status',
       });
     }
@@ -123,7 +124,7 @@ function buildIssues({ mcp, summary }) {
         kind: 'ledger-corrupt',
         clientId: String(landing.clientId ?? ''),
         scope: String(landing.scope ?? ''),
-        detail: 'AIOS 归属账本损坏，服务清单可能不完整',
+        detail: t("AIOS 归属账本损坏，服务清单可能不完整"),
         source: 'aios mcp list --json → landings[].ledgerCorrupt',
       });
     }
@@ -134,7 +135,7 @@ function buildIssues({ mcp, summary }) {
           clientId: String(landing.clientId ?? ''),
           scope: String(landing.scope ?? ''),
           server: String(server.name ?? ''),
-          detail: '同一个服务名在客户端配置与 AIOS 账本里指向不同内容',
+          detail: t("同一个服务名在客户端配置与 AIOS 账本里指向不同内容"),
           source: 'aios mcp list --json → servers[].ownership',
         });
       }
@@ -146,7 +147,7 @@ function buildIssues({ mcp, summary }) {
       kind: 'drift',
       clientId: '',
       scope: '',
-      detail: `${drift.length} 处配置与账本记录不一致`,
+      detail: t("{value0} 处配置与账本记录不一致", { value0: drift.length }),
       source: 'aios mcp list --json → counts.drift',
     });
   }
@@ -216,7 +217,7 @@ export async function collectConsoleFacts({ rootDir = repoRoot(), runImpl, works
   }
   if (workspacesResult.ok && workspacesResult.value?.ok === false) {
     // 清单读不到不等于「本机只有一个工作区」：那是一个需要说出来的降级。
-    degraded.push({ item: 'workspaces', error: String(workspacesResult.value.error ?? '工作区清单没读到') });
+    degraded.push({ item: 'workspaces', error: String(workspacesResult.value.error ?? t("工作区清单没读到")) });
   }
 
   const mcp = mcpResult.ok && mcpResult.value?.ok ? mcpResult.value : null;
@@ -269,7 +270,7 @@ export async function collectConsoleFacts({ rootDir = repoRoot(), runImpl, works
       { field: 'sessions / projects', origin: `${path.join(stateDir(rootDir), 'context-db', 'sessions')}` },
       { field: 'memories', origin: memoResult.ok ? memoResult.value?.file : 'unreadable' },
       { field: 'memoryTotals', origin: 'node scripts/aios.mjs memory report --json' },
-      { field: 'workspaces', origin: 'node scripts/aios.mjs workspaces list --json（注册表 ∪ 记忆仓存在性）' },
+      { field: 'workspaces', origin: t("node scripts/aios.mjs workspaces list --json（注册表 ∪ 记忆仓存在性）") },
       { field: 'pluginViews', origin: path.join(rootDir, 'config', 'plugins.json') },
     ],
     declaredClientCount: declared.clients.length,

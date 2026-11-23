@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../../i18n/t.mjs';
 // 网关控制卡：把「启停网关」与「接入客户端」从折叠说明里提升为可见、可操作的界面。
 // 启停/接入/还原都是有副作用的操作 → 先弹确认（Modal），再 POST confirm:true；状态只读，2.5s 轮询且仅在激活时。
 // 接入默认 magpie 式「就地」：一键把网关地址写进客户端真实配置（备份原值、可还原），普通命令即走网关；
@@ -58,7 +59,7 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
     try {
       const res = await fetch('/api/model-routing/gateway');
       const body = await res.json();
-      if (!res.ok) throw new Error(body.detail || body.error || '读取失败');
+      if (!res.ok) throw new Error(body.detail || body.error || t("读取失败"));
       setStatus(body as GatewayStatus);
       setError('');
     } catch (err) {
@@ -87,17 +88,17 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
       });
       const body = await res.json();
       if (!res.ok || body.ok === false) {
-        const detail = body.result?.error || body.stderr || body.detail || body.error || '操作失败';
-        setFeedback({ text: `${action === 'start' ? '启动' : '关闭'}失败：${detail}`, tone: 'error' });
+        const detail = body.result?.error || body.stderr || body.detail || body.error || t("操作失败");
+        setFeedback({ text: t("{value0}失败：{detail}", { value0: action === 'start' ? t("启动") : t("关闭"), detail: detail }), tone: 'error' });
       } else {
         const result = body.result ?? {};
         const text = action === 'start'
-          ? (result.alreadyRunning ? `网关已在 ${result.url} 运行` : `网关已启动：${result.url}`)
-          : (result.stopped ? '网关已关闭' : `网关未关闭：${result.reason || '未知'}`);
+          ? (result.alreadyRunning ? t("网关已在 {value0} 运行", { value0: result.url }) : t("网关已启动：{value0}", { value0: result.url }))
+          : (result.stopped ? t("网关已关闭") : t("网关未关闭：{value0}", { value0: result.reason || t("未知") }));
         setFeedback({ text, tone: result.stopped === false && action === 'stop' ? 'error' : 'ok' });
       }
     } catch (err) {
-      setFeedback({ text: `${action === 'start' ? '启动' : '关闭'}失败：${err instanceof Error ? err.message : String(err)}`, tone: 'error' });
+      setFeedback({ text: t("{value0}失败：{value1}", { value0: action === 'start' ? t("启动") : t("关闭"), value1: err instanceof Error ? err.message : String(err) }), tone: 'error' });
     } finally {
       setBusy(null);
       await loadStatus();
@@ -118,17 +119,17 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
       });
       const body = await res.json();
       if (!res.ok || body.ok === false) {
-        const detail = body.result?.error || body.stderr || body.detail || body.error || '操作失败';
-        setConnectFeedback({ text: `${action === 'connect' ? '接入' : '还原'}失败：${detail}`, tone: 'error' });
+        const detail = body.result?.error || body.stderr || body.detail || body.error || t("操作失败");
+        setConnectFeedback({ text: t("{value0}失败：{detail}", { value0: action === 'connect' ? t("接入") : t("还原"), detail: detail }), tone: 'error' });
       } else {
         const result = body.result ?? {};
         const text = action === 'connect'
-          ? `${name} 已接入，普通命令即走网关`
-          : (result.disconnected ? `${name} 已还原到接入前` : `${name} 未还原：${result.reason || '未知'}`);
+          ? t("{name} 已接入，普通命令即走网关", { name: name })
+          : (result.disconnected ? t("{name} 已还原到接入前", { name: name }) : t("{name} 未还原：{value1}", { name: name, value1: result.reason || t("未知") }));
         setConnectFeedback({ text, tone: result.disconnected === false && action === 'disconnect' ? 'error' : 'ok' });
       }
     } catch (err) {
-      setConnectFeedback({ text: `${action === 'connect' ? '接入' : '还原'}失败：${err instanceof Error ? err.message : String(err)}`, tone: 'error' });
+      setConnectFeedback({ text: t("{value0}失败：{value1}", { value0: action === 'connect' ? t("接入") : t("还原"), value1: err instanceof Error ? err.message : String(err) }), tone: 'error' });
     } finally {
       setBusy(null);
       await loadStatus();
@@ -143,46 +144,46 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
   const validRevision = typeof status?.configuredRevision === 'string' && /^[a-f0-9]{64}$/u.test(status.configuredRevision);
   const canConnect = ready && validRevision && Number.isInteger(status?.port) && Number(status?.port) > 0 && Number(status?.port) < 65536;
   const readinessText = pending
-    ? '尚未读取'
+    ? t("尚未读取")
     : !running
-    ? '网关未运行'
+    ? t("网关未运行")
     : ready
-      ? `可路由 ${status?.readyModels ?? status?.configuredModels ?? 0} 个模型`
+      ? t("可路由 {value0} 个模型", { value0: status?.readyModels ?? status?.configuredModels ?? 0 })
       : status?.code === 'gateway-readiness-unavailable'
-        ? '监听已启动，但无法确认已加载模型的就绪状态'
+        ? t("监听已启动，但无法确认已加载模型的就绪状态")
       : status?.code === 'PROVIDER_CREDENTIALS_MISSING'
-        ? '监听已启动，但模型来源缺少有效凭据'
+        ? t("监听已启动，但模型来源缺少有效凭据")
       : status?.code === 'PROVIDER_CONFIG_INVALID'
-        ? '监听已启动，但加载的供应商配置无效'
+        ? t("监听已启动，但加载的供应商配置无效")
       : status?.configuredModels === 0
-        ? '监听已启动，但尚无模型访问配置'
+        ? t("监听已启动，但尚无模型访问配置")
       : status?.code === 'NO_ROUTE_CONFIGURED' && Number(status?.readyModels) > 1
-        ? '监听已启动，多模型仍需显式默认或角色策略'
-        : '监听已启动，但当前没有就绪模型';
+        ? t("监听已启动，多模型仍需显式默认或角色策略")
+        : t("监听已启动，但当前没有就绪模型");
   const restoreNotice = !running && status?.connected
-    ? '有客户端仍指向网关。请启动网关或还原客户端，否则它们可能无法发送请求。'
+    ? t("有客户端仍指向网关。请启动网关或还原客户端，否则它们可能无法发送请求。")
     : '';
   const processNotice = pending
-    ? '尚未读到进程和接入状态，当前无法确认网关是否运行。'
+    ? t("尚未读到进程和接入状态，当前无法确认网关是否运行。")
     : status?.stale
-      ? `发现残留进程记录，但端口未响应，不能判定网关正在运行；重新启动时会检查进程状态。${restoreNotice}`
+      ? t("发现残留进程记录，但端口未响应，不能判定网关正在运行；重新启动时会检查进程状态。{restoreNotice}", { restoreNotice: restoreNotice })
       : running && !managed
-        ? '这个网关由外部前台进程启动，界面无法停机；请在启动它的终端按 Ctrl+C。aios model-router gateway-stop 仅对托管进程有效。'
+        ? t("这个网关由外部前台进程启动，界面无法停机；请在启动它的终端按 Ctrl+C。aios model-router gateway-stop 仅对托管进程有效。")
         : running
-          ? `界面托管进程 pid ${status?.pid}。停止网关不会自动还原客户端配置。`
-          : restoreNotice || '网关尚未启动。启动监听不会自动接入客户端，也不会自动配置模型。';
+          ? t("界面托管进程 pid {value0}。停止网关不会自动还原客户端配置。", { value0: status?.pid })
+          : restoreNotice || t("网关尚未启动。启动监听不会自动接入客户端，也不会自动配置模型。");
 
   const confirmMeta = (() => {
     if (!confirm) return { title: '', description: '' };
-    if (confirm.kind === 'start') return { title: '启动本地网关？', description: `将在本机 ${status?.url} 启动一个常驻网关进程，接入的客户端会开始把请求交给它路由。只绑 127.0.0.1，密钥仍只存环境变量。` };
-    if (confirm.kind === 'stop') return { title: '关闭本地网关？', description: '将停止界面托管的网关进程，接入的客户端在网关重新启动前无法路由请求。' };
+    if (confirm.kind === 'start') return { title: t("启动本地网关？"), description: t("将在本机 {value0} 启动一个常驻网关进程，接入的客户端会开始把请求交给它路由。只绑 127.0.0.1，密钥仍只存环境变量。", { value0: status?.url }) };
+    if (confirm.kind === 'stop') return { title: t("关闭本地网关？"), description: t("将停止界面托管的网关进程，接入的客户端在网关重新启动前无法路由请求。") };
     if (confirm.kind === 'connect') {
       const name = clientLabel(confirm.client).name;
-      return { title: `接入 ${name}？`, description: `将把 http://127.0.0.1:${confirm.port} 写进 ${name} 的真实配置（只改网关需要的 key，自动备份原值），默认目标 ${confirm.target}。按本次确认的目录版本接入；目录变化时需刷新并重新确认。之后普通 ${name} 命令即走网关。可随时一键还原。` };
+      return { title: t("接入 {name}？", { name: name }), description: t("将把 http://127.0.0.1:{value0} 写进 {name} 的真实配置（只改网关需要的 key，自动备份原值），默认目标 {value2}。按本次确认的目录版本接入；目录变化时需刷新并重新确认。之后普通 {name_3} 命令即走网关。可随时一键还原。", { value0: confirm.port, name: name, value2: confirm.target, name_3: name }) };
     }
     if (confirm.kind === 'disconnect') {
       const name = clientLabel(confirm.client).name;
-      return { title: `还原 ${name}？`, description: `将把 ${name} 的配置还原到接入前的原值（移除我们写入的 key，恢复你原来的设置）。` };
+      return { title: t("还原 {name}？", { name: name }), description: t("将把 {name} 的配置还原到接入前的原值（移除我们写入的 key，恢复你原来的设置）。", { name: name }) };
     }
     return { title: '', description: '' };
   })();
@@ -217,7 +218,7 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
           action={
             <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3">
               <Badge className="w-24 justify-center" tone={status?.stale ? 'warn' : running ? 'ok' : 'neutral'}>
-                {pending ? '状态未知' : running ? '运行中' : status?.stale ? '进程记录已失效' : '未运行'}
+                {pending ? t("状态未知") : running ? t("运行中") : status?.stale ? t("进程记录已失效") : t("未运行")}
               </Badge>
               <Button
                 variant={running ? 'outline' : 'default'}
@@ -227,27 +228,29 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
                 onClick={() => setConfirm({ kind: running ? 'stop' : 'start' })}
               >
                 <Power size={14} className="shrink-0" />
-                <span className="flex-1 text-center">{pending ? '读取状态中' : busy ? '处理中…' : running ? '关闭网关' : '启动网关'}</span>
+                <span className="flex-1 text-center">{pending ? t("读取状态中") : busy ? t("处理中…") : running ? t("关闭网关") : t("启动网关")}</span>
               </Button>
             </div>
           }
         >
-          本地网关
+          
+          {t("本地网关")}
         </SmallTitle>
         <p className="text-xs leading-6 text-rex-text-muted">
-          监听地址 <code className="inline-block w-52 max-w-full truncate rounded bg-rex-panel px-1 py-0.5 align-bottom font-rex-mono" title={status?.url}>{status?.url || '正在读取…'}</code>
-          {' · '}启动加载配置，改配置后需重启。
+          
+          {t("监听地址")} <code className="inline-block w-52 max-w-full truncate rounded bg-rex-panel px-1 py-0.5 align-bottom font-rex-mono" title={status?.url}>{status?.url || t("正在读取…")}</code>
+          {' · '}{t("启动加载配置，改配置后需重启。")}
         </p>
         <p className="mt-2 min-h-20 break-words text-[11px] leading-5 text-rex-text-muted sm:min-h-15">{processNotice}</p>
         <Panel className="mt-3 space-y-2 bg-rex-panel/40 p-3 text-xs leading-5">
-          <Badge className="min-h-11 w-full whitespace-normal leading-5" tone={pending ? 'neutral' : ready ? 'ok' : 'warn'}>运行时就绪：{readinessText}</Badge>
-          <p className="text-rex-text-muted">已保存配置：{status?.configuredModelCount === undefined ? '尚未读取' : `${status.configuredModelCount} 个显式绑定模型`}。改配置后需重启网关加载。</p>
+          <Badge className="min-h-11 w-full whitespace-normal leading-5" tone={pending ? 'neutral' : ready ? 'ok' : 'warn'}>{t("运行时就绪：")}{readinessText}</Badge>
+          <p className="text-rex-text-muted">{t("已保存配置：")}{status?.configuredModelCount === undefined ? t("尚未读取") : t("{value0} 个显式绑定模型", { value0: status.configuredModelCount })}{t("。改配置后需重启网关加载。")}</p>
         </Panel>
         <div className="mt-3 min-h-12 break-words text-[11px] leading-5">
           {error ? <>
-            <span className="text-rex-danger">{pending ? '状态读取失败' : '刷新失败'}：{error}</span>
-            <Button className="ml-2" size="sm" variant="ghost" onClick={() => void loadStatus()}>重试</Button>
-          </> : <InlineFeedback feedback={feedback} idle="启停会在本机绑定/释放 127.0.0.1 端口，操作前需确认。" />}
+            <span className="text-rex-danger">{pending ? t("状态读取失败") : t("刷新失败")}：{error}</span>
+            <Button className="ml-2" size="sm" variant="ghost" onClick={() => void loadStatus()}>{t("重试")}</Button>
+          </> : <InlineFeedback feedback={feedback} idle={t("启停会在本机绑定/释放 127.0.0.1 端口，操作前需确认。")} />}
         </div>
       </Panel>
 
@@ -271,10 +274,10 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
         description={confirmMeta.description}
       >
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setConfirm(null)}>取消</Button>
+          <Button variant="outline" onClick={() => setConfirm(null)}>{t("取消")}</Button>
           <Button variant={confirm?.kind === 'stop' || confirm?.kind === 'disconnect' ? 'danger' : 'default'} onClick={onConfirm}>
             <Power size={14} />
-            {confirm?.kind === 'start' ? '确认启动' : confirm?.kind === 'stop' ? '确认关闭' : confirm?.kind === 'connect' ? '确认接入' : '确认还原'}
+            {confirm?.kind === 'start' ? t("确认启动") : confirm?.kind === 'stop' ? t("确认关闭") : confirm?.kind === 'connect' ? t("确认接入") : t("确认还原")}
           </Button>
         </div>
       </Modal>

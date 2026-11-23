@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../../i18n/t.mjs';
 import { useEffect, useState } from 'react';
 import { Bookmark, Plus, Trash2 } from 'lucide-react';
 import { Button, InlineFeedback, Input, Modal, Panel, SmallTitle, type Feedback } from '../console-ui';
@@ -50,11 +51,11 @@ export function RoutingProfiles({
         !Array.isArray(value) ||
         !value.every((entry) => typeof entry?.name === 'string' && validMatrix(entry.matrix))
       )
-        throw new Error('本地方案数据格式不正确，未自动覆盖。');
+        throw new Error(t("本地方案数据格式不正确，未自动覆盖。"));
       setProfiles(value);
       setStorageReady(true);
     } catch (error) {
-      setFeedback({ tone: 'error', text: error instanceof Error ? error.message : '无法读取本地方案。' });
+      setFeedback({ tone: 'error', text: error instanceof Error ? error.message : t("无法读取本地方案。") });
     }
   }, []);
   function persist(next: Profile[]) {
@@ -64,7 +65,7 @@ export function RoutingProfiles({
       setProfiles(next);
       return true;
     } catch {
-      setFeedback({ tone: 'error', text: '浏览器存储不可用，方案没有保存。' });
+      setFeedback({ tone: 'error', text: t("浏览器存储不可用，方案没有保存。") });
       return false;
     }
   }
@@ -83,20 +84,23 @@ export function RoutingProfiles({
             }}
           >
             <Plus size={13} />
-            保存为方案
+            
+            {t("保存为方案")}
           </Button>
         }
       >
-        角色覆盖方案
+        
+        {t("角色覆盖方案")}
       </SmallTitle>
       <p className="mb-4 text-xs leading-6 text-rex-text-muted">
-        仅快照全局与客户端角色覆盖，不包含普通对话默认、客户端普通对话例外、供应商、密钥或意图规则。方案保存在此浏览器，不与 CLI
-        同步；应用只更新草稿。
+        
+        {t("仅快照全局与客户端角色覆盖，不包含普通对话默认、客户端普通对话例外、供应商、密钥或意图规则。方案保存在此浏览器，不与 CLI\r\n        同步；应用只更新草稿。")}
       </p>
       <div className="space-y-2">
         {profiles.length === 0 && (
           <p className="text-xs text-rex-text-muted">
-            还没有方案。可以把当前草稿的角色覆盖保存为一个命名方案。
+            
+            {t("还没有方案。可以把当前草稿的角色覆盖保存为一个命名方案。")}
           </p>
         )}
         {profiles.map((profile) => (
@@ -107,12 +111,13 @@ export function RoutingProfiles({
             <Bookmark size={14} className="shrink-0 text-rex-text-muted" />
             <span className="min-w-0 flex-1 truncate text-xs font-medium">{profile.name}</span>
             <Button size="sm" variant="outline" onClick={() => setSelected({ kind: 'apply', profile })}>
-              应用到草稿
+              
+              {t("应用到草稿")}
             </Button>
             <Button
               size="icon"
               variant="ghost"
-              aria-label={`删除方案 ${profile.name}`}
+              aria-label={t("删除方案 {value0}", { value0: profile.name })}
               onClick={() => setSelected({ kind: 'delete', profile })}
             >
               <Trash2 size={13} />
@@ -126,8 +131,8 @@ export function RoutingProfiles({
       <Modal
         open={saving}
         onOpenChange={setSaving}
-        title="保存角色覆盖方案"
-        description="快照当前草稿中的角色覆盖。保存方案不会写入网关配置。"
+        title={t("保存角色覆盖方案")}
+        description={t("快照当前草稿中的角色覆盖。保存方案不会写入网关配置。")}
       >
         <form
           onSubmit={(event) => {
@@ -135,19 +140,19 @@ export function RoutingProfiles({
             const trimmed = name.trim();
             if (!trimmed) return;
             if (profiles.some((profile) => profile.name === trimmed)) {
-              setFeedback({ tone: 'error', text: '方案名称已存在，请换一个名称。' });
+              setFeedback({ tone: 'error', text: t("方案名称已存在，请换一个名称。") });
               return;
             }
             if (persist([...profiles, { name: trimmed, matrix: structuredClone(matrix), targetRefVersion: 1 }])) {
               setSaving(false);
-              setFeedback({ tone: 'ok', text: '角色覆盖方案已保存在此浏览器。' });
+              setFeedback({ tone: 'ok', text: t("角色覆盖方案已保存在此浏览器。") });
             }
           }}
           className="space-y-4"
         >
           <Input
-            aria-label="方案名称"
-            placeholder="例如 日常开发"
+            aria-label={t("方案名称")}
+            placeholder={t("例如 日常开发")}
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={60}
@@ -155,10 +160,12 @@ export function RoutingProfiles({
           <InlineFeedback feedback={feedback?.tone === 'error' ? feedback : null} />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setSaving(false)}>
-              取消
+              
+              {t("取消")}
             </Button>
             <Button type="submit" disabled={!name.trim()}>
-              保存方案
+              
+              {t("保存方案")}
             </Button>
           </div>
         </form>
@@ -168,16 +175,17 @@ export function RoutingProfiles({
         onOpenChange={(open) => {
           if (!open) setSelected(null);
         }}
-        title={`${selected?.kind === 'delete' ? '删除' : '应用'}方案「${selected?.profile.name || ''}」？`}
+        title={t("{value0}方案「{value1}」？", { value0: selected?.kind === 'delete' ? t("删除") : t("应用"), value1: selected?.profile.name || '' })}
         description={
           selected?.kind === 'delete'
-            ? '从此浏览器移除方案，不影响当前草稿或已保存的网关配置。'
-            : '将替换草稿中的全局与客户端角色覆盖，其他设置保持不变。仍需保存全部修改才生效。'
+            ? t("从此浏览器移除方案，不影响当前草稿或已保存的网关配置。")
+            : t("将替换草稿中的全局与客户端角色覆盖，其他设置保持不变。仍需保存全部修改才生效。")
         }
       >
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setSelected(null)}>
-            取消
+            
+            {t("取消")}
           </Button>
           <Button
             variant={selected?.kind === 'delete' ? 'danger' : 'default'}
@@ -192,18 +200,19 @@ export function RoutingProfiles({
                   const available = new Set(targetIds ?? modelIds.map((id) => serializeTargetRef({ kind: 'model', id })));
                   const refs = [...Object.values(migratedMatrix.default), ...Object.values(migratedMatrix.clients).flatMap(Object.values)];
                   if (refs.some((ref) => ref && ref !== 'auto' && !available.has(ref))) {
-                    throw new Error('包含当前不可用的模型或模型组，请先补充或启用模型来源。');
+                    throw new Error(t("包含当前不可用的模型或模型组，请先补充或启用模型来源。"));
                   }
                   onApply(structuredClone(migratedMatrix));
-                  setFeedback({ tone: 'ok', text: '方案已应用到草稿，尚未写入配置。' });
+                  setFeedback({ tone: 'ok', text: t("方案已应用到草稿，尚未写入配置。") });
                 } catch (error) {
-                  setFeedback({ tone: 'error', text: `方案未应用：${error instanceof Error ? error.message : '目标引用无效。'}` });
+                  setFeedback({ tone: 'error', text: t("方案未应用：{value0}", { value0: error instanceof Error ? error.message : t("目标引用无效。") }) });
                 }
               }
               setSelected(null);
             }}
           >
-            确认{selected?.kind === 'delete' ? '删除' : '应用'}
+            
+            {t("确认")}{selected?.kind === 'delete' ? t("删除") : t("应用")}
           </Button>
         </div>
       </Modal>

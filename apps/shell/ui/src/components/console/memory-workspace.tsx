@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../i18n/t.mjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
@@ -20,12 +21,12 @@ import { ProjectButton } from './flows/project-button';
 
 /** 列表上的筛选片：每一个都对应 events.jsonl 里真实存在的字段值，不是造出来的分类。 */
 const FACETS: Array<[string, string, (memory: FactMemory) => boolean]> = [
-  ['all', '全部', () => true],
-  ['checkpoint', '里程碑', (memory) => memory.checkpoint],
-  ['verified', '已验证', (memory) => memory.claimStatus === 'verified'],
-  ['unclaimed', '未标注', (memory) => memory.claimStatus === null],
-  ['shared', '项目内共享', (memory) => memory.scope === 'project_shared'],
-  ['private', '仅本代理', (memory) => memory.scope === 'agent_private'],
+  ['all', t("全部"), () => true],
+  ['checkpoint', t("里程碑"), (memory) => memory.checkpoint],
+  ['verified', t("已验证"), (memory) => memory.claimStatus === 'verified'],
+  ['unclaimed', t("未标注"), (memory) => memory.claimStatus === null],
+  ['shared', t("项目内共享"), (memory) => memory.scope === 'project_shared'],
+  ['private', t("仅本代理"), (memory) => memory.scope === 'agent_private'],
 ];
 
 export function MemoryWorkspace({
@@ -100,7 +101,7 @@ export function MemoryWorkspace({
       });
     } catch (error) {
       if (token !== requestRef.current) return;
-      setActionError(`搜索没跑成：${error instanceof Error ? error.message : String(error)}`);
+      setActionError(t("搜索没跑成：{value0}", { value0: error instanceof Error ? error.message : String(error) }));
     } finally {
       if (token === requestRef.current) setSearching(false);
     }
@@ -119,7 +120,7 @@ export function MemoryWorkspace({
       });
       const payload = (await response.json()) as { ok?: boolean; output?: string; error?: string | null };
       if (!response.ok || payload.ok !== true) {
-        setActionError(payload.error || `${action} 失败（HTTP ${response.status}）`);
+        setActionError(payload.error || t("{action} 失败（HTTP {value1}）", { action: action, value1: response.status }));
         return false;
       }
       if (action === 'memo.useful') setUsefulDone((previous) => [...previous, selected.id]);
@@ -150,34 +151,36 @@ export function MemoryWorkspace({
     <>
       <Heading
         eyebrow="PROJECT MEMORY"
-        title="经验留下来，下一次接着用。"
-        description={`本机 ${facts.memoryTotals?.events ?? facts.memories.length} 条记忆记录，按它们真实存在的命名空间与适用范围组织。`}
+        title={t("经验留下来，下一次接着用。")}
+        description={t("本机 {value0} 条记忆记录，按它们真实存在的命名空间与适用范围组织。", { value0: facts.memoryTotals?.events ?? facts.memories.length })}
         actions={
           <Button variant="outline" onClick={() => window.location.reload()}>
             <Gauge size={15} />
-            重新采集
+            
+            {t("重新采集")}
           </Button>
         }
       />
       <div className="mb-5 flex items-center gap-2 text-xs leading-5 text-rex-text-muted">
         <ShieldCheck size={15} className="shrink-0 text-rex-cyan" />
-        记忆按 space 与 scope 陈列；顶部的项目选择器只决定配置目标，不筛记忆——memo 存储里没有按项目分栏这回事。
+        
+        {t("记忆按 space 与 scope 陈列；顶部的项目选择器只决定配置目标，不筛记忆——memo 存储里没有按项目分栏这回事。")}
       </div>
       <div className="grid min-h-[570px] overflow-hidden rounded-2xl border border-rex-border bg-rex-bg lg:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-[190px_minmax(260px,.95fr)_minmax(300px,1.15fr)]">
         <aside
-          aria-label="记忆命名空间"
+          aria-label={t("记忆命名空间")}
           className="border-b border-rex-border bg-rex-panel/40 p-3 lg:border-r lg:border-b-0"
         >
-          <p className="px-2 pt-2 pb-4 text-[11px] font-medium tracking-wide text-rex-text-muted">阅读范围</p>
+          <p className="px-2 pt-2 pb-4 text-[11px] font-medium tracking-wide text-rex-text-muted">{t("阅读范围")}</p>
           <div className="flex flex-wrap gap-1 lg:flex-col">
-            <ProjectButton name="全部 space" active={space === 'all'} onClick={() => chooseSpace('all')} />
+            <ProjectButton name={t("全部 space")} active={space === 'all'} onClick={() => chooseSpace('all')} />
             {facts.memorySpaces.map((entry) => {
               const spaceKey = String(entry.space ?? entry.spaceKey ?? '');
               return (
                 <ProjectButton
                   key={spaceKey}
                   name={spaceKey}
-                  description={`${entry.events} 条 · ${Math.round(Number(entry.chars ?? 0) / 1024)} KB`}
+                  description={t("{value0} 条 · {value1} KB", { value0: entry.events, value1: Math.round(Number(entry.chars ?? 0) / 1024) })}
                   active={spaceKey === space}
                   onClick={() => chooseSpace(spaceKey)}
                 />
@@ -187,46 +190,48 @@ export function MemoryWorkspace({
           {facts.memorySpaces.length === 0 && (
             <p className="mt-3 px-2 text-[11px] leading-5 text-rex-text-muted">
               {facts.degraded.some((entry) => entry.item === 'memoryReport')
-                ? `命名空间没读到：${facts.degraded.find((entry) => entry.item === 'memoryReport')?.error}`
-                : '本机没有记忆命名空间。'}
+                ? t("命名空间没读到：{value0}", { value0: facts.degraded.find((entry) => entry.item === 'memoryReport')?.error })
+                : t("本机没有记忆命名空间。")}
             </p>
           )}
           {pinnedBudget && (
             <div className="mt-5 rounded-lg border border-rex-border bg-rex-bg p-3 text-[11px] leading-5 text-rex-text-muted">
-              <p className="font-medium text-rex-text-body">常驻记忆预算</p>
+              <p className="font-medium text-rex-text-body">{t("常驻记忆预算")}</p>
               <p>
-                {pinnedBudget.chars} / {pinnedBudget.maxChars} 字符
+                {pinnedBudget.chars} / {pinnedBudget.maxChars}  {t("字符")}
               </p>
               {pinnedBudget.truncated === true && (
                 <p className="mt-1 flex items-start gap-1.5 text-rex-danger">
                   <AlertTriangle size={13} className="mt-0.5 shrink-0" />
-                  已超出并被截断：常驻窗口只装得下一部分。
+                  
+                  {t("已超出并被截断：常驻窗口只装得下一部分。")}
                 </p>
               )}
             </div>
           )}
           <p className="mt-5 px-2 text-[11px] leading-5 text-rex-text-muted">
-            出处：{facts.sources.find((source) => source.field === 'memories')?.origin ?? '未记录'}
+            
+            {t("出处：")}{facts.sources.find((source) => source.field === 'memories')?.origin ?? t("未记录")}
           </p>
         </aside>
-        <section aria-label="记忆列表" className="min-w-0 border-b border-rex-border xl:border-r xl:border-b-0">
+        <section aria-label={t("记忆列表")} className="min-w-0 border-b border-rex-border xl:border-r xl:border-b-0">
           <div className="border-b border-rex-border p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="truncate text-sm font-semibold">
-                {space === 'all' ? '全部记忆' : `space · ${space}`}
+                {space === 'all' ? t("全部记忆") : `space · ${space}`}
               </h2>
-              <span className="shrink-0 text-xs text-rex-text-muted">{rows.length} 条</span>
+              <span className="shrink-0 text-xs text-rex-text-muted">{rows.length}  {t("条")}</span>
             </div>
             <div className="relative">
               <Search size={15} className="absolute top-3 left-3 text-rex-text-muted" />
               <Input
-                aria-label="搜索记忆内容"
+                aria-label={t("搜索记忆内容")}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') void runServerSearch();
                 }}
-                placeholder="搜索已加载记录；回车跑一次真实 memo search…"
+                placeholder={t("搜索已加载记录；回车跑一次真实 memo search…")}
                 className="pl-9"
               />
             </div>
@@ -245,16 +250,17 @@ export function MemoryWorkspace({
           </div>
           {searching ? (
             <div role="status">
-              <Empty icon={CircleDashed} title="正在跑 memo search…">
-                命令、结果与失败原文都来自子进程，不在页面里模拟。
+              <Empty icon={CircleDashed} title={t("正在跑 memo search…")}>
+                
+                {t("命令、结果与失败原文都来自子进程，不在页面里模拟。")}
               </Empty>
             </div>
           ) : serverSearch ? (
             <div className="max-h-[540px] overflow-y-auto">
               <p className="border-b border-rex-border px-5 py-3 text-[11px] text-rex-text-muted">
-                `memo search “{serverSearch.query}”` 命中 {serverSearch.entries.length} 条
-                {serverSearch.truncated ? '（已到上限，可能还有）' : ''}
-                {serverSearch.error ? ` · 失败原文：${serverSearch.error}` : ''}
+                `memo search “{serverSearch.query}{t("”` 命中")} {serverSearch.entries.length}  {t("条")}
+                {serverSearch.truncated ? t("（已到上限，可能还有）") : ''}
+                {serverSearch.error ? t(" · 失败原文：{value0}", { value0: serverSearch.error }) : ''}
               </p>
               {serverSearch.entries.map((entry) => (
                 <button
@@ -268,19 +274,19 @@ export function MemoryWorkspace({
                 </button>
               ))}
               {serverSearch.entries.length === 0 && !serverSearch.error && (
-                <Empty icon={FolderSearch} title="真实搜索没有命中">
-                  <p>这个词在这台机器的记忆里没匹配上。搜索不是错误，没命中就是没命中。</p>
+                <Empty icon={FolderSearch} title={t("真实搜索没有命中")}>
+                  <p>{t("这个词在这台机器的记忆里没匹配上。搜索不是错误，没命中就是没命中。")}</p>
                 </Empty>
               )}
             </div>
           ) : rows.length === 0 ? (
-            <Empty icon={BookOpen} title={query ? '没有匹配的记忆' : '这里还没有记忆'}>
+            <Empty icon={BookOpen} title={query ? t("没有匹配的记忆") : t("这里还没有记忆")}>
               <p>
                 {query
-                  ? '换一个词，或按回车让本机 CLI 再搜一次。'
+                  ? t("换一个词，或按回车让本机 CLI 再搜一次。")
                   : facts.memories.length === 0
-                    ? '这台机器上还没有 memo 记录。产生第一条之后，它会按最近记录出现在这里。'
-                    : '当前筛选条件下没有记录；换一个片或清除筛选。'}
+                    ? t("这台机器上还没有 memo 记录。产生第一条之后，它会按最近记录出现在这里。")
+                    : t("当前筛选条件下没有记录；换一个片或清除筛选。")}
               </p>
               {query && (
                 <Button
@@ -291,7 +297,8 @@ export function MemoryWorkspace({
                     setFacet('all');
                   }}
                 >
-                  清除筛选
+                  
+                  {t("清除筛选")}
                 </Button>
               )}
             </Empty>
@@ -308,7 +315,7 @@ export function MemoryWorkspace({
                       <span>{memory.space}</span>
                       <span>·</span>
                       <span>{memory.ts.slice(5, 10)}</span>
-                      {memory.checkpoint && <Badge tone="info">里程碑</Badge>}
+                      {memory.checkpoint && <Badge tone="info">{t("里程碑")}</Badge>}
                       {memory.scope && memory.scope !== 'project_shared' && (
                         <Badge tone="neutral">{MEMO_SCOPE_LABELS[memory.scope] ?? memory.scope}</Badge>
                       )}
@@ -321,10 +328,11 @@ export function MemoryWorkspace({
             </ul>
           )}
         </section>
-        <section aria-label="记忆详情" className="min-w-0 p-6 lg:col-span-2 xl:col-span-1">
+        <section aria-label={t("记忆详情")} className="min-w-0 p-6 lg:col-span-2 xl:col-span-1">
           {!selected ? (
-            <Empty icon={FileText} title="让记忆有来有回">
-              选择一条记录，查看完整事实、来源和它后来的变化。
+            <Empty icon={FileText} title={t("让记忆有来有回")}>
+              
+              {t("选择一条记录，查看完整事实、来源和它后来的变化。")}
             </Empty>
           ) : (
             <MemoryDetail
@@ -350,13 +358,14 @@ export function MemoryWorkspace({
       <Modal
         open={updateOpen}
         onOpenChange={setUpdateOpen}
-        title="更新这条事实"
-        description="新增一条并取代它：旧记录保留但退出召回，历史可追溯。这一步会真的写入本机记忆文件。"
+        title={t("更新这条事实")}
+        description={t("新增一条并取代它：旧记录保留但退出召回，历史可追溯。这一步会真的写入本机记忆文件。")}
       >
         <div className="mb-4 rounded-lg bg-rex-panel p-3 text-sm leading-6 text-rex-text-muted">
-          原记录：{selected?.excerpt.slice(0, 80)}
+          
+          {t("原记录：")}{selected?.excerpt.slice(0, 80)}
         </div>
-        <Field label="现在应该记住什么" hint="8–2000 字符；命令是 aios memo add <文本> --supersedes <id>">
+        <Field label={t("现在应该记住什么")} hint={t("8–2000 字符；命令是 aios memo add <文本> --supersedes <id>")}>
           <Textarea
             rows={4}
             value={replacement}
@@ -366,10 +375,11 @@ export function MemoryWorkspace({
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="outline" onClick={() => setUpdateOpen(false)}>
             <ArrowLeft size={14} />
-            取消
+            
+            {t("取消")}
           </Button>
           <Button disabled={replacement.trim().length < 8 || busy} onClick={() => void submitSupersede()}>
-            {busy ? '执行中' : '写入并取代'}
+            {busy ? t("执行中") : t("写入并取代")}
           </Button>
         </div>
       </Modal>

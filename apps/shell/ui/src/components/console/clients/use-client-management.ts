@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../../i18n/t.mjs';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { clientFailure, clientTargetOptions } from './client-management-model.mjs';
 
@@ -36,7 +37,7 @@ export interface TargetOption { value: string; label: string }
 async function readJson(url: string, body?: unknown) {
   const response = await fetch(url, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' });
   const result = await response.json();
-  if (!response.ok || !result || result.ok === false) throw new Error(clientFailure(result, `读取失败（HTTP ${response.status}）`));
+  if (!response.ok || !result || result.ok === false) throw new Error(clientFailure(result, t("读取失败（HTTP {value0}）", { value0: response.status })));
   return result;
 }
 
@@ -60,7 +61,7 @@ export function useClientManagement() {
     if (ticket !== generation.current) return;
     const failures: Record<string, string> = {};
     for (const [index, result] of results.entries()) {
-      const key = ['安装信息', '网关状态', '可选目标'][index];
+      const key = [t("安装信息"), t("网关状态"), t("可选目标")][index];
       if (result.status === 'rejected') {
         failures[key] = result.reason instanceof Error ? result.reason.message : String(result.reason);
         if (index === 0) setInstallations([]);
@@ -71,15 +72,15 @@ export function useClientManagement() {
       try {
         if (index === 0) {
           if (!Array.isArray(result.value.clients) || !result.value.clients.every((client: ClientInstallation) => client
-            && typeof client.id === 'string' && [true, false, null].includes(client.installed))) throw new Error('客户端清单返回格式无效。');
+            && typeof client.id === 'string' && [true, false, null].includes(client.installed))) throw new Error(t("客户端清单返回格式无效。"));
           setInstallations(result.value.clients);
         }
         if (index === 1) {
-          if (typeof result.value.running !== 'boolean' || !Number.isInteger(result.value.port)) throw new Error('网关状态返回格式无效。');
+          if (typeof result.value.running !== 'boolean' || !Number.isInteger(result.value.port)) throw new Error(t("网关状态返回格式无效。"));
           setGateway(result.value);
         }
         if (index === 2) {
-          if (typeof result.value.hash !== 'string' || !/^[a-f0-9]{64}$/u.test(result.value.hash)) throw new Error('模型目录版本无效，请刷新后重试。');
+          if (typeof result.value.hash !== 'string' || !/^[a-f0-9]{64}$/u.test(result.value.hash)) throw new Error(t("模型目录版本无效，请刷新后重试。"));
           setTargets(clientTargetOptions(result.value));
           setTargetRevision(result.value.hash);
         }
@@ -96,7 +97,7 @@ export function useClientManagement() {
   useEffect(() => { void reload(); return () => { generation.current += 1; }; }, [reload]);
 
   async function act(url: string, body: unknown) {
-    if (lock.current) throw new Error('上一项操作尚未结束。');
+    if (lock.current) throw new Error(t("上一项操作尚未结束。"));
     lock.current = true;
     setBusy(true);
     try { return await readJson(url, body); }

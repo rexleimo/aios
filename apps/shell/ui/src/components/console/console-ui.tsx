@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../i18n/t.mjs';
 import * as Dialog from '@radix-ui/react-dialog';
 import { ArrowUpRight, X, type LucideIcon } from 'lucide-react';
 import { useRef, type ReactNode, type RefObject } from 'react';
@@ -102,7 +103,7 @@ export function Modal({
           </Dialog.Description>
           <Dialog.Close asChild>
             <button
-              aria-label="关闭弹窗"
+              aria-label={t("关闭弹窗")}
               className="absolute top-5 right-5 rounded-lg p-1.5 text-rex-text-muted hover:bg-rex-panel focus-visible:outline-2 focus-visible:outline-rex-cyan"
             >
               <X size={18} />

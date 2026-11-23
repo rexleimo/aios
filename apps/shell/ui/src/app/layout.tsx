@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { I18nAppProvider } from '../i18n/provider';
 import { getServerLocale, getServerTranslate } from '../i18n/server';
+import { setCurrentLocale } from '../i18n/t.mjs';
 import './globals.css';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,6 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getServerLocale();
+  setCurrentLocale(locale);
   return (
     <html lang={locale} data-rex-theme="light">
       <body>

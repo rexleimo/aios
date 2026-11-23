@@ -1,3 +1,4 @@
+import { t } from '../../i18n/t.mjs';
 // The only way a page gets facts: run the capability process and read its JSON.
 //
 // ADR 0007 decision 3 — the view fetches, the capability process executes. Importing
@@ -64,12 +65,12 @@ export function repoRoot() {
 export function resolveCapabilityCli(rootDir = repoRoot(), env = process.env, exists = require_exists) {
   const tried = [];
   const source = path.join(rootDir, 'scripts', 'aios.mjs');
-  tried.push(`${source} (工程自带的源码入口)`);
+  tried.push(t("{source} (工程自带的源码入口)", { source: source }));
   if (exists(source)) return { ok: true, script: source, kind: 'project-source', tried };
 
   const declared = String(env.AIOS_CLI ?? '').trim();
   if (declared) {
-    tried.push(`${declared} (AIOS_CLI 指定)`);
+    tried.push(t("{declared} (AIOS_CLI 指定)", { declared: declared }));
     if (exists(declared)) return { ok: true, script: declared, kind: 'env', tried };
   }
 
@@ -80,11 +81,11 @@ export function resolveCapabilityCli(rootDir = repoRoot(), env = process.env, ex
   const installedRoots = [String(env.AIOS_ROOT_DIR ?? '').trim(), path.join(home, '.rexcil', 'aios')].filter(Boolean);
   for (const root of installedRoots) {
     const entry = path.join(root, 'scripts', 'aios.mjs');
-    tried.push(`${entry} (已安装运行时)`);
+    tried.push(t("{entry} (已安装运行时)", { entry: entry }));
     if (exists(entry)) return { ok: true, script: entry, kind: 'installed', tried };
   }
 
-  return { ok: false, error: `找不到可执行的 AIOS CLI，试过：${tried.join('；')}`, tried };
+  return { ok: false, error: t("找不到可执行的 AIOS CLI，试过：{value0}", { value0: tried.join('；') }), tried };
 }
 
 // 写成可注入的小包装：测试要能在没有真实安装面的机器上跑完三种分支。

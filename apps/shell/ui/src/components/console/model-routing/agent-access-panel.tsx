@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../../i18n/t.mjs';
 // 总览页「接入客户端」：照 magpie 的 Agent 列表——一行一个客户端，图标 / 版本 / 更新 / AIOS 模型 ID
 // 全部内联；接入由程序就地写全局配置（父组件的确认门 + /api/model-routing/gateway）。
 // 手动接入说明归接入手册，不在列表里摊开 API 表单。
@@ -66,7 +67,7 @@ export function AgentAccessPanel({
       setCopied(key);
       window.setTimeout(() => setCopied((current) => (current === key ? '' : current)), 1500);
     } catch {
-      setFailure('复制失败：请手动选中内容复制。');
+      setFailure(t("复制失败：请手动选中内容复制。"));
     }
   }
 
@@ -74,7 +75,7 @@ export function AgentAccessPanel({
     setFailure('');
     try {
       const result = await state.act('/api/clients', { action: 'preview-update', client: client.id });
-      if (!result.preview || result.preview.client !== client.id) throw new Error('更新预览与所选客户端不一致。');
+      if (!result.preview || result.preview.client !== client.id) throw new Error(t("更新预览与所选客户端不一致。"));
       setUpdate({ ...result.preview, client });
     } catch (err) {
       setFailure(err instanceof Error ? err.message : String(err));
@@ -83,17 +84,18 @@ export function AgentAccessPanel({
 
   return (
     <Panel className="min-w-0 p-6">
-      <SmallTitle action={<Badge className="w-32 justify-center" tone="neutral">{status ? `已接入 ${connectedCount} · ${ids.length} 个客户端` : '读取接入状态…'}</Badge>}>
-        接入客户端
+      <SmallTitle action={<Badge className="w-32 justify-center" tone="neutral">{status ? t("已接入 {connectedCount} · {value1} 个客户端", { connectedCount: connectedCount, value1: ids.length }) : t("读取接入状态…")}</Badge>}>
+        
+        {t("接入客户端")}
       </SmallTitle>
-      <p className="text-xs leading-6 text-rex-text-muted">选模型即接入：程序就地写入客户端全局配置并备份原值，不启停网关；选「断开并还原配置」即还原。</p>
+      <p className="text-xs leading-6 text-rex-text-muted">{t("选模型即接入：程序就地写入客户端全局配置并备份原值，不启停网关；选「断开并还原配置」即还原。")}</p>
       {/* 固定高度：异步读取逐个返回时，下面列表/折叠区不因提示文案增减而跳动。 */}
       <div className="mt-1 min-h-12 text-xs leading-5">
-        {error ? <p role="alert" className="text-rex-danger">网关状态刷新失败：{error}</p>
+        {error ? <p role="alert" className="text-rex-danger">{t("网关状态刷新失败：")}{error}</p>
           : failure ? <p role="alert" className="text-rex-danger">{failure}</p>
             : Object.keys(state.errors).length > 0
-              ? <p role="alert" className="text-rex-danger">{Object.values(state.errors).join('；')}未读到</p>
-              : <InlineFeedback feedback={feedback} idle={canConnect ? '选择模型即写入客户端配置，操作前需确认。' : '先让运行中的网关加载就绪的模型路由，再接入客户端；已接入的仍可断开还原。'} />}
+              ? <p role="alert" className="text-rex-danger">{Object.values(state.errors).join('；')}{t("未读到")}</p>
+              : <InlineFeedback feedback={feedback} idle={canConnect ? t("选择模型即写入客户端配置，操作前需确认。") : t("先让运行中的网关加载就绪的模型路由，再接入客户端；已接入的仍可断开还原。")} />}
       </div>
 
       <ul className="mt-3 divide-y divide-rex-border rounded-rex-md border border-rex-border">
@@ -107,10 +109,10 @@ export function AgentAccessPanel({
           const pickerValue = connected ? target : DISCONNECT_VALUE;
           const clientOptions = [
             ...state.targets,
-            { value: DISCONNECT_VALUE, label: '断开并还原配置' },
+            { value: DISCONNECT_VALUE, label: t("断开并还原配置") },
           ];
           if (target && target !== DISCONNECT_VALUE && !clientOptions.some((option) => option.value === target)) {
-            clientOptions.unshift({ value: target, label: `${target} · 当前引用未在目录中` });
+            clientOptions.unshift({ value: target, label: t("{target} · 当前引用未在目录中", { target: target }) });
           }
           // 选模型接入需要网关就绪且无刷新错误；断开（已接入）不依赖目录版本或刷新成功。
           const disabled = busy || state.busy || !item || (connected ? false : state.loading || !!error || !canConnect);
@@ -122,15 +124,15 @@ export function AgentAccessPanel({
                 <div className="min-w-0">
                   <p className="truncate text-xs font-medium">{label.name}<span className="ml-2 font-normal text-rex-text-muted">{id}</span></p>
                   <p className="flex min-w-0 items-center gap-2 text-[11px] text-rex-text-muted">
-                    <span className="truncate">{installed ? installationSummary(installed) : '未检测到程序'}</span>
-                    <Button className="shrink-0 px-1.5" size="sm" variant="ghost" disabled={state.busy || !installed} onClick={() => installed && void previewUpdate(installed)}>更新</Button>
+                    <span className="truncate">{installed ? installationSummary(installed) : t("未检测到程序")}</span>
+                    <Button className="shrink-0 px-1.5" size="sm" variant="ghost" disabled={state.busy || !installed} onClick={() => installed && void previewUpdate(installed)}>{t("更新")}</Button>
                   </p>
                 </div>
               </div>
               <div className="flex min-w-0 items-center gap-2">
                 <div className="min-w-0 flex-1">
                   <Select
-                    aria-label={`${label.name} 接入模型`}
+                    aria-label={t("{value0} 接入模型", { value0: label.name })}
                     value={pickerValue}
                     onValueChange={(value) => {
                       if (value === DISCONNECT_VALUE) {
@@ -147,9 +149,9 @@ export function AgentAccessPanel({
                 <button
                   type="button"
                   role="switch"
-                  aria-label={`${label.name} 接入网关`}
+                  aria-label={t("{value0} 接入网关", { value0: label.name })}
                   aria-checked={connected}
-                  title={connected ? '已接入 · 点击断开并还原' : '未接入 · 点击接入（写入全局配置）'}
+                  title={connected ? t("已接入 · 点击断开并还原") : t("未接入 · 点击接入（写入全局配置）")}
                   disabled={disabled}
                   onClick={() => connected ? onDisconnect(id) : onConnect(id, target)}
                   className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rex-cyan disabled:opacity-40 ${connected ? 'bg-rex-cyan' : 'bg-rex-border'}`}
@@ -163,17 +165,18 @@ export function AgentAccessPanel({
       </ul>
 
       <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-rex-text-muted">
-        <Button size="sm" variant="outline" disabled={state.loading || state.busy} onClick={() => void state.reload()}>刷新客户端状态</Button>
-        <button type="button" className="underline underline-offset-2" onClick={() => onNavigate('tools')}>完整配置与恢复记录</button>
+        <Button size="sm" variant="outline" disabled={state.loading || state.busy} onClick={() => void state.reload()}>{t("刷新客户端状态")}</Button>
+        <button type="button" className="underline underline-offset-2" onClick={() => onNavigate('tools')}>{t("完整配置与恢复记录")}</button>
       </div>
 
       <p className="mt-4 text-[11px] leading-5 text-rex-text-muted">
-        接入由程序写入客户端全局配置并备份原值；手动接入步骤见接入手册。
+        
+        {t("接入由程序写入客户端全局配置并备份原值；手动接入步骤见接入手册。")}
       </p>
 
       <details className="group mt-3 text-[11px] leading-5 text-rex-text-muted">
-        <summary className="cursor-pointer select-none">手动接入（隔离模式，不碰真实配置）</summary>
-        <p className="mt-2">不想改真实配置时，用 <code className="rounded bg-rex-panel px-1 py-0.5">aios model-router connect --isolated --port {status?.port ?? '<port>'}</code> 生成隔离工件，再按下列命令启动客户端；还原用 <code className="rounded bg-rex-panel px-1 py-0.5">aios model-router disconnect</code>。</p>
+        <summary className="cursor-pointer select-none">{t("手动接入（隔离模式，不碰真实配置）")}</summary>
+        <p className="mt-2">{t("不想改真实配置时，用")} <code className="rounded bg-rex-panel px-1 py-0.5">aios model-router connect --isolated --port {status?.port ?? '<port>'}</code>  {t("生成隔离工件，再按下列命令启动客户端；还原用")} <code className="rounded bg-rex-panel px-1 py-0.5">aios model-router disconnect</code>。</p>
         <div className="mt-2 space-y-2">
           {(status?.clients ?? []).map((item) => <CopyRow key={item.client} label={clientLabel(item.client).name} value={item.launch || ''} copied={copied === item.client} onCopy={() => void copy(item.launch || '', item.client)} />)}
         </div>
@@ -184,7 +187,7 @@ export function AgentAccessPanel({
         void (async () => {
           try {
             const result = await state.act('/api/clients', { action: 'update', client: pending.client.id, expectedRevision: pending.revision, confirm: true });
-            if (!result.ok) throw new Error('更新未完成');
+            if (!result.ok) throw new Error(t("更新未完成"));
             await state.reload();
           } catch (err) {
             setFailure(err instanceof Error ? err.message : String(err));
@@ -202,7 +205,7 @@ function CopyRow({ label, value, copied, onCopy }: { label: string; value: strin
     <div className="flex flex-wrap items-center gap-2">
       <span className="w-20 shrink-0 break-all">{label}</span>
       <code className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-rex-bg px-2.5 py-1.5 font-rex-mono text-[11px] whitespace-nowrap text-rex-text-body ring-1 ring-rex-border">{value || '—'}</code>
-      <Button variant="ghost" size="icon" aria-label={copied ? '已复制' : `复制 ${label}`} onClick={onCopy}>
+      <Button variant="ghost" size="icon" aria-label={copied ? t("已复制") : t("复制 {label}", { label: label })} onClick={onCopy}>
         {copied ? <Check size={15} className="text-rex-green" /> : <Copy size={15} />}
       </Button>
     </div>

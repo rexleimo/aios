@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../../i18n/t.mjs';
 // All editing sections share this draft and save boundary; monitoring reads saved facts separately.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { IntentRouting, ModelOption } from './intent-routing-section';
@@ -82,7 +83,7 @@ export function useRoutingConfig() {
   const read = useCallback(async () => {
     const res = await fetch('/api/config/model-routing', { cache: 'no-store' });
     const body = await res.json();
-    if (!res.ok) throw new Error(body.detail || body.error || '读取失败');
+    if (!res.ok) throw new Error(body.detail || body.error || t("读取失败"));
     const loaded = migrateEditableTargets({ ...body.editable, activeModel: body.editable.activeModel ?? '', clientDefaults: body.editable.clientDefaults ?? {}, routingGroups: body.editable.routingGroups ?? [] });
     setEditable(loaded);
     setSaved(loaded);
@@ -132,7 +133,7 @@ export function useRoutingConfig() {
 
   const saveDocument = useCallback(
     async (next: RoutingEditable): Promise<{ ok: boolean; text: string }> => {
-      if (busy.current) return { ok: false, text: '上一项操作尚未结束，请稍后重试。' };
+      if (busy.current) return { ok: false, text: t("上一项操作尚未结束，请稍后重试。") };
       busy.current = true;
       setStatus('saving');
       setFeedback(null);
@@ -146,12 +147,12 @@ export function useRoutingConfig() {
         if (!res.ok)
           throw new Error(
             res.status === 409
-              ? '配置已被其他窗口或 CLI 修改。草稿已保留，请重新读取配置后再编辑。'
-              : body.detail || body.error || '保存失败'
+              ? t("配置已被其他窗口或 CLI 修改。草稿已保留，请重新读取配置后再编辑。")
+              : body.detail || body.error || t("保存失败")
           );
         let text = body.changed?.length
-          ? body.backup ? '配置已保存，写入前已自动备份。' : '配置已保存。'
-          : '配置没有变化。';
+          ? body.backup ? t("配置已保存，写入前已自动备份。") : t("配置已保存。")
+          : t("配置没有变化。");
         // A failed follow-up read must not turn an acknowledged disk write into a failed save.
         setSaved(next);
         setEditable(next);
@@ -159,7 +160,7 @@ export function useRoutingConfig() {
         try {
           await read();
         } catch (readError) {
-          text = '配置已写入，但未能重新读取。请重新读取配置确认。';
+          text = t("配置已写入，但未能重新读取。请重新读取配置确认。");
           setError(readError instanceof Error ? readError.message : String(readError));
         }
         setStatus('ready');
@@ -178,13 +179,13 @@ export function useRoutingConfig() {
   );
 
   const save = useCallback(async (): Promise<{ ok: boolean; text: string }> => {
-    if (!editable) return { ok: false, text: '没有可保存的配置' };
+    if (!editable) return { ok: false, text: t("没有可保存的配置") };
     return saveDocument(editable);
   }, [editable, saveDocument]);
 
   const refreshModels = useCallback(async (): Promise<{ ok: boolean; text: string }> => {
-    if (dirty) return { ok: false, text: '请先保存或放弃未保存的修改，再刷新模型目录。' };
-    if (busy.current) return { ok: false, text: '上一项操作尚未结束，请稍后重试。' };
+    if (dirty) return { ok: false, text: t("请先保存或放弃未保存的修改，再刷新模型目录。") };
+    if (busy.current) return { ok: false, text: t("上一项操作尚未结束，请稍后重试。") };
     busy.current = true;
     setStatus('saving');
     try {
@@ -195,16 +196,16 @@ export function useRoutingConfig() {
       });
       const body = await res.json();
       if (!res.ok || body.ok === false)
-        throw new Error(body.stderr || body.detail || body.error || '刷新失败');
+        throw new Error(body.stderr || body.detail || body.error || t("刷新失败"));
       const result = body.result ?? {};
       const failedSources = Array.isArray(result.providers)
         ? result.providers.flatMap((provider: { provider?: string; errors?: { protocol?: string }[] }) =>
             (Array.isArray(provider.errors) ? provider.errors : []).map((failure) =>
-              `${provider.provider || '未知供应商'} / ${failure.protocol || '未知协议'}`
+              `${provider.provider || t("未知供应商")} / ${failure.protocol || t("未知协议")}`
             )
           )
         : [];
-      const text = `发现 ${result.discovered ?? 0} 个模型，新增 ${result.added ?? 0}、补协议 ${result.enriched ?? 0}。仅发现列表，尚未验证生成可用性${failedSources.length ? `。部分来源读取失败：${failedSources.join('、')}；已有目录已保留。` : ''}`;
+      const text = t("发现 {value0} 个模型，新增 {value1}、补协议 {value2}。仅发现列表，尚未验证生成可用性{value3}", { value0: result.discovered ?? 0, value1: result.added ?? 0, value2: result.enriched ?? 0, value3: failedSources.length ? t("。部分来源读取失败：{value0}；已有目录已保留。", { value0: failedSources.join('、') }) : '' });
       await read();
       setStatus('ready');
       return { ok: true, text };

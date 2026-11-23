@@ -1,3 +1,4 @@
+import { t } from '../../i18n/t.mjs';
 // Memory entries as the page shows them: parsed, identified, and safe to act on.
 //
 // `aios memo search` prints text, one entry per line:
@@ -35,15 +36,15 @@ export function isEventId(value) {
 /** The actions the memory page may run, with the argv each maps to. No free text in ids. */
 export const MEMORY_ACTIONS = Object.freeze({
   'memo.useful': {
-    label: '这条有用',
-    detail: '记一次召回反馈（aios memo useful <id>），它会提高这条以后被召回的概率。',
+    label: t("这条有用"),
+    detail: t("记一次召回反馈（aios memo useful <id>），它会提高这条以后被召回的概率。"),
     kind: 'write',
     argv: ({ cli, id }) => [cli, 'memo', 'useful', id],
   },
   'memo.supersede': {
-    label: '这条过时了',
+    label: t("这条过时了"),
     detail:
-      '用一段新事实取代它（aios memo add <text> --supersedes <id>）：旧条目保留但不再被召回，历史可追溯。',
+      t("用一段新事实取代它（aios memo add <text> --supersedes <id>）：旧条目保留但不再被召回，历史可追溯。"),
     kind: 'write',
     argv: ({ cli, id, text }) => [cli, 'memo', 'add', text, '--supersedes', id],
   },

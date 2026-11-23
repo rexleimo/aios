@@ -1,3 +1,4 @@
+import { t } from '../../../i18n/t.mjs';
 // Memory: the content, not only the counts.
 //
 // The page previously showed "572 events / 1 space" — numbers about a store you could not
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     return json(400, { error: 'invalid-body' });
   }
   if (body.confirm !== true) {
-    return json(409, { error: 'confirmation-required', detail: '写记忆需要显式确认' });
+    return json(409, { error: 'confirmation-required', detail: t("写记忆需要显式确认") });
   }
   const action = typeof body.action === 'string' ? body.action : '';
   const id = typeof body.id === 'string' ? body.id : '';

@@ -1,3 +1,4 @@
+import { t } from '../i18n/t.mjs';
 // The action allowlist: the only executable surface the panel has.
 //
 // ADR 0007 decision 3 puts execution in the capability process — the browser only
@@ -32,8 +33,8 @@ export const CLI_REL_PATH = 'scripts/aios.mjs';
 /** @type {Record<string, ActionSpec>} */
 export const ACTIONS = Object.freeze({
   'status.refresh': {
-    label: '重新采集状态',
-    detail: '重跑 aios status --json：矩阵与阻断都来自它的输出。',
+    label: t("重新采集状态"),
+    detail: t("重跑 aios status --json：矩阵与阻断都来自它的输出。"),
     kind: 'read-only',
     confirm: false,
     needsClient: false,
@@ -43,8 +44,8 @@ export const ACTIONS = Object.freeze({
     argv: ({ cli }) => [cli, 'status', '--json'],
   },
   'skill.health': {
-    label: '技能健康',
-    detail: 'aios skill health --json：技能的安装情况与失败模式。',
+    label: t("技能健康"),
+    detail: t("aios skill health --json：技能的安装情况与失败模式。"),
     kind: 'read-only',
     confirm: false,
     needsClient: false,
@@ -52,8 +53,8 @@ export const ACTIONS = Object.freeze({
     argv: ({ cli }) => [cli, 'skill', 'health', '--json'],
   },
   'doctor.run': {
-    label: '仓库体检',
-    detail: 'aios doctor：安装、集成与仓库健康。实测约 14 秒，输出流式回显。',
+    label: t("仓库体检"),
+    detail: t("aios doctor：安装、集成与仓库健康。实测约 14 秒，输出流式回显。"),
     kind: 'read-only',
     confirm: false,
     needsClient: false,
@@ -61,8 +62,8 @@ export const ACTIONS = Object.freeze({
     argv: ({ cli }) => [cli, 'doctor'],
   },
   'client.setup.preview': {
-    label: '预览安装',
-    detail: 'aios setup --dry-run：只显示会写什么，不写任何东西。',
+    label: t("预览安装"),
+    detail: t("aios setup --dry-run：只显示会写什么，不写任何东西。"),
     kind: 'read-only',
     confirm: false,
     needsClient: true,
@@ -71,8 +72,8 @@ export const ACTIONS = Object.freeze({
       client ? [cli, 'setup', '--dry-run', '--client', client] : null,
   },
   'client.setup.apply': {
-    label: '安装 / 修复',
-    detail: 'aios setup --client <id> --yes：把 AIOS 集成写进该客户端。写主目录，必须显式确认。',
+    label: t("安装 / 修复"),
+    detail: t("aios setup --client <id> --yes：把 AIOS 集成写进该客户端。写主目录，必须显式确认。"),
     kind: 'mutating',
     confirm: true,
     needsClient: true,

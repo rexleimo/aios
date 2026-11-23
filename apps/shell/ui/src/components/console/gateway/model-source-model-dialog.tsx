@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../../i18n/t.mjs';
 import { useRef, useState } from 'react';
 import { Button, Field, InlineFeedback, Input, Modal, Select, type Feedback } from '../console-ui';
 import type { CustomModel, RoutingProvider } from '../model-routing/use-routing-config';
@@ -43,15 +44,15 @@ export function ModelSourceModelDialog({
     };
     const provider = providers.find((item) => item.id === next.provider);
     const message = !next.upstreamModel
-      ? '请填写真实上游模型 ID，大小写需与上游一致。'
+      ? t("请填写真实上游模型 ID，大小写需与上游一致。")
       : !editingId && modelIds.includes(next.id)
-        ? '这个模型标识已在目录中，请勿重复添加。'
+        ? t("这个模型标识已在目录中，请勿重复添加。")
         : !providers.some((item) => item.id === next.provider)
-          ? '请选择已配置的供应商。'
+          ? t("请选择已配置的供应商。")
           : !next.protocols.length
-            ? '至少选择一种协议。'
+            ? t("至少选择一种协议。")
             : !next.protocols.some((protocol) => provider?.protocols.includes(protocol))
-              ? '模型与供应商必须至少有一种共同协议。'
+              ? t("模型与供应商必须至少有一种共同协议。")
             : '';
     if (message) {
       setError({ text: message, tone: 'error' });
@@ -66,8 +67,8 @@ export function ModelSourceModelDialog({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      title={editingId ? '编辑自定义模型' : '添加自定义模型'}
-      description="模型加入当前供应商的草稿。真实上游 ID 保留大小写；添加不代表生成已验证。"
+      title={editingId ? t("编辑自定义模型") : t("添加自定义模型")}
+      description={t("模型加入当前供应商的草稿。真实上游 ID 保留大小写；添加不代表生成已验证。")}
       initialFocus={initialFocus}
     >
       <form
@@ -77,36 +78,36 @@ export function ModelSourceModelDialog({
         }}
         className="space-y-4"
       >
-        {!editingId && providerId && <Field label="所属供应商"><Input aria-label="所属供应商" value={model.provider} disabled /></Field>}
-        <Field label="真实上游模型 ID" hint="填写 API 接受的完整 ID，保留原始大小写与路径，不是显示名称。">
+        {!editingId && providerId && <Field label={t("所属供应商")}><Input aria-label={t("所属供应商")} value={model.provider} disabled /></Field>}
+        <Field label={t("真实上游模型 ID")} hint={t("填写 API 接受的完整 ID，保留原始大小写与路径，不是显示名称。")}>
           <Input
             ref={initialFocus}
-            aria-label="真实上游模型 ID"
+            aria-label={t("真实上游模型 ID")}
             value={model.upstreamModel || ''}
             onChange={(event) => setModel({ ...model, upstreamModel: event.target.value })}
-            placeholder="例如 org/Model-Instruct"
+            placeholder={t("例如 org/Model-Instruct")}
           />
         </Field>
-        <Field label="本地路由标识" hint="留空自动生成「供应商/模型」唯一标识；保存后保持稳定。">
+        <Field label={t("本地路由标识")} hint={t("留空自动生成「供应商/模型」唯一标识；保存后保持稳定。")}>
           <Input
-            aria-label="模型标识"
+            aria-label={t("模型标识")}
             disabled={!!editingId}
             value={model.id}
             onChange={(event) => setModel({ ...model, id: event.target.value })}
             placeholder={modelBindingId(model.provider, model.upstreamModel || 'model', modelIds)}
           />
         </Field>
-        <Field label="显示名称">
+        <Field label={t("显示名称")}>
           <Input
-            aria-label="模型显示名称"
+            aria-label={t("模型显示名称")}
             value={model.label}
             onChange={(event) => setModel({ ...model, label: event.target.value })}
-            placeholder="留空使用真实上游 ID"
+            placeholder={t("留空使用真实上游 ID")}
           />
         </Field>
-        {(!!editingId || !providerId) && <Field label="所属供应商" hint={editingId ? '切换后模型会移入该供应商，本地路由标识保持不变。' : undefined}>
+        {(!!editingId || !providerId) && <Field label={t("所属供应商")} hint={editingId ? t("切换后模型会移入该供应商，本地路由标识保持不变。") : undefined}>
           <Select
-            aria-label="模型供应商"
+            aria-label={t("模型供应商")}
             value={model.provider}
             onValueChange={(value) => setModel({ ...model, provider: value })}
             options={providers.map((item) => ({ value: item.id, label: item.id }))}
@@ -119,14 +120,16 @@ export function ModelSourceModelDialog({
         />
         <label className="flex items-center gap-2 text-xs">
           <input type="checkbox" className="accent-rex-cyan focus-visible:outline-2 focus-visible:outline-rex-cyan" checked={model.enabled !== false} onChange={(event) => setModel({ ...model, enabled: event.target.checked })} />
-          启用此模型
+          
+          {t("启用此模型")}
         </label>
         <InlineFeedback feedback={error} />
         <div className="sticky bottom-0 flex justify-end gap-2 border-t border-rex-border bg-rex-bg pt-4">
           <Button type="button" variant="outline" onClick={onClose}>
-            取消
+            
+            {t("取消")}
           </Button>
-          <Button type="submit">加入草稿</Button>
+          <Button type="submit">{t("加入草稿")}</Button>
         </div>
       </form>
     </Modal>

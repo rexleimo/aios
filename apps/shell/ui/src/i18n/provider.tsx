@@ -14,6 +14,7 @@ import {
 import { interpolate } from './interpolate.mjs';
 import { LOCALES, LOCALE_COOKIE, resolveLocale } from './locales.mjs';
 import { createI18n } from './runtime';
+import { setCurrentLocale } from './t.mjs';
 
 type LocaleContextValue = {
   locale: string;
@@ -25,15 +26,17 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function I18nAppProvider({ initialLocale, children }: { initialLocale: string; children: ReactNode }) {
   const [locale, setLocaleState] = useState(() => resolveLocale({ choice: initialLocale }));
+  setCurrentLocale(locale);
   const i18n = useMemo(() => createI18n(locale), [locale]);
 
   const setLocale = useCallback((next: string) => {
     const resolved = resolveLocale({ choice: next });
     if (!resolved) return;
-    setLocaleState(resolved);
-    // Cookie is the single source of truth: proxy forwards it and the server
-    // layout reads it back, so deep links keep the chosen language on reload.
+    // Cookie is the single source of truth. Some labels are module-level
+    // constants evaluated at import, so reloading after writing the cookie is
+    // what makes every surface — including those constants — switch language.
     document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(resolved)}; path=/; max-age=31536000; samesite=lax`;
+    window.location.reload();
   }, []);
 
   useEffect(() => {

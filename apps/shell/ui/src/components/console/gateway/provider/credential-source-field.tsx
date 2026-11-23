@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../../../i18n/t.mjs';
 import { Button, Input } from '../../console-ui';
 
 // A credential has exactly one active source at a time. Switching clears the
@@ -7,9 +8,9 @@ import { Button, Input } from '../../console-ui';
 export type CredentialMode = 'direct' | 'env' | 'inherit';
 
 const MODE_LABELS: Record<CredentialMode, string> = {
-  direct: '直接填写',
-  env: '环境变量引用',
-  inherit: '继承供应商',
+  direct: t("直接填写"),
+  env: t("环境变量引用"),
+  inherit: t("继承供应商"),
 };
 
 export function CredentialSourceField({
@@ -47,7 +48,7 @@ export function CredentialSourceField({
   return (
     <div className="space-y-3">
       <span className="block text-sm font-medium">{label}</span>
-      <div className="flex flex-wrap gap-2" role="group" aria-label={`${label}来源`}>
+      <div className="flex flex-wrap gap-2" role="group" aria-label={t("{label}来源", { label: label })}>
         {modes.map((option) => (
           <Button
             key={option}
@@ -55,7 +56,7 @@ export function CredentialSourceField({
             size="sm"
             variant={mode === option ? 'default' : 'outline'}
             aria-pressed={mode === option}
-            aria-label={`${label}来源：${MODE_LABELS[option]}`}
+            aria-label={t("{label}来源：{value1}", { label: label, value1: MODE_LABELS[option] })}
             onClick={() => pick(option)}
           >
             {MODE_LABELS[option]}
@@ -68,11 +69,11 @@ export function CredentialSourceField({
             type={showKeys ? 'text' : 'password'}
             aria-label={inputLabel}
             value={apiKey}
-            placeholder="粘贴真实密钥"
+            placeholder={t("粘贴真实密钥")}
             onChange={(event) => onChange({ mode, apiKey: event.target.value, apiKeyEnv: '' })}
           />
-          <Button type="button" variant="outline" aria-label={showKeys ? '隐藏密钥' : '显示密钥'} onClick={onToggleShow}>
-            {showKeys ? '隐藏' : '显示'}
+          <Button type="button" variant="outline" aria-label={showKeys ? t("隐藏密钥") : t("显示密钥")} onClick={onToggleShow}>
+            {showKeys ? t("隐藏") : t("显示")}
           </Button>
         </div>
       )}
@@ -86,7 +87,8 @@ export function CredentialSourceField({
       )}
       {mode === 'inherit' && (
         <p className="rounded-rex-sm border border-rex-border p-2 text-xs leading-5 text-rex-text-muted">
-          此账号不单独配置密钥，运行时继承供应商的密钥配置。
+          
+          {t("此账号不单独配置密钥，运行时继承供应商的密钥配置。")}
         </p>
       )}
     </div>

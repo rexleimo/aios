@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../../i18n/t.mjs';
 // 实时路由图：客户端 → 本机 AIOS 网关 → 上游(magpie) → 模型。
 // 真实链路：请求先打到我们自己的网关(127.0.0.1:8686)，网关经上游供应商 magpie(3425)
 // 落到具体模型。magpie 在图中作为网关下方的一行上游标注，不占据中心节点。
@@ -47,7 +48,7 @@ const CLIENT_LABELS: Record<string, string> = {
   claude: 'Claude Code', codex: 'Codex', gemini: 'Gemini CLI', opencode: 'OpenCode',
   workbuddy: 'WorkBuddy', grok: 'Grok', pi: 'Pi', qoder: 'Qoder', zcode: 'ZCode', cursor: 'Cursor',
 };
-const agentLabel = (id: string) => CLIENT_LABELS[id] || id || '默认客户端';
+const agentLabel = (id: string) => CLIENT_LABELS[id] || id || t("默认客户端");
 
 /** upstreamModel「provider/model」→ 真实 provider 名；没有就用 providerId。 */
 function providerOf(entry: DecisionEntry): string {
@@ -106,7 +107,7 @@ export function RoutingGraph({ models }: { models: ModelOption[] }) {
     try {
       const res = await fetch('/api/model-routing/decisions?limit=60');
       const body = await res.json();
-      if (!res.ok) throw new Error(body.detail || body.error || '读取失败');
+      if (!res.ok) throw new Error(body.detail || body.error || t("读取失败"));
       setData(body as DecisionsPayload);
       setStatus('ready');
       setPollError('');
@@ -146,9 +147,9 @@ export function RoutingGraph({ models }: { models: ModelOption[] }) {
 
   const graph = useMemo(() => buildGraph(data?.recent || []), [data]);
 
-  if (status === 'loading') return <Loading label="正在读取路由决策…" />;
+  if (status === 'loading') return <Loading label={t("正在读取路由决策…")} />;
   if (status === 'error' || !data) {
-    return <ErrorState message={`没读到路由决策：${message || '未知原因'}`} onRetry={() => { setStatus('loading'); void load(); }} />;
+    return <ErrorState message={t("没读到路由决策：{value0}", { value0: message || t("未知原因") })} onRetry={() => { setStatus('loading'); void load(); }} />;
   }
 
   const { agentNodes, providerNodes } = graph;
@@ -185,41 +186,45 @@ export function RoutingGraph({ models }: { models: ModelOption[] }) {
             <Button variant="outline" size="sm" onClick={() => {
               if (data.recent.length) setReplay({ entries: data.recent.slice(0, 6), idx: 0 });
             }} disabled={!data.recent.length || Boolean(replay)}>
-              <RotateCcw size={13} /> 重放路由
+              <RotateCcw size={13} />  {t("重放路由")}
             </Button>
             {pollError
-              ? <Badge tone="warn">刷新失败</Badge>
-              : <Badge tone="ok"><span className="size-1.5 rounded-full bg-rex-green motion-safe:animate-pulse" />实时 · 网关正在做的决策</Badge>}
+              ? <Badge tone="warn">{t("刷新失败")}</Badge>
+              : <Badge tone="ok"><span className="size-1.5 rounded-full bg-rex-green motion-safe:animate-pulse" />{t("实时 · 网关正在做的决策")}</Badge>}
           </div>
         }
       >
-        路由
+        
+        {t("路由")}
       </SmallTitle>
 
       {empty ? (
-        <Empty icon={Waypoints} title="网关还没处理过请求">
-          启动网关并用 connect 接入客户端后，这里会实时画出 客户端 → 本机网关 → 模型 的路由；数据光点随每次请求飞行。
-          <span className="mt-2 block text-[11px] text-rex-text-soft">决策日志：{data.path}</span>
+        <Empty icon={Waypoints} title={t("网关还没处理过请求")}>
+          
+          {t("启动网关并用 connect 接入客户端后，这里会实时画出 客户端 → 本机网关 → 模型 的路由；数据光点随每次请求飞行。")}
+          <span className="mt-2 block text-[11px] text-rex-text-soft">{t("决策日志：")}{data.path}</span>
         </Empty>
       ) : (
         <>
           <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-base font-semibold text-rex-text">
-              难题给强模型，简单的给便宜模型
-              <span className="ml-2 text-xs font-normal text-rex-text-muted">· 路由组 · 启用 {models.length} 个</span>
+              
+              {t("难题给强模型，简单的给便宜模型")}
+              <span className="ml-2 text-xs font-normal text-rex-text-muted">{t("· 路由组 · 启用")} {models.length}  {t("个")}</span>
             </h2>
           </div>
           <p className="mb-4 text-xs leading-6 text-rex-text-muted">
-            请求先到本机网关，再经上游 magpie 落到模型。有余量的账号优先、失败后休息的排最后；每次请求实时显示落点。
+            
+            {t("请求先到本机网关，再经上游 magpie 落到模型。有余量的账号优先、失败后休息的排最后；每次请求实时显示落点。")}
           </p>
 
           <div className="mb-3 grid grid-cols-3 gap-3">
-            <Stat icon={Zap} label="请求" value={data.counters.requests} />
-            <Stat icon={Cpu} label="意图自动路由" value={data.counters.autoRouted} tone="text-rex-cyan" />
-            <Stat icon={Bot} label="错误" value={data.counters.errors} tone={data.counters.errors > 0 ? 'text-rex-danger' : undefined} />
+            <Stat icon={Zap} label={t("请求")} value={data.counters.requests} />
+            <Stat icon={Cpu} label={t("意图自动路由")} value={data.counters.autoRouted} tone="text-rex-cyan" />
+            <Stat icon={Bot} label={t("错误")} value={data.counters.errors} tone={data.counters.errors > 0 ? 'text-rex-danger' : undefined} />
           </div>
 
-          <svg viewBox={`0 0 ${SVG_W} ${height}`} role="img" aria-label="实时路由图：客户端经本机 AIOS 网关与上游 magpie 路由到模型" className="w-full">
+          <svg viewBox={`0 0 ${SVG_W} ${height}`} role="img" aria-label={t("实时路由图：客户端经本机 AIOS 网关与上游 magpie 路由到模型")} className="w-full">
             {/* 底层静态连线 */}
             {agentNodes.map((node, index) => (
               <Wire key={`ca-${node.id}`} x1={AGENT_X + AGENT_W} y1={agentY(index)} x2={HUB_X} y2={hubY}
@@ -264,12 +269,13 @@ export function RoutingGraph({ models }: { models: ModelOption[] }) {
           </svg>
 
           <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-rex-text-muted">
-            <Legend icon={<Bot size={12} color={HILITE} />} text="客户端" />
-            <Legend icon={<Network size={12} color={HILITE} />} text="本机网关 127.0.0.1:8686" />
-            <Legend icon={<Cpu size={12} color={HILITE} />} text="模型（上游 magpie）" />
+            <Legend icon={<Bot size={12} color={HILITE} />} text={t("客户端")} />
+            <Legend icon={<Network size={12} color={HILITE} />} text={t("本机网关 127.0.0.1:8686")} />
+            <Legend icon={<Cpu size={12} color={HILITE} />} text={t("模型（上游 magpie）")} />
           </div>
           <p className="mt-3 text-[11px] text-rex-text-soft">
-            每 {POLL_MS / 1000}s 读一次真实决策日志 · 光点沿本次请求的路由飞行 · 完整记录在「请求记录」· {data.path}
+            
+            {t("每")} {POLL_MS / 1000}{t("s 读一次真实决策日志 · 光点沿本次请求的路由飞行 · 完整记录在「请求记录」·")} {data.path}
           </p>
         </>
       )}
@@ -300,10 +306,10 @@ function GatewayHub({ y }: { y: number }) {
       <g transform={`translate(${HUB_X + HUB_W / 2 - 13},${y - 40})`}>
         <Network size={26} color={HILITE} />
       </g>
-      <text x={HUB_X + HUB_W / 2} y={y - 2} textAnchor="middle" fontSize={13} fontWeight={700} fill="var(--color-rex-text)">AIOS 网关</text>
+      <text x={HUB_X + HUB_W / 2} y={y - 2} textAnchor="middle" fontSize={13} fontWeight={700} fill="var(--color-rex-text)">{t("AIOS 网关")}</text>
       <text x={HUB_X + HUB_W / 2} y={y + 15} textAnchor="middle" fontSize={10.5} fill="var(--color-rex-text-muted)">127.0.0.1:8686</text>
       <line x1={HUB_X + 26} y1={y + 24} x2={HUB_X + HUB_W - 26} y2={y + 24} stroke="var(--color-rex-border)" strokeWidth={1} />
-      <text x={HUB_X + HUB_W / 2} y={y + 38} textAnchor="middle" fontSize={9.5} fill="var(--color-rex-text-soft)">上游 · magpie</text>
+      <text x={HUB_X + HUB_W / 2} y={y + 38} textAnchor="middle" fontSize={9.5} fill="var(--color-rex-text-soft)">{t("上游 · magpie")}</text>
     </g>
   );
 }

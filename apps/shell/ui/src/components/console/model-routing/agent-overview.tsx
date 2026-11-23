@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../../i18n/t.mjs';
 // Client facts, request history and configured defaults are separate observations.
 // Decision logs cannot establish whether a client or gateway process is running.
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -69,7 +70,7 @@ export function AgentOverview({
       const res = await fetch('/api/model-routing/decisions?limit=50', { signal, cache: 'no-store' });
       const body = await res.json();
       if (signal.aborted) return;
-      if (!res.ok) throw new Error(body.detail || body.error || '读取失败');
+      if (!res.ok) throw new Error(body.detail || body.error || t("读取失败"));
       setDecisions(body as DecisionsPayload);
       setDecisionsError('');
     } catch (error) {
@@ -132,49 +133,53 @@ export function AgentOverview({
     <div className="space-y-5">
       {decisionsError && (
         <ErrorState
-          message={`${decisions ? '日志刷新失败，以下保留上次成功读取的快照' : '没读到网关决策日志'}：${decisionsError}`}
+          message={`${decisions ? t("日志刷新失败，以下保留上次成功读取的快照") : t("没读到网关决策日志")}：${decisionsError}`}
           onRetry={active ? () => void loadDecisions() : undefined}
         />
       )}
       <Panel className="p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-          <Badge tone="neutral">决策日志</Badge>
-          <Counter label="日志内请求" value={decisions?.counters.requests} />
-          <Counter label="含意图记录" value={decisions?.counters.autoRouted} />
-          <Counter label="错误记录" value={decisions?.counters.errors} tone={decisions && decisions.counters.errors > 0 ? 'text-rex-danger' : undefined} />
+          <Badge tone="neutral">{t("决策日志")}</Badge>
+          <Counter label={t("日志内请求")} value={decisions?.counters.requests} />
+          <Counter label={t("含意图记录")} value={decisions?.counters.autoRouted} />
+          <Counter label={t("错误记录")} value={decisions?.counters.errors} tone={decisions && decisions.counters.errors > 0 ? 'text-rex-danger' : undefined} />
         </div>
         <p className="mt-3 text-xs leading-5 text-rex-text-muted">
-          计数来自当前保留的网关日志，不是客户端在线状态或累计用量。
-          {active ? '当前视图每 2.5 秒读取一次。' : '当前视图未轮询。'}
+          
+          {t("计数来自当前保留的网关日志，不是客户端在线状态或累计用量。")}
+          {active ? t("当前视图每 2.5 秒读取一次。") : t("当前视图未轮询。")}
         </p>
       </Panel>
 
       {compact ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-rex-md border border-rex-border bg-rex-panel/40 px-4 py-3 text-xs">
           <span className="text-rex-text-muted">
-            最近请求涉及 <span className="font-semibold text-rex-text">{visibleClients.length}</span> 个客户端
-            {decisions ? ` · 日志内 ${decisions.counters.requests} 条请求` : ' · 日志读取中'}
-            <span className="ml-1">（仅为历史日志，不代表在线）</span>
+            
+            {t("最近请求涉及")} <span className="font-semibold text-rex-text">{visibleClients.length}</span>  {t("个客户端")}
+            {decisions ? t(" · 日志内 {value0} 条请求", { value0: decisions.counters.requests }) : t(" · 日志读取中")}
+            <span className="ml-1">{t("（仅为历史日志，不代表在线）")}</span>
           </span>
-          <TextLink onClick={() => navigate('routingConfig')}>查看分配明细</TextLink>
+          <TextLink onClick={() => navigate('routingConfig')}>{t("查看分配明细")}</TextLink>
         </div>
       ) : (
       <Panel className="overflow-hidden">
         <div className="border-b border-rex-border p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-[15px] font-semibold">客户端与模型</h2>
-            <TextLink onClick={() => navigate('routingConfig')}>管理模型分配</TextLink>
+            <h2 className="text-[15px] font-semibold">{t("客户端与模型")}</h2>
+            <TextLink onClick={() => navigate('routingConfig')}>{t("管理模型分配")}</TextLink>
           </div>
           <p className="mt-2 text-xs leading-5 text-rex-text-muted">
-            最近请求仅查看日志末尾 50 条；未列出不代表从未请求。配置默认只展示实现角色，不代表所有角色或意图。
+            
+            {t("最近请求仅查看日志末尾 50 条；未列出不代表从未请求。配置默认只展示实现角色，不代表所有角色或意图。")}
           </p>
           <p className="mt-2 min-h-10 text-xs leading-5 text-rex-text-muted sm:min-h-5">
-            {!decisions ? '尚未读到网关决策日志。' : decisions.counters.requests === 0 ? (decisions.exists ? '当前日志内没有请求记录。' : '尚未找到网关决策日志。') : ''}客户端配置落点不能证明已接入网关。
+            {!decisions ? t("尚未读到网关决策日志。") : decisions.counters.requests === 0 ? (decisions.exists ? t("当前日志内没有请求记录。") : t("尚未找到网关决策日志。")) : ''}{t("客户端配置落点不能证明已接入网关。")}
           </p>
         </div>
         {visibleClients.length === 0 && (
-          <Empty icon={Waypoints} title="没有可展示的客户端">
-            当前工作区没有返回客户端事实；配置落点与请求记录分别采集。
+          <Empty icon={Waypoints} title={t("没有可展示的客户端")}>
+            
+            {t("当前工作区没有返回客户端事实；配置落点与请求记录分别采集。")}
           </Empty>
         )}
         <ul className="divide-y divide-rex-border">
@@ -190,24 +195,24 @@ export function AgentOverview({
                     <h3 className="break-words text-sm font-semibold">{label.name}</h3>
                     <p className="break-all text-[11px] text-rex-text-muted">{client.clientId}</p>
                     <p className="text-xs leading-5 text-rex-text-muted">
-                      {client.installed ? '本机有配置落点' : client.declaredOnly ? '仅声明支持 · 本机无落点' : '本机无落点'}
+                      {client.installed ? t("本机有配置落点") : client.declaredOnly ? t("仅声明支持 · 本机无落点") : t("本机无落点")}
                     </p>
                   </div>
                 </div>
                 <dl className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
                   <div className="min-w-0">
-                    <dt className="mb-1.5 text-[11px] text-rex-text-muted">最近请求</dt>
+                    <dt className="mb-1.5 text-[11px] text-rex-text-muted">{t("最近请求")}</dt>
                     <dd className="min-h-24 space-y-1">
                       {latest ? (
                         <>
-                          <p className="break-all text-sm font-medium">{latest.modelId ? labelOf(latest.modelId) : '未记录模型'}</p>
+                          <p className="break-all text-sm font-medium">{latest.modelId ? labelOf(latest.modelId) : t("未记录模型")}</p>
                           {latest.modelId && labelOf(latest.modelId) !== latest.modelId && (
                             <p className="break-all text-[11px] text-rex-text-muted">{latest.modelId}</p>
                           )}
                           {(latest.role || latest.intent) && (
                             <p className="flex flex-wrap gap-x-2 text-[11px] leading-5 text-rex-text-muted">
-                              {latest.role && <span className="break-all">角色 {latest.role}</span>}
-                              {latest.intent && <span className="break-all">意图 {latest.intent}</span>}
+                              {latest.role && <span className="break-all">{t("角色")} {latest.role}</span>}
+                              {latest.intent && <span className="break-all">{t("意图")} {latest.intent}</span>}
                             </p>
                           )}
                           {latest.intentFallback && (
@@ -215,23 +220,24 @@ export function AgentOverview({
                               <Badge tone="danger" className="cursor-help" title={[
                                 latest.intentFallback.reason,
                                 latest.intentFallback.originalIntentId
-                                  ? `原意图: ${latest.intentFallback.originalIntentId} → ${latest.intentFallback.originalModelId}`
+                                  ? t("原意图: {value0} → {value1}", { value0: latest.intentFallback.originalIntentId, value1: latest.intentFallback.originalModelId })
                                   : '',
-                                `实际执行: ${latest.intentFallback.fallbackModelId}`,
+                                t("实际执行: {value0}", { value0: latest.intentFallback.fallbackModelId }),
                               ].filter(Boolean).join('\n')}>
-                                回落 ({latest.intentFallback.stage})
+                                
+                                {t("回落 (")}{latest.intentFallback.stage})
                               </Badge>
                             </p>
                           )}
                           {latest.at && <p className="break-words text-[11px] text-rex-text-muted"><RequestTime at={latest.at} /></p>}
                         </>
                       ) : (
-                        <p className="text-xs leading-5 text-rex-text-muted">{decisions ? '最近 50 条内无记录' : '尚未读到日志'}</p>
+                        <p className="text-xs leading-5 text-rex-text-muted">{decisions ? t("最近 50 条内无记录") : t("尚未读到日志")}</p>
                       )}
                     </dd>
                   </div>
                   <div className="min-w-0">
-                    <dt className="mb-1.5 text-[11px] text-rex-text-muted">配置默认 · 实现角色</dt>
+                    <dt className="mb-1.5 text-[11px] text-rex-text-muted">{t("配置默认 · 实现角色")}</dt>
                     <dd className="min-h-12 space-y-1">
                       {configured ? (
                         <>
@@ -239,12 +245,12 @@ export function AgentOverview({
                           {labelOf(configured) !== configured && <p className="break-all text-[11px] text-rex-text-muted">{configured}</p>}
                         </>
                       ) : (
-                        <p className="text-xs leading-5 text-rex-text-muted">{config ? '未解析到默认模型' : '尚未读到配置'}</p>
+                        <p className="text-xs leading-5 text-rex-text-muted">{config ? t("未解析到默认模型") : t("尚未读到配置")}</p>
                       )}
                     </dd>
                   </div>
                   <div className="min-w-0 sm:col-span-2 xl:col-span-1">
-                    <dt className="mb-1.5 text-[11px] text-rex-text-muted">日志内请求</dt>
+                    <dt className="mb-1.5 text-[11px] text-rex-text-muted">{t("日志内请求")}</dt>
                     <dd className="text-sm font-medium tabular-nums">
                       {decisions ? decisions.byClient[client.clientId] ?? 0 : '—'}
                     </dd>
@@ -259,20 +265,20 @@ export function AgentOverview({
 
       {issues.length > 0 && (
         <Panel className="border-rex-orange/40 p-5">
-          <SmallTitle action={<Badge tone="warn">{issues.length} 项</Badge>}>需要你处理</SmallTitle>
+          <SmallTitle action={<Badge tone="warn">{issues.length}  {t("项")}</Badge>}>{t("需要你处理")}</SmallTitle>
           <ul className="space-y-2 text-xs leading-5 text-rex-text-muted">
             {issues.slice(0, 3).map((issue, index) => (
               <li key={`${issue.kind}:${issue.clientId}:${index}`} className="flex gap-2">
                 <CircleAlert size={15} className="mt-0.5 shrink-0 text-rex-orange" />
                 <span className="min-w-0 break-words">
-                  <span className="font-medium text-rex-text">{issue.clientId ? clientLabel(issue.clientId).name : '本机配置'} · {issue.kind}</span>
+                  <span className="font-medium text-rex-text">{issue.clientId ? clientLabel(issue.clientId).name : t("本机配置")} · {issue.kind}</span>
                   ：{issue.detail}
                 </span>
               </li>
             ))}
           </ul>
           <div className="mt-3">
-            <TextLink onClick={() => navigate('mcp')}>查看服务与落点</TextLink>
+            <TextLink onClick={() => navigate('mcp')}>{t("查看服务与落点")}</TextLink>
           </div>
         </Panel>
       )}

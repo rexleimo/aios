@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../i18n/t.mjs';
 import * as Tabs from '@radix-ui/react-tabs';
 import { useState } from 'react';
 import type { ConsoleFacts } from '../../lib/console-facts';
@@ -13,7 +14,7 @@ export function ResourcesWorkspace({ facts }: { facts: ConsoleFacts }) {
     <Tabs.Root defaultValue="mcp" onValueChange={value => {
       if (value === 'skills' || value === 'agents') setVisited(current => ({ ...current, [value]: true }));
     }}>
-      <Tabs.List aria-label="资源库分类" className="mb-6 flex gap-1 rounded-rex-lg border border-rex-border bg-rex-panel p-1">
+      <Tabs.List aria-label={t("资源库分类")} className="mb-6 flex gap-1 rounded-rex-lg border border-rex-border bg-rex-panel p-1">
         {[['mcp', 'MCP'], ['skills', 'Skills'], ['agents', 'Subagents']].map(([value, label]) => (
           <Tabs.Trigger key={value} value={value} className="rounded-rex-sm px-4 py-2 text-sm text-rex-text-muted data-[state=active]:bg-rex-bg data-[state=active]:font-semibold data-[state=active]:text-rex-text focus-visible:outline-2 focus-visible:outline-rex-cyan">
             {label}

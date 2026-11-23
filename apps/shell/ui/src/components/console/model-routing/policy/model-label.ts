@@ -1,7 +1,8 @@
+import { t } from '../../../../i18n/t.mjs';
 import type { ModelOption } from '../intent-routing-section';
 
 export function modelLabel(model: ModelOption): string {
-  return `${model.provider || '未绑定供应商'} / ${model.label || model.id}`;
+  return `${model.provider || t("未绑定供应商")} / ${model.label || model.id}`;
 }
 
 export function modelName(models: ModelOption[], id: string): string {

@@ -1,3 +1,4 @@
+import { t } from '../../../i18n/t.mjs';
 // Binding-qualified concrete model and assignment-target catalogs.
 import { ConfigError, isRecord, lower } from './common.mjs';
 import { declaredModelProtocols, normalizeProtocol, validateProviderConnection } from './provider-schema.mjs';
@@ -88,7 +89,7 @@ export function toRoutingTargets(document) {
     let members;
     try { members = orderedGroupMembers(document, id).filter((modelId) => eligible.has(modelId)); }
     catch (error) { if (error instanceof ConfigError) return []; throw error; }
-    return members.length ? [{ id: serializeTargetRef({ kind: 'group', id }), label: id, provider: '模型组', protocols: [], cost: 'unknown', source: 'group', models: members }] : [];
+    return members.length ? [{ id: serializeTargetRef({ kind: 'group', id }), label: id, provider: t("模型组"), protocols: [], cost: 'unknown', source: 'group', models: members }] : [];
   });
   return [...catalog.map((model) => ({ ...model, id: serializeTargetRef({ kind: 'model', id: model.id }) })), ...groups];
 }

@@ -1,3 +1,4 @@
+import { t } from '../../i18n/t.mjs';
 // apps/shell/ui/src/lib/config/workspaces.mjs — Console 侧的工作区清单读取（CLI 的瘦客户端）。
 //
 // 为什么不 import `scripts/lib/foundation/workspaces/*`：
@@ -17,16 +18,16 @@ const SCHEMA = 'aios.workspaces.v1';
 export async function loadWorkspaces({ rootDir, runImpl } = {}) {
   const result = await runCapabilityJson(['workspaces', 'list', '--json'], { rootDir, runImpl });
   if (!result || result.ok !== true) {
-    return { ok: false, workspaces: [], scanRoots: [], error: String(result?.error ?? '工作区命令没有返回结果') };
+    return { ok: false, workspaces: [], scanRoots: [], error: String(result?.error ?? t("工作区命令没有返回结果")) };
   }
   // `runCapabilityJson` 的契约是 `{ ok:true, data }`，所以这里得先拆 data。
   // 拆错的结果实测过一次：schema 判断拿到 undefined，把一条止确的清单报成协议不匹配。
   const payload = result.data;
   if (!payload || typeof payload !== 'object') {
-    return { ok: false, workspaces: [], scanRoots: [], error: '工作区清单没有返回可读的 JSON' };
+    return { ok: false, workspaces: [], scanRoots: [], error: t("工作区清单没有返回可读的 JSON") };
   }
   if (payload.schema !== SCHEMA) {
-    return { ok: false, workspaces: [], scanRoots: [], error: `工作区清单协议版本不是 ${SCHEMA}，而是 ${String(payload.schema)}` };
+    return { ok: false, workspaces: [], scanRoots: [], error: t("工作区清单协议版本不是 {SCHEMA}，而是 {value1}", { SCHEMA: SCHEMA, value1: String(payload.schema) }) };
   }
   const workspaces = Array.isArray(payload.workspaces) ? payload.workspaces : [];
   return { ok: true, workspaces, scanRoots: payload.scanRoots ?? [], error: null };
@@ -41,10 +42,10 @@ export async function resolveWorkspace({ key, rootDir, runImpl }) {
   if (!list.ok) return { ok: false, reason: 'list-unreadable', detail: list.error };
   const wanted = String(key ?? '').trim();
   if (!/^[0-9a-f]{12}$/u.test(wanted)) {
-    return { ok: false, reason: 'bad-key', detail: `工作区标识必须是 12 位十六进制摘要，收到「${wanted || '(空)'}」` };
+    return { ok: false, reason: 'bad-key', detail: t("工作区标识必须是 12 位十六进制摘要，收到「{value0}」", { value0: wanted || t("(空)") }) };
   }
   const hit = list.workspaces.find((item) => item.key === wanted);
-  if (!hit) return { ok: false, reason: 'not-listed', detail: '这个标识不在本机工作区清单里；重新加载页面即可拿到最新清单' };
-  if (hit.missing) return { ok: false, reason: 'missing', detail: `登记的路径 ${hit.path} 在本机已不存在` };
+  if (!hit) return { ok: false, reason: 'not-listed', detail: t("这个标识不在本机工作区清单里；重新加载页面即可拿到最新清单") };
+  if (hit.missing) return { ok: false, reason: 'missing', detail: t("登记的路径 {value0} 在本机已不存在", { value0: hit.path }) };
   return { ok: true, workspace: hit, list };
 }

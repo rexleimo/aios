@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-11-23-console-i18n-full-coverage-testability.json",
+  "redCandidate": {
+    "publicEntry": "node --test apps/shell/ui/tests/i18n-full-coverage.test.mjs (catalog data seam consumed by src/i18n/runtime.ts translate())",
+    "setup": "Clean worktree at HEAD 2b4febdf plus the new focused test file; accepted 83-key catalogs exist but contain no keys for the gateway / model-routing / resources secondary panels.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "apps/shell/ui/tests/i18n-full-coverage.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Test passes: gateway.workspace.title, routing.config.title and resources.skills.title resolve to the expected zh-CN / en / ja strings in every catalog.",
+    "observed": "Test exits 1; first assertion reports zh-CN:gateway.workspace.title actual=undefined expected='模型网关'. A subsequent translate() lookup would return the raw key, i.e. untranslated copy.",
+    "failureReason": "Secondary panel copy was never externalized into the catalogs; the user-observable behavior (translated copy after switching locale) does not exist for these domains.",
+    "receiptRef": "receipt:622c5471-deb0-4b8a-b7b6-3c9663c5cd57"
+  }
+}

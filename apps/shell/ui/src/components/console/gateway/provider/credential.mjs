@@ -1,3 +1,4 @@
+import { t } from '../../../../i18n/t.mjs';
 // Display-only helpers for inline API keys. A pasted key is stored in the local
 // config but must never be rendered in full in the editor, summaries or confirmations.
 
@@ -16,7 +17,7 @@ export function maskCredential(value) {
  */
 export function credentialLabel(scope = {}) {
   const inline = String(scope.apiKey || '').trim();
-  if (inline) return `内联密钥 ${maskCredential(inline)}`;
+  if (inline) return t("内联密钥 {value0}", { value0: maskCredential(inline) });
   return String(scope.apiKeyEnv || '').trim();
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../../../i18n/t.mjs';
 import { useState } from 'react';
 import { Button, Field, Input } from '../../console-ui';
 
@@ -15,17 +16,17 @@ export function ProviderHeaderFields({ initialValue, onChange }: {
     onChange(Object.fromEntries(next.map(([name, value]) => [name.trim(), value.trim()])), invalid);
   }
   return <details className="rounded-rex-sm border border-rex-border p-3" open={rows.length > 0}>
-    <summary className="cursor-pointer rounded-sm text-xs font-medium focus-visible:outline-2 focus-visible:outline-rex-cyan">自定义请求头</summary>
+    <summary className="cursor-pointer rounded-sm text-xs font-medium focus-visible:outline-2 focus-visible:outline-rex-cyan">{t("自定义请求头")}</summary>
     <div className="mt-4 space-y-3">
-      <p className="text-xs leading-5 text-rex-text-muted">用于渠道要求的额外头，例如 x-region。密钥和令牌只填 env:VARIABLE 引用；不会读取或显示实际值。无需认证模式不能配置凭据头。</p>
+      <p className="text-xs leading-5 text-rex-text-muted">{t("用于渠道要求的额外头，例如 x-region。密钥和令牌只填 env:VARIABLE 引用；不会读取或显示实际值。无需认证模式不能配置凭据头。")}</p>
       {rows.map(([name, value], index) => <div key={index} className="space-y-3 rounded-rex-sm border border-rex-border p-3">
-        <Field label={`请求头 ${index + 1} 名称`}><Input aria-label={`请求头 ${index + 1} 名称`} value={name} placeholder="x-region"
+        <Field label={t("请求头 {value0} 名称", { value0: index + 1 })}><Input aria-label={t("请求头 {value0} 名称", { value0: index + 1 })} value={name} placeholder="x-region"
           onChange={event => update(rows.map((row, i) => i === index ? [event.target.value, row[1]] : row))} /></Field>
-        <Field label={`请求头 ${index + 1} 值`}><Input aria-label={`请求头 ${index + 1} 值`} value={value} placeholder="region-name 或 env:CHANNEL_TOKEN"
+        <Field label={t("请求头 {value0} 值", { value0: index + 1 })}><Input aria-label={t("请求头 {value0} 值", { value0: index + 1 })} value={value} placeholder={t("region-name 或 env:CHANNEL_TOKEN")}
           onChange={event => update(rows.map((row, i) => i === index ? [row[0], event.target.value] : row))} /></Field>
-        <Button type="button" variant="outline" aria-label={`移除请求头 ${index + 1}`} onClick={() => update(rows.filter((_, i) => i !== index))}>移除请求头</Button>
+        <Button type="button" variant="outline" aria-label={t("移除请求头 {value0}", { value0: index + 1 })} onClick={() => update(rows.filter((_, i) => i !== index))}>{t("移除请求头")}</Button>
       </div>)}
-      <Button type="button" variant="outline" onClick={() => update([...rows, ['', '']])}>添加请求头</Button>
+      <Button type="button" variant="outline" onClick={() => update([...rows, ['', '']])}>{t("添加请求头")}</Button>
     </div>
   </details>;
 }

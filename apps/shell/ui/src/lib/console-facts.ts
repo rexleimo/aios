@@ -1,3 +1,4 @@
+import { t } from '../i18n/t.mjs';
 // 首屏事实的**类型与显示名**——这个文件不做任何 IO，所以它可以同时被服务端组件和
 // `'use client'` 组件 import（README 约定 3：服务端组件不从 'use client' 模块取数据；
 // 类型是双向安全的，数据不是）。
@@ -211,23 +212,23 @@ export const NON_CLIENT_HOSTS: ReadonlySet<string> = new Set(['aios-harness', 'g
 export function landingTokenLabel(token: string): { label: string; tone: 'ok' | 'warn' | 'danger' | 'neutral' } {
   switch (token) {
     case 'landing-verified':
-      return { label: '落点已验证', tone: 'ok' };
+      return { label: t("落点已验证"), tone: 'ok' };
     case 'landing-unverified':
-      return { label: '落点未验证', tone: 'warn' };
+      return { label: t("落点未验证"), tone: 'warn' };
     case 'landing-error':
-      return { label: '配置读取失败', tone: 'danger' };
+      return { label: t("配置读取失败"), tone: 'danger' };
     case 'landing-unregistered':
-      return { label: '落点未登记', tone: 'neutral' };
+      return { label: t("落点未登记"), tone: 'neutral' };
     default:
-      return { label: token || '状态未知', tone: 'neutral' };
+      return { label: token || t("状态未知"), tone: 'neutral' };
   }
 }
 
 export const LANDING_TOKEN_EXPLANATION: Record<string, string> = {
-  'landing-verified': '有证据卡确认这个落点真的读写成功。',
-  'landing-unverified': '配置读到了，但还没有一份证据卡确认写回去也成立——这不代表它坏了。',
-  'landing-error': '配置文件读失败，界面上的数字来自能读到的部分。',
-  'landing-unregistered': '产品声明支持这个客户端，但落点声明表里没有它的位置。',
+  'landing-verified': t("有证据卡确认这个落点真的读写成功。"),
+  'landing-unverified': t("配置读到了，但还没有一份证据卡确认写回去也成立——这不代表它坏了。"),
+  'landing-error': t("配置文件读失败，界面上的数字来自能读到的部分。"),
+  'landing-unregistered': t("产品声明支持这个客户端，但落点声明表里没有它的位置。"),
 };
 
 /**
@@ -237,13 +238,13 @@ export const LANDING_TOKEN_EXPLANATION: Record<string, string> = {
  * 这里只拥有「这三个 token 在界面上怎么念」，不拥有第三个值该不该存在。
  */
 export const MEMO_SCOPE_LABELS: Record<string, string> = {
-  project_shared: '项目内共享（可被本项目 AI 召回）',
-  agent_private: '仅本代理私有',
-  agent_ephemeral: '临时，不进入长期召回',
+  project_shared: t("项目内共享（可被本项目 AI 召回）"),
+  agent_private: t("仅本代理私有"),
+  agent_ephemeral: t("临时，不进入长期召回"),
 };
 
 export function claimStatusLabel(claimStatus: string | null): string {
-  if (claimStatus === 'verified') return '已验证';
-  if (claimStatus === null) return '未标注验证状态';
+  if (claimStatus === 'verified') return t("已验证");
+  if (claimStatus === null) return t("未标注验证状态");
   return claimStatus;
 }

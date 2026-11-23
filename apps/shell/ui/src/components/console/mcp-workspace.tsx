@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../i18n/t.mjs';
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Plug, Plus, ShieldCheck } from 'lucide-react';
 
@@ -8,11 +9,11 @@ import { Badge, Button, Empty, Heading, Panel, SmallTitle } from './console-ui';
 import { McpWizard, type McpPreset } from './flows/mcp-wizard';
 
 const OWNERSHIP_LABELS: Record<string, string> = {
-  owned: 'AIOS 登记并持有',
-  external: '别人写的，AIOS 不覆盖',
-  conflict: '同名但内容不一致',
-  'kept-differs': '登记后被人工改过',
-  unknown: '归属未记录',
+  owned: t("AIOS 登记并持有"),
+  external: t("别人写的，AIOS 不覆盖"),
+  conflict: t("同名但内容不一致"),
+  'kept-differs': t("登记后被人工改过"),
+  unknown: t("归属未记录"),
 };
 
 export function McpWorkspace({ facts }: { facts: ConsoleFacts }) {
@@ -41,7 +42,7 @@ export function McpWorkspace({ facts }: { facts: ConsoleFacts }) {
     try {
       const response = await fetch('/api/mcp/presets', { cache: 'no-store' });
       const result = await response.json();
-      if (!response.ok || !result.ok) throw new Error(result.error || '搜索预设读取失败');
+      if (!response.ok || !result.ok) throw new Error(result.error || t("搜索预设读取失败"));
       setPreset(result.preset);
       setOpen(true);
     } catch (error) {
@@ -55,67 +56,69 @@ export function McpWorkspace({ facts }: { facts: ConsoleFacts }) {
     <>
       <Heading
         eyebrow="MCP SERVICES"
-        title="服务装在哪里、谁的、读没读到。"
-        description={`本机 ${rows.length} 个服务配置实例、${String(summary?.landings ?? 0)} 个落点，全部来自 ${'`aios mcp list --json`'} 的一次读取。`}
+        title={t("服务装在哪里、谁的、读没读到。")}
+        description={t("本机 {value0} 个服务配置实例、{value1} 个落点，全部来自 {value2} 的一次读取。", { value0: rows.length, value1: String(summary?.landings ?? 0), value2: '`aios mcp list --json`' })}
         actions={
           <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => void addSearch()} disabled={presetBusy || !facts.services.loaded || installed.length === 0}>
-            {presetBusy ? '读取搜索预设…' : '添加 DeepSeek 搜索'}
+            {presetBusy ? t("读取搜索预设…") : t("添加 DeepSeek 搜索")}
           </Button><Button onClick={() => { setPreset(undefined); setOpen(true); }} disabled={!facts.services.loaded || installed.length === 0}>
             <Plus size={15} />
-            添加 MCP 服务
+            
+            {t("添加 MCP 服务")}
           </Button></div>
         }
       />
       {presetError && <p role="alert" className="mb-4 text-xs text-rex-danger">{presetError}</p>}
       {!facts.services.loaded ? (
         <Panel className="mb-6 border-rex-danger/40 p-5">
-          <SmallTitle action={<Badge tone="danger">读取失败</Badge>}>服务清单没读到</SmallTitle>
+          <SmallTitle action={<Badge tone="danger">{t("读取失败")}</Badge>}>{t("服务清单没读到")}</SmallTitle>
           <p className="text-xs leading-6 text-rex-text-muted">
-            {facts.services.error ?? '能力进程没有返回可读的清单。'}
+            {facts.services.error ?? t("能力进程没有返回可读的清单。")}
           </p>
         </Panel>
       ) : (
         <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="服务配置实例" value={String(rows.length)} note="按 (客户端, 范围, 名字) 计数" />
-          <StatCard label="落点" value={String(summary?.landings ?? 0)} note={`可写 ${String(summary?.writableLandings ?? 0)}`} />
+          <StatCard label={t("服务配置实例")} value={String(rows.length)} note={t("按 (客户端, 范围, 名字) 计数")} />
+          <StatCard label={t("落点")} value={String(summary?.landings ?? 0)} note={t("可写 {value0}", { value0: String(summary?.writableLandings ?? 0) })} />
           <StatCard
-            label="归属：AIOS 持有 / 外部"
+            label={t("归属：AIOS 持有 / 外部")}
             value={`${String(summary?.owned ?? 0)} / ${String(summary?.external ?? 0)}`}
-            note="外部条目不会被覆盖，adopt 才接管"
+            note={t("外部条目不会被覆盖，adopt 才接管")}
           />
           <StatCard
-            label="落点已验证"
+            label={t("落点已验证")}
             value={`${String(summary?.landingVerified ?? 0)} / ${String(summary?.landings ?? 0)}`}
-            note={Number(summary?.landingUnverified ?? 0) > 0 ? `${String(summary?.landingUnverified)} 个未验证` : '全部有证据卡'}
+            note={Number(summary?.landingUnverified ?? 0) > 0 ? t("{value0} 个未验证", { value0: String(summary?.landingUnverified) }) : t("全部有证据卡")}
             warn={Number(summary?.landingError ?? 0) > 0}
           />
         </div>
       )}
       {landingTally.length > 0 && (
         <Panel className="mb-6 p-5">
-          <SmallTitle>落点状态分别是什么意思</SmallTitle>
+          <SmallTitle>{t("落点状态分别是什么意思")}</SmallTitle>
           <ul className="grid gap-2 text-xs leading-5 text-rex-text-muted sm:grid-cols-2">
             {landingTally.map(([token, count]) => (
               <li key={token} className="flex items-start gap-2">
                 <Badge tone={landingTokenLabel(token).tone}>
                   {landingTokenLabel(token).label} × {count}
                 </Badge>
-                <span>{LANDING_TOKEN_EXPLANATION[token] ?? '这个状态的含义尚未登记，不编造解释。'}</span>
+                <span>{LANDING_TOKEN_EXPLANATION[token] ?? t("这个状态的含义尚未登记，不编造解释。")}</span>
               </li>
             ))}
           </ul>
           <p className="mt-3 flex items-start gap-2 border-t border-rex-border pt-3 text-[11px] leading-5 text-rex-text-muted">
             <ShieldCheck size={14} className="mt-0.5 shrink-0" />
-            配置写入、落点验证与连接测试是三条不同的事实。当前界面只读配置并做 dry-run 预览，
-            <strong className="font-medium text-rex-text-body">不启动真实服务进程</strong>，所以这里不会声称任何服务「能连上」。
+            
+            {t("配置写入、落点验证与连接测试是三条不同的事实。当前界面只读配置并做 dry-run 预览，")}
+            <strong className="font-medium text-rex-text-body">{t("不启动真实服务进程")}</strong>{t("，所以这里不会声称任何服务「能连上」。")}
           </p>
         </Panel>
       )}
       <Panel className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-2 border-b border-rex-border px-5 py-3">
-          <h2 className="text-sm font-semibold">服务清单</h2>
+          <h2 className="text-sm font-semibold">{t("服务清单")}</h2>
           <div className="ml-auto flex flex-wrap gap-1">
-            <FilterChip label={`全部 ${rows.length}`} active={clientFilter === 'all'} onClick={() => setClientFilter('all')} />
+            <FilterChip label={t("全部 {value0}", { value0: rows.length })} active={clientFilter === 'all'} onClick={() => setClientFilter('all')} />
             {installed.map((client) => (
               <FilterChip
                 key={client.clientId}
@@ -127,21 +130,21 @@ export function McpWorkspace({ facts }: { facts: ConsoleFacts }) {
           </div>
         </div>
         {visible.length === 0 ? (
-          <Empty icon={Plug} title="这台机器上没有 MCP 服务配置">
+          <Empty icon={Plug} title={t("这台机器上没有 MCP 服务配置")}>
             <p>
               {clientFilter === 'all'
-                ? '已声明支持的客户端在本机没有服务落点。在任意客户端里配置一个 MCP 服务后，回来重新采集。'
-                : '这个客户端的落点里没有服务条目。'}
+                ? t("已声明支持的客户端在本机没有服务落点。在任意客户端里配置一个 MCP 服务后，回来重新采集。")
+                : t("这个客户端的落点里没有服务条目。")}
             </p>
           </Empty>
         ) : (
           <div className="max-h-[560px] overflow-y-auto">
             <div className="hidden grid-cols-[minmax(0,1.2fr)_110px_90px_minmax(0,1fr)_130px] gap-3 border-b border-rex-border bg-rex-panel/40 px-5 py-2.5 text-[11px] text-rex-text-muted lg:grid">
-              <span>服务</span>
-              <span>客户端</span>
-              <span>范围</span>
-              <span>归属 / 配置落点</span>
-              <span className="text-right">落点状态</span>
+              <span>{t("服务")}</span>
+              <span>{t("客户端")}</span>
+              <span>{t("范围")}</span>
+              <span>{t("归属 / 配置落点")}</span>
+              <span className="text-right">{t("落点状态")}</span>
             </div>
             {visible.map((row) => (
               <ServiceRow key={row.id} row={row} />
@@ -152,7 +155,8 @@ export function McpWorkspace({ facts }: { facts: ConsoleFacts }) {
       {facts.degraded.length > 0 && (
         <p className="mt-4 flex items-start gap-2 text-[11px] leading-5 text-rex-danger">
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          本次采集有 {facts.degraded.length} 项没读到：
+          
+          {t("本次采集有")} {facts.degraded.length}  {t("项没读到：")}
           {facts.degraded.map((entry) => `${entry.item}（${entry.error}）`).join('；')}
         </p>
       )}
@@ -167,7 +171,7 @@ function ServiceRow({ row }: { row: FactServiceRow }) {
     <div className="grid items-start gap-3 border-b border-rex-border p-4 text-xs last:border-0 lg:grid-cols-[minmax(0,1.2fr)_110px_90px_minmax(0,1fr)_130px]">
       <div className="min-w-0">
         <p className="truncate font-medium text-rex-text-body">{row.name}</p>
-        <p className="mt-1 text-[10px] text-rex-text-muted">{row.fields.join(' · ') || '字段未记录'}</p>
+        <p className="mt-1 text-[10px] text-rex-text-muted">{row.fields.join(' · ') || t("字段未记录")}</p>
       </div>
       <span className="truncate">{clientLabel(row.clientId).name}</span>
       <span className="text-rex-text-muted">{row.scope}</span>

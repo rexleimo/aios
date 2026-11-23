@@ -1,3 +1,4 @@
+import { t } from '../../i18n/t.mjs';
 // apps/shell/ui/src/lib/data/memo-store.mjs — 项目记忆（memo）的结构化只读视图。
 //
 // 为什么自己读文件而不是跑 `aios memo search`：实测 `memo search` **没有 JSON 输出**
@@ -70,13 +71,13 @@ function toRow(parsed, index) {
 export function readMemoEvents({ rootDir, limit = MEMO_MAX_ROWS } = {}) {
   const file = memoEventsPath(rootDir);
   if (!fs.existsSync(file)) {
-    return { ok: false, reason: 'no-memo-file', error: `记忆文件不存在：${file}`, file };
+    return { ok: false, reason: 'no-memo-file', error: t("记忆文件不存在：{file}", { file: file }), file };
   }
   let raw = '';
   try {
     raw = fs.readFileSync(file, 'utf8');
   } catch (error) {
-    return { ok: false, reason: 'read-failed', error: `记忆文件读失败：${error instanceof Error ? error.message : String(error)}`, file };
+    return { ok: false, reason: 'read-failed', error: t("记忆文件读失败：{value0}", { value0: error instanceof Error ? error.message : String(error) }), file };
   }
   const lines = raw.split(/\r?\n/u).filter((line) => line.trim().length > 0);
   const rows = [];

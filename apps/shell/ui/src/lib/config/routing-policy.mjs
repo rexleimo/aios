@@ -1,3 +1,4 @@
+import { t } from '../../i18n/t.mjs';
 // Configuration-only gateway policy. Runtime parity is tested without importing scripts into the UI.
 import { assignmentReferences, orderedGroupMembers, parseTargetRef, toModelCatalog, validateDocument } from './model-routing.mjs';
 
@@ -48,14 +49,14 @@ function policyChain(document, role, clientId) {
   const taskType = lower(roleDefault?.taskType) || role;
   const rule = (Array.isArray(document.routingRules) ? document.routingRules : []).find((item) => lower(item?.taskType) === taskType);
   // Only ONE preferred target is selected. An unusable higher preference never retries lower ones.
-  const preferred = clientRole ? { id: clientRole, source: '客户端例外' }
-    : globalRole ? { id: globalRole, source: '全局角色指定' }
-      : roleDefault?.preferredModel ? { id: roleDefault.preferredModel, source: '角色默认' }
-        : { id: rule?.primary || '', source: '任务规则' };
+  const preferred = clientRole ? { id: clientRole, source: t("客户端例外") }
+    : globalRole ? { id: globalRole, source: t("全局角色指定") }
+      : roleDefault?.preferredModel ? { id: roleDefault.preferredModel, source: t("角色默认") }
+        : { id: rule?.primary || '', source: t("任务规则") };
   // Role/rule targets intentionally retain their raw spelling, as gatewayCandidateChain does.
   // Empty-role legacy preferences/rules still precede clientDefaults, without inferring "general".
   const clientDefault = role ? '' : Object.entries(document.clientDefaults || {}).find(([key]) => lower(key) === clientId)?.[1];
-  return [preferred, { id: clientDefault, source: '客户端例外' }, ...(Array.isArray(rule?.fallback) ? rule.fallback : []).map((id) => ({ id, source: '规则回落' })), { id: active, source: '全局指定' }];
+  return [preferred, { id: clientDefault, source: t("客户端例外") }, ...(Array.isArray(rule?.fallback) ? rule.fallback : []).map((id) => ({ id, source: t("规则回落") })), { id: active, source: t("全局指定") }];
 }
 
 /**
@@ -104,23 +105,23 @@ export function projectPolicyAssignment(document, { role = '', clientId = '' } =
       break;
     }
   }
-  const candidates = blockedClient || invalidTarget ? [] : catalog.length === 1 && !hasGroup ? [{ id: catalog[0].id, source: '单模型直连' }] : expanded.filter((entry, index) => expanded.findIndex((other) => other.id === entry.id) === index);
+  const candidates = blockedClient || invalidTarget ? [] : catalog.length === 1 && !hasGroup ? [{ id: catalog[0].id, source: t("单模型直连") }] : expanded.filter((entry, index) => expanded.findIndex((other) => other.id === entry.id) === index);
   const selected = candidates.find((entry) => eligible.has(entry.id));
   // Gateway translation means input protocols currently share a chain, not native-protocol filtering.
   const byProtocol = PROTOCOLS.map((protocol) => ({ protocol, modelId: selected?.id || '' }));
   const outcomes = new Set(byProtocol.map((entry) => entry.modelId));
   const modelId = outcomes.size === 1 ? byProtocol[0].modelId : '';
-  const notes = ['仅网关配置推演；不含环境覆盖、意图分类、凭据校验或实时可用性。'];
-  if (unavailableModelId) notes.push(groupBlocked ? `配置组 ${unavailableModelId} 无可用成员或模式不受支持；不会改用其他固定目标。` : `配置目标 ${unavailableModelId} 不可用，按配置候选链回落。`);
-  if (hasGroup && modelId) notes.push('模型组按已保存成员顺序选择；不实现权重、轮询或成本优选。');
-  if (invalidProviders) notes.push('供应商配置无效，不能确定路由。');
-  if (invalidTarget) notes.push('目标引用版本或编码无效，不能确定路由。');
-  if (blockedClient) notes.push('该客户端不参与网关模型分配；保留配置不表示会向该客户端派发模型。');
-  if (outcomes.size > 1) notes.push('各协议结果不同，请查看 byProtocol，不汇总为单一模型。');
-  if (!modelId && outcomes.size === 1 && !blockedClient) notes.push('没有可用的配置默认路由。');
+  const notes = [t("仅网关配置推演；不含环境覆盖、意图分类、凭据校验或实时可用性。")];
+  if (unavailableModelId) notes.push(groupBlocked ? t("配置组 {unavailableModelId} 无可用成员或模式不受支持；不会改用其他固定目标。", { unavailableModelId: unavailableModelId }) : t("配置目标 {unavailableModelId} 不可用，按配置候选链回落。", { unavailableModelId: unavailableModelId }));
+  if (hasGroup && modelId) notes.push(t("模型组按已保存成员顺序选择；不实现权重、轮询或成本优选。"));
+  if (invalidProviders) notes.push(t("供应商配置无效，不能确定路由。"));
+  if (invalidTarget) notes.push(t("目标引用版本或编码无效，不能确定路由。"));
+  if (blockedClient) notes.push(t("该客户端不参与网关模型分配；保留配置不表示会向该客户端派发模型。"));
+  if (outcomes.size > 1) notes.push(t("各协议结果不同，请查看 byProtocol，不汇总为单一模型。"));
+  if (!modelId && outcomes.size === 1 && !blockedClient) notes.push(t("没有可用的配置默认路由。"));
   return {
     modelId,
-    source: blockedClient ? '客户端不参与网关分配' : modelId ? selected.source : '未配置默认路由',
+    source: blockedClient ? t("客户端不参与网关分配") : modelId ? selected.source : t("未配置默认路由"),
     configuredModelId,
     unavailableModelId,
     candidateIds: candidates.map((entry) => entry.id),
@@ -151,17 +152,17 @@ export function describePolicyChanges(before, after) {
   if (!before || !after) return [];
   const changes = [];
   const scalar = (title, previous, next) => {
-    if ((previous || '') !== (next || '')) changes.push(`${title}：${previous || '继承'} → ${next || '继承'}`);
+    if ((previous || '') !== (next || '')) changes.push(`${title}：${previous || t("继承")} → ${next || t("继承")}`);
   };
   const map = (title, previous = {}, next = {}) => {
     for (const key of new Set([...Object.keys(previous), ...Object.keys(next)])) scalar(`${title} ${key}`, previous[key], next[key]);
   };
-  scalar('全局默认', before.activeModel, after.activeModel);
-  map('客户端默认', before.clientDefaults, after.clientDefaults);
-  map('全局角色', before.matrix?.default, after.matrix?.default);
-  for (const client of new Set([...Object.keys(before.matrix?.clients || {}), ...Object.keys(after.matrix?.clients || {})])) map(`客户端 ${client} / 角色`, before.matrix?.clients?.[client], after.matrix?.clients?.[client]);
-  for (const [field, label] of [['providers', '供应商来源'], ['customModels', '自定义模型'], ['routingGroups', '模型组'], ['intentRouting', '意图路由']]) {
-    if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) changes.push(`${label}已修改`);
+  scalar(t("全局默认"), before.activeModel, after.activeModel);
+  map(t("客户端默认"), before.clientDefaults, after.clientDefaults);
+  map(t("全局角色"), before.matrix?.default, after.matrix?.default);
+  for (const client of new Set([...Object.keys(before.matrix?.clients || {}), ...Object.keys(after.matrix?.clients || {})])) map(t("客户端 {client} / 角色", { client: client }), before.matrix?.clients?.[client], after.matrix?.clients?.[client]);
+  for (const [field, label] of [['providers', t("供应商来源")], ['customModels', t("自定义模型")], ['routingGroups', t("模型组")], ['intentRouting', t("意图路由")]]) {
+    if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) changes.push(t("{label}已修改", { label: label }));
   }
   return changes;
 }

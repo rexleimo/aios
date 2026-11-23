@@ -1,3 +1,4 @@
+import { t } from '../../i18n/t.mjs';
 // Reading ContextDB sessions from the console.
 //
 // ContextDB already stores what a session was, in files, one directory per session:
@@ -233,7 +234,7 @@ export function auditSessionStore(root) {
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch {
-    return { ok: false, dir, dirs: 0, withMeta: 0, withoutMeta: [], error: `会话目录读不到：${dir}` };
+    return { ok: false, dir, dirs: 0, withMeta: 0, withoutMeta: [], error: t("会话目录读不到：{dir}", { dir: dir }) };
   }
   const names = entries.filter((entry) => entry.isDirectory() && SESSION_ID_PATTERN.test(entry.name)).map((entry) => entry.name);
   const withoutMeta = names.filter((name) => !fs.existsSync(path.join(dir, name, 'meta.json')));

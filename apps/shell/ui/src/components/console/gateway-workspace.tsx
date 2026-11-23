@@ -1,5 +1,6 @@
 'use client';
 
+import { t } from '../../i18n/t.mjs';
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -25,10 +26,10 @@ import { RoutingGraph } from './model-routing/routing-graph';
 import { useRoutingConfig } from './model-routing/use-routing-config';
 
 const SECTIONS = [
-  { id: 'overview', label: '运行总览', description: '启停与客户端接入', icon: LayoutDashboard },
-  { id: 'providers', label: '供应商与模型', description: '管理请求的上游', icon: Plug },
-  { id: 'policy', label: '模型分配', description: '决定请求交给谁', icon: Settings2 },
-  { id: 'requests', label: '请求记录', description: '查看实际路由结果', icon: FileClock },
+  { id: 'overview', label: t("运行总览"), description: t("启停与客户端接入"), icon: LayoutDashboard },
+  { id: 'providers', label: t("供应商与模型"), description: t("管理请求的上游"), icon: Plug },
+  { id: 'policy', label: t("模型分配"), description: t("决定请求交给谁"), icon: Settings2 },
+  { id: 'requests', label: t("请求记录"), description: t("查看实际路由结果"), icon: FileClock },
 ] as const;
 type Section = (typeof SECTIONS)[number]['id'];
 
@@ -63,18 +64,19 @@ export function GatewayWorkspace({
     <div className="space-y-6">
       <Heading
         eyebrow="GATEWAY / CONTROL PLANE"
-        title="模型网关"
-        description="接入客户端，配置模型来源，让每一次请求都有清晰的去向。"
+        title={t("模型网关")}
+        description={t("接入客户端，配置模型来源，让每一次请求都有清晰的去向。")}
         actions={
           <Badge tone="info">
             <ShieldCheck size={12} />
-            本机控制台
+            
+            {t("本机控制台")}
           </Badge>
         }
       />
 
       <nav
-        aria-label="网关工作区"
+        aria-label={t("网关工作区")}
         className="grid grid-cols-2 gap-2 rounded-rex-lg border border-rex-border bg-rex-panel/60 p-2 xl:grid-cols-4"
       >
         {SECTIONS.map((item, index) => (
@@ -104,19 +106,22 @@ export function GatewayWorkspace({
         ))}
       </nav>
       <p className="text-[11px] leading-5 text-rex-text-muted">
-        此处管理本机网关，注册表属于 Console 服务启动根。切换工作区只改变客户端事实的采集范围，不会切换为另一套网关。
+        
+        {t("此处管理本机网关，注册表属于 Console 服务启动根。切换工作区只改变客户端事实的采集范围，不会切换为另一套网关。")}
       </p>
 
       <div hidden={section !== 'overview'} className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">先接通，再分配。</h2>
+            <h2 className="text-lg font-semibold tracking-tight">{t("先接通，再分配。")}</h2>
             <p className="mt-1 text-xs leading-5 text-rex-text-muted">
-              运行状态、客户端接入和历史请求分别展示，互不推断。
+              
+              {t("运行状态、客户端接入和历史请求分别展示，互不推断。")}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => selectSection('providers')}>
-            管理模型来源
+            
+            {t("管理模型来源")}
             <ArrowRight size={14} />
           </Button>
         </div>
@@ -134,9 +139,9 @@ export function GatewayWorkspace({
       {(section === 'providers' || section === 'policy') &&
         !routing.editable &&
         (routing.status === 'error' ? (
-          <ErrorState message={`配置读取失败：${routing.error}`} onRetry={() => void routing.reload()} />
+          <ErrorState message={t("配置读取失败：{value0}", { value0: routing.error })} onRetry={() => void routing.reload()} />
         ) : (
-          <Loading label="正在读取网关配置…" />
+          <Loading label={t("正在读取网关配置…")} />
         ))}
       {routing.editable && (
         <fieldset
@@ -169,7 +174,7 @@ export function GatewayWorkspace({
 
       {routing.error && routing.editable && (
         <ErrorState
-          message={`配置快照未能更新，当前草稿已保留：${routing.error}`}
+          message={t("配置快照未能更新，当前草稿已保留：{value0}", { value0: routing.error })}
           onRetry={() => setConfirm('reload')}
         />
       )}
@@ -184,11 +189,11 @@ export function GatewayWorkspace({
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold">
-                {saving ? '正在写入配置…' : routing.dirty ? '有未保存的修改' : '与已读取配置一致'}
+                {saving ? t("正在写入配置…") : routing.dirty ? t("有未保存的修改") : t("与已读取配置一致")}
               </p>
-               <p className="mt-1 text-[11px] leading-5 text-rex-text-muted">所有分区共用草稿；保存仅写入磁盘，运行中的网关需重启加载。</p>
+               <p className="mt-1 text-[11px] leading-5 text-rex-text-muted">{t("所有分区共用草稿；保存仅写入磁盘，运行中的网关需重启加载。")}</p>
                {routing.dirty && <details className="mt-1 text-[11px] leading-5 text-rex-text-muted">
-                 <summary className="cursor-pointer font-medium focus-visible:outline-2 focus-visible:outline-rex-cyan">修改摘要（{routing.changes.length} 项）</summary>
+                 <summary className="cursor-pointer font-medium focus-visible:outline-2 focus-visible:outline-rex-cyan">{t("修改摘要（")}{routing.changes.length}  {t("项）")}</summary>
                  <ul className="mt-1 max-h-24 space-y-1 overflow-y-auto">{routing.changes.map((change) => <li key={change}>{change}</li>)}</ul>
                </details>}
               <InlineFeedback feedback={routing.feedback} />
@@ -199,19 +204,21 @@ export function GatewayWorkspace({
                 variant="ghost"
                 disabled={saving}
                 onClick={() => setConfirm('reload')}
-                aria-label="重新读取配置"
+                aria-label={t("重新读取配置")}
               >
                 <RotateCcw size={14} />
-                重新读取
+                
+                {t("重新读取")}
               </Button>
               {routing.dirty && (
                 <Button size="sm" variant="outline" disabled={saving} onClick={() => setConfirm('discard')}>
-                  放弃修改
+                  
+                  {t("放弃修改")}
                 </Button>
               )}
               <Button size="sm" disabled={!routing.dirty || saving} onClick={() => void routing.save()}>
                 <Save size={14} />
-                {saving ? '保存中…' : '保存全部修改'}
+                {saving ? t("保存中…") : t("保存全部修改")}
               </Button>
             </div>
           </Panel>
@@ -221,16 +228,17 @@ export function GatewayWorkspace({
         onOpenChange={(open) => {
           if (!open) setConfirm(null);
         }}
-        title={confirm === 'reload' ? '重新读取配置？' : '放弃未保存的修改？'}
+        title={confirm === 'reload' ? t("重新读取配置？") : t("放弃未保存的修改？")}
         description={
           confirm === 'reload'
-            ? '将读取磁盘上的最新配置。如有未保存修改，会被替换；这不会更改已保存的配置。'
-            : '供应商、模型和模型分配将恢复到最近一次读取的配置。此操作不会改写磁盘。'
+            ? t("将读取磁盘上的最新配置。如有未保存修改，会被替换；这不会更改已保存的配置。")
+            : t("供应商、模型和模型分配将恢复到最近一次读取的配置。此操作不会改写磁盘。")
         }
       >
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setConfirm(null)}>
-            继续编辑
+            
+            {t("继续编辑")}
           </Button>
           <Button
             variant={routing.dirty ? 'danger' : 'default'}
@@ -240,7 +248,8 @@ export function GatewayWorkspace({
               setConfirm(null);
             }}
           >
-            确认{confirm === 'reload' ? '重新读取' : '放弃修改'}
+            
+            {t("确认")}{confirm === 'reload' ? t("重新读取") : t("放弃修改")}
           </Button>
         </div>
       </Modal>
