@@ -98,6 +98,33 @@ test('the shell is a window over a server, not a bundler of the page', () => {
   assert.deepEqual(config.app.windows, [], 'the window is created in code, after the server listens');
 });
 
+test('the installer bundles a self-contained capability tree, not a page', () => {
+  // A user who downloads one DMG/exe gets a working GUI: the installer must carry
+  // the capability tree (scripts, config, built UI, node) as a Tauri resource. The
+  // frontendDist stays the small placeholder — the window loads the served page.
+  const config = JSON.parse(read('tauri.conf.json'));
+  assert.equal(config.bundle.resources['bundle/runtime/'], 'bundle/runtime/',
+    'bundle.resources must embed the staged capability tree at bundle/runtime');
+  assert.equal(config.build.frontendDist, 'resources',
+    'frontendDist stays the placeholder; the served page is not a static export');
+
+  const sidecar = read(path.join('src', 'sidecar.rs'));
+  assert.ok(sidecar.includes('pub const BUNDLE_RUNTIME_REL: &str = "bundle/runtime"'),
+    'the Rust side must agree on the resource-relative path');
+  assert.ok(sidecar.includes('pub fn bundled_node('),
+    'the Rust side must resolve the bundled Node runtime relative to the install root');
+  assert.ok(sidecar.includes('bundle/runtime'), 'sidecar documents the staged tree shape');
+
+  const lib = read(path.join('src', 'lib.rs'));
+  assert.ok(lib.includes('app.path().resource_dir()'),
+    'the install root must come from Tauri resource_dir (platform-specific), not a guessed exe path');
+  assert.ok(/node_binary\(\s*\w+\s*\)/.test(lib) && !/node_binary\(\)/.test(lib),
+    'the shell must pass the install root to node_binary so it can find the bundled Node');
+
+  const wf = readFileSync(path.join(ROOT, '.github', 'workflows', 'desktop-release.yml'), 'utf8');
+  assert.match(wf, /prepare-desktop-bundle\.mjs/, 'CI must stage the tree before bundling');
+});
+
 test('the desktop release workflow is isolated from the CLI release channel', () => {
   // A `v*` tag owns the CLI release (full regression). The desktop workflow must
   // only fire on `desktop-v*`, or one tag would publish two unrelated products.

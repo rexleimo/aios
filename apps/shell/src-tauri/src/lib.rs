@@ -81,8 +81,17 @@ fn declared_root() -> Option<PathBuf> {
     std::env::var_os("AIOS_SHELL_ROOT").map(PathBuf::from)
 }
 
-fn node_binary() -> String {
-    std::env::var(sidecar::NODE_ENV).unwrap_or_else(|_| String::from("node"))
+fn node_binary(install_root: &Path) -> String {
+    if let Ok(declared) = std::env::var(sidecar::NODE_ENV) {
+        return declared;
+    }
+    // A self-contained bundle carries its own Node so the user needs no runtime
+    // installed. A dev checkout has no bundled binary and falls back to PATH.
+    let bundled = sidecar::bundled_node(install_root);
+    if bundled.is_file() {
+        return bundled.to_string_lossy().into_owned();
+    }
+    String::from("node")
 }
 
 fn volatile_work_dir() -> PathBuf {
@@ -107,7 +116,7 @@ fn ensure_server(install_root: &Path, port: u16) -> Result<ServerHandle, String>
     std::fs::create_dir_all(&work_dir)
         .map_err(|error| format!("cannot create the working directory {work_dir:?}: {error}"))?;
 
-    let mut command = Command::new(node_binary());
+    let mut command = Command::new(node_binary(install_root));
     command
         .args(sidecar::server_args(install_root, port))
         .current_dir(&work_dir)
@@ -141,49 +150,61 @@ fn ensure_server(install_root: &Path, port: u16) -> Result<ServerHandle, String>
     ))
 }
 
+/// Resolve the capability tree from a list of candidates, first one holding the
+/// launcher wins. Kept separate from `run()` so the ordering itself is testable.
+fn resolve_root(candidates: &[PathBuf]) -> Option<PathBuf> {
+    candidates.iter().find(|dir| sidecar::script_path(dir).is_file()).cloned()
+}
+
 /// Entry point shared by `main.rs` and the mobile targets.
 pub fn run() {
     let port = sidecar::resolve_port(std::env::var(sidecar::PORT_ENV).ok().as_deref());
-    let start = declared_root()
-        .or_else(|| std::env::current_dir().ok())
-        .unwrap_or_default();
-
-    let Some(root) = install_root(&start) else {
-        fail(&format!(
-            "the capability process is not reachable from {start:?}: no {} found in it or any parent",
-            sidecar::UI_SCRIPT_REL
-        ));
-    };
-
-    let server = match ensure_server(&root, port) {
-        Ok(server) => server,
-        Err(reason) => fail(&reason),
-    };
-    let owns_process = server.owns_process();
-
-    // The token is minted by whoever runs the server, so it is read after the server
-    // answers. No token means no gate, and no gate means no window: showing the page
-    // anyway would make the boundary optional.
-    let published = sidecar::token_path(port, &std::env::temp_dir());
-    let Some(token) = sidecar::read_token(
-        std::env::var(sidecar::TOKEN_ENV).ok().as_deref(),
-        &published,
-    ) else {
-        fail(&format!(
-            "the capability process published no token at {published:?}; refusing to open an ungated page"
-        ));
-    };
-    let url = sidecar::bootstrap_url(port, &token);
 
     let built = tauri::Builder::default()
-        .manage(server)
         .setup(move |app| {
+            // Three entry points, one rule: declared override > self-contained bundle
+            // > a plain checkout. Tauri owns the platform-specific resource path
+            // (Windows exe dir, macOS ../Resources, Linux /usr/lib/<name>), so asking
+            // `app.path()` is the only correct way to find the bundled tree.
+            let mut candidates: Vec<PathBuf> = Vec::new();
+            if let Some(declared) = declared_root() {
+                candidates.push(declared);
+            }
+            if let Ok(resources) = app.path().resource_dir() {
+                candidates.push(resources.join(sidecar::BUNDLE_RUNTIME_REL));
+            }
+            if let Some(cwd) = std::env::current_dir().ok() {
+                if let Some(found) = install_root(&cwd) {
+                    candidates.push(found);
+                }
+            }
+            let root = resolve_root(&candidates).ok_or_else(|| {
+                std::io::Error::other(format!(
+                    "the capability process is not reachable: no {} found in the declared root, the bundle resources, or the working directory",
+                    sidecar::UI_SCRIPT_REL
+                ))
+            })?;
+
+            let server = ensure_server(&root, port).map_err(std::io::Error::other)?;
+            app.manage(server);
+
+            // The token is minted by whoever runs the server, so it is read after the
+            // server answers. No token means no gate, and no gate means no window.
+            let published = sidecar::token_path(port, &std::env::temp_dir());
+            let token = sidecar::read_token(
+                std::env::var(sidecar::TOKEN_ENV).ok().as_deref(),
+                &published,
+            ).ok_or_else(|| {
+                std::io::Error::other(format!(
+                    "the capability process published no token at {published:?}; refusing to open an ungated page"
+                ))
+            })?;
+            let url = sidecar::bootstrap_url(port, &token);
             let target: tauri::Url = url
                 .parse()
-                .map_err(|error| format!("invalid capability URL {url}: {error}"))?;
+                .map_err(|error| std::io::Error::other(format!("invalid capability URL {url}: {error}")))?;
             WebviewWindowBuilder::new(app, "main", WebviewUrl::External(target))
                 .title("AIOS")
-                // 窗口/任务栏图标：bundle.icon 只管安装包文件图标，运行时窗口图标要显式设。
                 .icon(include_image!("icons/32x32.png"))?
                 .inner_size(1280.0, 860.0)
                 .min_inner_size(900.0, 600.0)
@@ -197,13 +218,35 @@ pub fn run() {
         Err(error) => fail(&format!("cannot build the shell: {error}")),
     };
 
-    app.run(move |app_handle, event| {
+    app.run(move |_app_handle, event| {
         if let RunEvent::Exit = event {
-            if owns_process {
-                app_handle.state::<ServerHandle>().stop();
+            // ServerHandle is managed; stop() is a no-op when we did not start it.
+            if let Some(state) = _app_handle.try_state::<ServerHandle>() {
+                state.stop();
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_first_candidate_holding_the_launcher_wins() {
+        let base = std::env::temp_dir().join(format!("aios-root-test-{}", std::process::id()));
+        let declared = base.join("declared");
+        let bundled = base.join("bundled");
+        let script = sidecar::script_path(&bundled);
+        std::fs::create_dir_all(script.parent().unwrap()).unwrap();
+        std::fs::write(&script, "// fixture\n").unwrap();
+
+        // A declared path that exists but is not a capability tree is skipped.
+        std::fs::create_dir_all(&declared).unwrap();
+        assert_eq!(resolve_root(&[declared.clone(), bundled.clone()]), Some(bundled));
+        assert_eq!(resolve_root(&[declared]), None);
+        std::fs::remove_dir_all(&base).ok();
+    }
 }
 
 /// A GUI process has no terminal to read, so the reason goes to stderr *and* the

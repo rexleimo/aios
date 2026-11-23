@@ -84,6 +84,23 @@ pub fn script_path(install_root: &Path) -> PathBuf {
     install_root.join(UI_SCRIPT_REL)
 }
 
+/// The capability tree a self-contained desktop bundle carries, relative to the
+/// directory the Tauri resources are unpacked into. `prepare-desktop-bundle.mjs`
+/// stages exactly this shape and declares it in `tauri.conf.json#bundle.resources`.
+/// Tauri resolves the resource base per platform (`app.path().resource_dir()`); this
+/// crate only knows the relative name, never the platform layout.
+pub const BUNDLE_RUNTIME_REL: &str = "bundle/runtime";
+
+/// The Node runtime a self-contained bundle carries, relative to the install root.
+/// Kept here so the shell never hard-codes a platform-specific binary name.
+pub fn bundled_node(install_root: &Path) -> PathBuf {
+    #[cfg(windows)]
+    let name = "node.exe";
+    #[cfg(not(windows))]
+    let name = "node";
+    install_root.join("bin").join(name)
+}
+
 /// Arguments for `scripts/aios-ui.mjs`: the mode, then the declared port.
 ///
 /// `start` rather than `dev`: the shell serves what `next build` produced, so the
@@ -229,6 +246,13 @@ mod tests {
         assert_eq!(resolve_work_dir(&root(), &Path::new(""), &volatile), volatile);
         let outside = PathBuf::from("C:\\Users\\me\\AppData\\Local\\Temp\\aios-shell");
         assert_eq!(resolve_work_dir(&root(), &outside, &volatile), outside);
+    }
+
+    #[test]
+    fn the_bundled_node_is_platform_specific_and_relative_to_the_root() {
+        let expected = if cfg!(windows) { "node.exe" } else { "node" };
+        assert_eq!(bundled_node(&root()).file_name().unwrap(), std::ffi::OsStr::new(expected));
+        assert_eq!(bundled_node(&root()).parent().unwrap(), root().join("bin"));
     }
 
     #[test]
