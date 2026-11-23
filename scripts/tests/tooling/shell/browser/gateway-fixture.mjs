@@ -30,7 +30,7 @@ export async function browserRuntime() {
 export async function gatewayFixture(browser, baseUrl, token, options = {}) {
   const { empty = false, configuration, clientResources, gatewayStatus = {}, connectionOverrides = {}, evidenceName, ...contextOptions } = options;
   const evidenceId = String(++fixtureSequence).padStart(3, '0');
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, ...contextOptions });
+  const context = await browser.newContext({ locale: 'zh-CN', viewport: { width: 1440, height: 1000 }, ...contextOptions });
   await context.addCookies([{ name: 'aios_ui_token', value: token, url: baseUrl, httpOnly: true, sameSite: 'Strict' }]);
   const page = await context.newPage();
   page.setDefaultTimeout(15_000);

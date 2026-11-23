@@ -78,7 +78,7 @@ async function boundaryPage(t, name, initialAge, hydrationAge) {
   const port = server.address().port;
   assert.notEqual(port, 3126);
   const baseUrl = `http://127.0.0.1:${port}`;
-  const context = await browser.newContext();
+  const context = await browser.newContext({ locale: 'zh-CN' });
   const page = await context.newPage();
   page.setDefaultTimeout(15_000);
   page.on('pageerror', error => errors.push(error.message));
