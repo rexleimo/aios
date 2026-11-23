@@ -4,10 +4,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const PLUGIN_VIEWS_PATH = path.join('.aios', 'gateway', 'plugin-views.json');
+import { stateDir } from './state-root.mjs';
+
+const PLUGIN_VIEWS_PATH = path.join('gateway', 'plugin-views.json');
 
 export function loadPluginPanelViews({ rootDir, readFileImpl = fs.readFileSync } = {}) {
-  const filePath = path.join(rootDir, PLUGIN_VIEWS_PATH);
+  const filePath = path.join(stateDir(rootDir), PLUGIN_VIEWS_PATH);
   if (!fs.existsSync(filePath)) return { views: [], failed: [] };
   const doc = JSON.parse(String(readFileImpl(filePath, 'utf8')).replace(/^\uFEFF/u, ''));
   const views = Array.isArray(doc?.views) ? doc.views : [];

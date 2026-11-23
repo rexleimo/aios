@@ -5,7 +5,16 @@
 // 所以这个界面不是任意目录读取器；不在清单里的 key 一律退回默认根并如实说明原因。
 import { collectConsoleFacts, CONSOLE_FACTS_KIND } from './data/console-facts.mjs';
 import { repoRoot } from './data/capability.mjs';
-import { resolveWorkspace } from './config/workspaces.mjs';
+import { resolveWorkspace, loadWorkspaces } from './config/workspaces.mjs';
+import { isBundledRoot } from './data/state-root.mjs';
+
+/** Pick the user's most recently active registered workspace, never a missing path. */
+export function chooseDefaultRoot(defaultRoot, workspaces = []) {
+  const usable = workspaces.filter((item) => item?.path && !item.missing);
+  usable.sort((a, b) => String(b.lastActivityAt ?? b.registeredLastSeenAt ?? '')
+    .localeCompare(String(a.lastActivityAt ?? a.registeredLastSeenAt ?? '')));
+  return usable[0]?.path ?? defaultRoot;
+}
 
 /**
  * @param {{ ws?: string | null }} searchParams
@@ -15,14 +24,23 @@ export async function collectForRequest(searchParams = {}) {
   const requested = String(searchParams.ws ?? '').trim();
   const defaultRoot = repoRoot();
   if (!requested) {
-    return { facts: await collectConsoleFacts({ rootDir: defaultRoot }), selection: { requested: '', ok: true } };
+    // Installed bundle: its own root is product code, not a user project. Start
+    // from the most recently used registered workspace so memory, sessions and
+    // projects come from the user's machine. Reuse the list for the facts call.
+    const list = isBundledRoot(defaultRoot) ? await loadWorkspaces({ rootDir: defaultRoot }) : null;
+    const rootDir = chooseDefaultRoot(defaultRoot, list?.workspaces ?? []);
+    const facts = await collectConsoleFacts({
+      rootDir,
+      ...(list?.ok ? { workspaces: list } : {}),
+    });
+    return { facts, selection: { requested: '', ok: true } };
   }
   const resolved = await resolveWorkspace({ key: requested, rootDir: defaultRoot });
   if (!resolved.ok) {
     // 退回默认根，但把「你要的那个工作区没被采用，原因是 X」带在 selection 里给界面说出去。
     // 静默退回会被读成「那个工程是空的」，那是假话。
     const facts = await collectConsoleFacts({ rootDir: defaultRoot });
-    return { facts, selection: { requested, ok: false, reason: resolved.reason, detail: resolved.detail } };
+    return { facts, selection: { requested, ok: false, reason: resolved.reason ?? undefined, detail: resolved.detail ?? undefined } };
   }
   const facts = await collectConsoleFacts({ rootDir: resolved.workspace.path, workspaces: { ok: true, workspaces: resolved.list.workspaces, scanRoots: resolved.list.scanRoots, error: null } });
   // 中文注释：上一步解析 key 时已经拿过一次清单，这里直接注入，不再跑第二条

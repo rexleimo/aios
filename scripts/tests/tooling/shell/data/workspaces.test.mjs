@@ -13,7 +13,7 @@ import test from 'node:test';
 const { discoverWorkspaces, resolveWorkspaceKey, scanRoots } = await import(
   pathToFileURL(path.resolve(process.cwd(), 'scripts/lib/foundation/workspaces/discover.mjs')).href
 );
-const { workspaceKey, registryRoot, recordWorkspace, listWorkspaces } = await import(
+const { workspaceKey, registryPath, registryRoot, recordWorkspace, listWorkspaces } = await import(
   pathToFileURL(path.resolve(process.cwd(), 'scripts/lib/foundation/workspaces/registry.mjs')).href
 );
 const { listSessions, auditSessionStore } = await import(
@@ -142,9 +142,14 @@ test('the registry honours AIOS_HOME so a test sandbox cannot pollute the real o
   });
 
   assert.equal(registryRoot(), path.join(home, '.aios', 'workspaces'), 'registryRoot 必须认 AIOS_HOME');
+  // A real home may already have a legitimate entry for this repo (same path hash).
+  // Assert it is untouched, not that it is absent — otherwise an existing user
+  // workspace makes this isolation test fail for the wrong reason.
+  const realPath = path.join(os.homedir(), '.aios', 'workspaces', path.basename(registryPath(process.cwd())));
+  const realBefore = fs.existsSync(realPath) ? fs.readFileSync(realPath, 'utf8') : null;
   const written = recordWorkspace({ rootDir: process.cwd() });
   assert.ok(written && written.startsWith(home), `登记项必须落在隔离家目录里，实际：${written}`);
   assert.equal(listWorkspaces().length, 1, '读也必须读同一张隔离后的表');
-  assert.equal(fs.existsSync(path.join(os.homedir(), '.aios', 'workspaces', path.basename(String(written)))), false,
-    '真实家目录里不能因为这条测试长出文件');
+  const realAfter = fs.existsSync(realPath) ? fs.readFileSync(realPath, 'utf8') : null;
+  assert.equal(realAfter, realBefore, '真实家目录里已有的同 key 登记项不能被这条测试改写或新建');
 });

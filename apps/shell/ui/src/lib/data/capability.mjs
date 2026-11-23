@@ -14,6 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { withSnapshotStale } from './snapshot-cache.mjs';
+import { stateEnv } from './state-root.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -121,7 +122,9 @@ export async function runCapabilityJson(args, options = {}) {
       encoding: 'utf8',
       timeout: options.timeoutMs ?? CAPABILITY_TIMEOUT_MS,
       maxBuffer: 32 * 1024 * 1024,
-      env: { ...process.env, AIOS_PROJECT_ROOT: rootDir },
+      // A packaged install runs from Program Files; the CLI must read user state
+      // from the user's home, not from the install tree. Empty for source roots.
+      env: { ...process.env, AIOS_PROJECT_ROOT: rootDir, ...stateEnv(rootDir) },
     });
     result = { status: 0, stdout, stderr, error: null };
   } catch (error) {
@@ -192,7 +195,7 @@ export async function runCapabilityText(args, options = {}) {
       encoding: 'utf8',
       timeout: options.timeoutMs ?? CAPABILITY_TIMEOUT_MS,
       maxBuffer: 16 * 1024 * 1024,
-      env: { ...process.env, AIOS_PROJECT_ROOT: rootDir },
+      env: { ...process.env, AIOS_PROJECT_ROOT: rootDir, ...stateEnv(rootDir) },
     });
     return { ok: true, text: String(stdout).trim(), error: null };
   } catch (error) {

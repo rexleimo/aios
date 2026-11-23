@@ -18,6 +18,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { stateDir } from './state-root.mjs';
+
 export const SESSION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/u;
 export const EVENT_TAIL = 120;
 export const MAX_TEXT = 400;
@@ -31,7 +33,7 @@ export class SessionError extends Error {
 }
 
 export function sessionsDir(root) {
-  return path.join(root, '.aios', 'context-db', 'sessions');
+  return path.join(stateDir(root), 'context-db', 'sessions');
 }
 
 /** Resolve a session directory, refusing anything that could leave the sessions root. */
@@ -187,7 +189,7 @@ export function trashSession(root, id, { now = new Date() } = {}) {
   if (!fs.existsSync(dir)) {
     throw new SessionError(`no such session: ${id}`, { status: 404 });
   }
-  const trashRoot = path.join(root, '.aios', 'context-db', 'sessions-trash');
+  const trashRoot = path.join(stateDir(root), 'context-db', 'sessions-trash');
   const stamp = now.toISOString().replace(/[:.]/g, '-');
   const target = path.join(trashRoot, `${stamp}-${id}`);
   fs.mkdirSync(trashRoot, { recursive: true });

@@ -33,7 +33,7 @@ const TREE = [
   'README.md', 'README-zh.md', 'skills-lock.json',
   'vendor', 'client-sources', 'agent-sources', 'skill-sources', 'rex-harness',
   'config', 'scripts', 'mcp-server', 'src', 'packages/debug-hub',
-  'apps/shell/README.md', UI_REL,
+  'apps/shell/README.md', 'apps/shell/data', UI_REL,
 ];
 
 function parseArgs(argv) {
@@ -106,6 +106,33 @@ export function stageBuiltUi(root, dest, { fsImpl = fs } = {}) {
   return path.relative(dest, path.join(targetUi, '.next', 'BUILD_ID'));
 }
 
+/**
+ * Install the root package's production dependencies inside the staged tree.
+ *
+ * `commander`, `yaml` and friends are imported by `scripts/aios.mjs` and its
+ * command modules. The source repo has them in node_modules, but the bundle
+ * deliberately excludes generated output -- without this step the installed
+ * exe reports ERR_MODULE_NOT_FOUND for every CLI-backed panel (mcp, memory,
+ * workspaces, gateway). Installing from the staged lockfile keeps the bundle
+ * reproducible instead of copying whatever a developer happened to have.
+ */
+export function stageRuntimeDependencies(dest, { spawnImpl = spawnSync } = {}) {
+  const command = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const result = spawnImpl(command, ['ci', '--omit=dev', '--no-audit', '--no-fund'], {
+    cwd: dest,
+    encoding: 'utf8',
+    windowsHide: true,
+    shell: process.platform === 'win32',
+  });
+  if (result.status !== 0) {
+    throw new Error(`[bundle] ${command} ci failed (${result.status}): ${result.stderr || result.stdout}`);
+  }
+  if (!fs.existsSync(path.join(dest, 'node_modules'))) {
+    throw new Error('[bundle] npm ci reported success but produced no node_modules');
+  }
+  return 'node_modules';
+}
+
 /** Place the Node runtime inside the tree; aios-ui.mjs re-execs process.execPath. */
 export function stageNode(dest, nodeBinary, { fsImpl = fs, platform = process.platform } = {}) {
   if (!fsImpl.existsSync(nodeBinary)) throw new Error(`[bundle] node runtime missing: ${nodeBinary}`);
@@ -124,12 +151,14 @@ export function stage({ root = REPO, node = process.execPath } = {}) {
   fs.mkdirSync(dest, { recursive: true });
   buildUi(root, { node });
   const entries = stageTree(root, dest);
+  const depsRel = stageRuntimeDependencies(dest);
   const buildIdRel = stageBuiltUi(root, dest);
   const nodeRel = stageNode(dest, node);
   const manifest = {
     kind: 'aios.desktop-bundle.v1',
     runtime: RUNTIME_REL.replace(/\\/g, '/'),
     entries,
+    deps: depsRel,
     build: buildIdRel.replace(/\\/g, '/'),
     node: nodeRel.replace(/\\/g, '/'),
   };

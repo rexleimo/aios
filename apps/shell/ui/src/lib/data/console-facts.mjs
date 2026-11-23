@@ -18,6 +18,7 @@ import { listSessions, auditSessionStore } from './sessions.mjs';
 import { readMemoEvents, readPinnedMemo } from './memo-store.mjs';
 import { loadPluginPanelViews } from './plugin-contributions.mjs';
 import { runCapabilityJson, repoRoot } from './capability.mjs';
+import { stateDir } from './state-root.mjs';
 
 /** 字面量类型要显式声明：没有这层断言，导出常量会被推成 `string`，页面就没法对齐 `ConsoleFacts`。 */
 export const CONSOLE_FACTS_KIND = /** @type {'aios.console-facts.v1'} */ ('aios.console-facts.v1');
@@ -265,7 +266,7 @@ export async function collectConsoleFacts({ rootDir = repoRoot(), runImpl, works
     sources: [
       { field: 'clients / services / issues', origin: 'node scripts/aios.mjs mcp list --json' },
       { field: 'declaredClients', origin: declared.file },
-      { field: 'sessions / projects', origin: `${path.join(rootDir, '.aios', 'context-db', 'sessions')}` },
+      { field: 'sessions / projects', origin: `${path.join(stateDir(rootDir), 'context-db', 'sessions')}` },
       { field: 'memories', origin: memoResult.ok ? memoResult.value?.file : 'unreadable' },
       { field: 'memoryTotals', origin: 'node scripts/aios.mjs memory report --json' },
       { field: 'workspaces', origin: 'node scripts/aios.mjs workspaces list --json（注册表 ∪ 记忆仓存在性）' },

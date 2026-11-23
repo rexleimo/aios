@@ -15,6 +15,8 @@
 // 2. The port has one declaration. It is `AIOS_UI_PORT`, else the default — and the
 //    default is pinned to `scripts/aios-ui.mjs` by a test, so the two cannot drift.
 use std::ffi::OsString;
+#[cfg(windows)]
+use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use std::net::{Ipv4Addr, SocketAddrV4, TcpStream};
 use std::path::{Component, Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -22,6 +24,23 @@ use std::time::{Duration, Instant};
 /// Must equal `UI_DEFAULT_PORT` in `scripts/aios-ui.mjs`; pinned by
 /// `scripts/tests/tooling/shell/shell-sidecar.test.mjs`.
 pub const DEFAULT_UI_PORT: u16 = 3126;
+
+/// Windows verbatim paths (`\\?\C:\...`) are valid for Rust's file APIs but not
+/// for Node's ESM loader: a script path carrying that prefix makes Node exit 0
+/// with no output, so the shell waits the full startup timeout for a server that
+/// was never started. Tauri's `resource_dir()` is a real source of such paths.
+/// Strip the prefix at this boundary, before any path crosses into the child.
+pub fn plain_path(path: PathBuf) -> PathBuf {
+    #[cfg(windows)]
+    {
+        const VERBATIM: [u16; 4] = [b'\\' as u16, b'\\' as u16, b'?' as u16, b'\\' as u16];
+        let wide: Vec<u16> = path.as_os_str().encode_wide().collect();
+        if wide.starts_with(&VERBATIM) {
+            return PathBuf::from(std::ffi::OsString::from_wide(&wide[VERBATIM.len()..]));
+        }
+    }
+    path
+}
 
 /// The capability-process entry point, relative to the install root.
 pub const UI_SCRIPT_REL: &str = "scripts/aios-ui.mjs";
@@ -81,7 +100,7 @@ pub fn resolve_port(declared: Option<&str>) -> u16 {
 
 /// The server script inside a given install root.
 pub fn script_path(install_root: &Path) -> PathBuf {
-    install_root.join(UI_SCRIPT_REL)
+    plain_path(install_root.join(UI_SCRIPT_REL))
 }
 
 /// The capability tree a self-contained desktop bundle carries, relative to the
@@ -98,7 +117,7 @@ pub fn bundled_node(install_root: &Path) -> PathBuf {
     let name = "node.exe";
     #[cfg(not(windows))]
     let name = "node";
-    install_root.join("bin").join(name)
+    plain_path(install_root.join("bin").join(name))
 }
 
 /// Arguments for `scripts/aios-ui.mjs`: the mode, then the declared port.
@@ -222,6 +241,19 @@ mod tests {
                 OsString::from("3400"),
             ]
         );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn verbatim_resource_paths_are_plain_before_reaching_node() {
+        let verbatim = PathBuf::from(r"\\?\C:\aios");
+        let plain = PathBuf::from(r"C:\aios");
+        // Only the verbatim prefix matters here; `/` vs `\` is normalized by
+        // PathBuf differently for prefixed and plain roots.
+        let norm = |path: PathBuf| path.to_string_lossy().replace('/', "\\");
+        assert_eq!(norm(script_path(&verbatim)), norm(script_path(&plain)));
+        assert_eq!(norm(bundled_node(&verbatim)), norm(bundled_node(&plain)));
+        assert_eq!(norm(PathBuf::from(server_args(&verbatim, 3400)[0].clone())), norm(script_path(&plain)));
     }
 
     #[test]

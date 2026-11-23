@@ -23,6 +23,7 @@
 pub mod job;
 pub mod sidecar;
 
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 
@@ -83,7 +84,9 @@ fn declared_root() -> Option<PathBuf> {
 
 fn node_binary(install_root: &Path) -> String {
     if let Ok(declared) = std::env::var(sidecar::NODE_ENV) {
-        return declared;
+        return sidecar::plain_path(PathBuf::from(declared))
+            .to_string_lossy()
+            .into_owned();
     }
     // A self-contained bundle carries its own Node so the user needs no runtime
     // installed. A dev checkout has no bundled binary and falls back to PATH.
@@ -116,15 +119,36 @@ fn ensure_server(install_root: &Path, port: u16) -> Result<ServerHandle, String>
     std::fs::create_dir_all(&work_dir)
         .map_err(|error| format!("cannot create the working directory {work_dir:?}: {error}"))?;
 
+    // A GUI launch has no terminal, so swallowing the child's stderr turns every
+    // startup failure into an unexplained closing window. Log to temp (not the
+    // child's work dir, which may be the install tree and unwritable) and name
+    // that file in the error the shell does print.
+    let log_path = std::env::temp_dir().join("aios-shell-capability.log");
+    let args = sidecar::server_args(install_root, port);
+    let stderr = match std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+    {
+        Ok(file) => {
+            if let Ok(mut header) = file.try_clone() {
+                let _ = writeln!(header, "[aios-shell] spawn {:?}", args);
+            }
+            Stdio::from(file)
+        }
+        Err(_) => Stdio::null(),
+    };
+
     let mut command = Command::new(node_binary(install_root));
     command
-        .args(sidecar::server_args(install_root, port))
+        .args(&args)
         .current_dir(&work_dir)
         .stdout(Stdio::null())
-        .stderr(Stdio::null());
+        .stderr(stderr);
 
-    let child = job::spawn_supervised(&mut command)
-        .map_err(|error| format!("cannot start the capability process: {error}"))?;
+    let child = job::spawn_supervised(&mut command).map_err(|error| {
+        format!("cannot start the capability process: {error} (stderr log: {log_path:?})")
+    })?;
     let guard = job::ProcessGuard::adopt(&child);
     if !guard.is_supervised() {
         // Not fatal: the window still works. It is fatal to the *promise* that a
@@ -145,7 +169,7 @@ fn ensure_server(install_root: &Path, port: u16) -> Result<ServerHandle, String>
         return Ok(handle);
     }
     Err(format!(
-        "the capability process did not listen on {address} within {:?}",
+        "the capability process did not listen on {address} within {:?} (stderr log: {log_path:?})",
         sidecar::STARTUP_TIMEOUT
     ))
 }

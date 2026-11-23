@@ -9,6 +9,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { stateDir } from './state-root.mjs';
+
 export const MEMO_SCHEMA_VERSION = 1;
 /** 单条正文的显示上限：一条 memo 可以上千字，首屏不需要整份。 */
 export const MEMO_EXCERPT_CHARS = 220;
@@ -16,11 +18,11 @@ export const MEMO_EXCERPT_CHARS = 220;
 export const MEMO_MAX_ROWS = 200;
 
 export function memoEventsPath(rootDir) {
-  return path.join(rootDir, '.aios', 'memo', 'file', 'events.jsonl');
+  return path.join(stateDir(rootDir), 'memo', 'file', 'events.jsonl');
 }
 
 export function memoPinnedPath(rootDir) {
-  return path.join(rootDir, '.aios', 'memo', 'file', 'pinned', 'default.md');
+  return path.join(stateDir(rootDir), 'memo', 'file', 'pinned', 'default.md');
 }
 
 function excerpt(text) {

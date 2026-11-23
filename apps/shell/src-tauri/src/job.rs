@@ -200,6 +200,18 @@ pub fn spawn_supervised(command: &mut std::process::Command) -> std::io::Result<
 
 #[cfg(not(unix))]
 pub fn spawn_supervised(command: &mut std::process::Command) -> std::io::Result<Child> {
+    #[cfg(windows)]
+    {
+        // The shell is a GUI process: no console to inherit. Without this flag
+        // Windows creates a visible console for the capability process, so a
+        // desktop-shortcut launch flashes a black "node.exe / next-server"
+        // window before the actual UI appears. CREATE_NO_WINDOW keeps the child
+        // (and its own children) off the desktop while stderr still goes to the
+        // file the caller configured.
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
     command.spawn()
 }
 

@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { stageTree, stageNode, stageBuiltUi } from '../../../../../scripts/prepare-desktop-bundle.mjs';
+import { stageTree, stageNode, stageBuiltUi, stageRuntimeDependencies } from '../../../../../scripts/prepare-desktop-bundle.mjs';
 
 function fixtureRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-stage-fixture-'));
@@ -19,7 +19,7 @@ function fixtureRoot() {
     'README.md', 'README-zh.md', 'skills-lock.json',
     'vendor', 'client-sources', 'agent-sources', 'skill-sources', 'rex-harness',
     'config', 'scripts', 'mcp-server', 'src', 'packages/debug-hub',
-    'apps/shell/README.md', 'apps/shell/ui',
+    'apps/shell/README.md', 'apps/shell/data', 'apps/shell/ui',
   ]) {
     const target = path.join(root, rel);
     fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -41,6 +41,8 @@ test('staging copies the whole capability tree and drops generated output', () =
   assert.ok(fs.existsSync(path.join(dest, 'scripts')));
   assert.ok(fs.existsSync(path.join(dest, 'config')));
   assert.ok(fs.existsSync(path.join(dest, 'apps', 'shell', 'ui')));
+  assert.ok(fs.existsSync(path.join(dest, 'apps', 'shell', 'data')),
+    'console data loaders must exist in the installed tree');
   assert.equal(fs.existsSync(path.join(dest, 'apps', 'shell', 'ui', '.next')), false,
     '.next is rebuilt in CI and must not be copied from the source tree');
   fs.rmSync(root, { recursive: true, force: true });
@@ -73,6 +75,29 @@ test('the freshly built UI is copied in, and a missing build fails loudly', () =
   assert.throws(() => stageBuiltUi(empty, path.join(empty, 'staged')), /UI build did not produce/);
   fs.rmSync(root, { recursive: true, force: true });
   fs.rmSync(empty, { recursive: true, force: true });
+});
+
+test('production dependencies are installed inside the staged tree', () => {
+  const root = fixtureRoot();
+  const dest = path.join(root, 'staged');
+  fs.mkdirSync(dest, { recursive: true });
+  let seen = null;
+  const spawnImpl = (command, args, options) => {
+    seen = { command, args, options };
+    fs.mkdirSync(path.join(options.cwd, 'node_modules', 'commander'), { recursive: true });
+    return { status: 0, stdout: '', stderr: '' };
+  };
+  assert.equal(stageRuntimeDependencies(dest, { spawnImpl }), 'node_modules');
+  assert.match(seen.command, /^npm/);
+  assert.deepEqual(seen.args.slice(0, 2), ['ci', '--omit=dev']);
+  assert.equal(seen.options.cwd, dest);
+  assert.ok(fs.existsSync(path.join(dest, 'node_modules', 'commander')));
+
+  assert.throws(
+    () => stageRuntimeDependencies(dest, { spawnImpl: () => ({ status: 1, stdout: '', stderr: 'ENOTFOUND' }) }),
+    /ci failed/,
+  );
+  fs.rmSync(root, { recursive: true, force: true });
 });
 
 test('the bundled node is placed at bin/node and refuses a missing runtime', () => {
