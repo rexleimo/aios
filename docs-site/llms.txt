@@ -67,7 +67,7 @@ AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, 
 
 ## Blog
 
-- v8.1.0 release post not yet published — see https://cli.rexai.top/changelog/
+- https://cli.rexai.top/blog/2026-11-v810-console-speaks-your-language/ — v8.1.0: The Console Speaks Your Language
 - https://cli.rexai.top/blog/2026-11-v800-official-site/ — v8.0.0: One Visual Language for Site, Docs and Blog
 - https://cli.rexai.top/blog/2026-11-v710-console-and-mcp/ — v7.1.0: One Console Interface and Shared MCP Configuration
 - https://cli.rexai.top/blog/2026-10-v700-grill-readiness/ — v7.0.0: Grill Must Resolve Critical Unknowns Before Implementation

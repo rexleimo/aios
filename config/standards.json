@@ -650,7 +650,7 @@
       },
       {
         "path": "apps/shell/ui/src/lib/data",
-        "count": 11
+        "count": 12
       },
       {
         "path": "scripts/lib/clients/native/distribution/emitters",
@@ -682,7 +682,7 @@
       },
       {
         "path": "scripts/tests/tooling/shell/data",
-        "count": 15
+        "count": 17
       },
       {
         "path": "scripts/tests/tooling/shell/interface",

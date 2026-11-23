@@ -1,9 +1,9 @@
 // Shared translation seam for every Console module, including non-React data
 // helpers. The current locale is set by the client provider and by the server
 // layout before children render, so t() always reflects the active language.
-import en from './catalogs/en.json';
-import ja from './catalogs/ja.json';
-import zhCN from './catalogs/zh-CN.json';
+import en from './catalogs/en.json' with { type: 'json' };
+import ja from './catalogs/ja.json' with { type: 'json' };
+import zhCN from './catalogs/zh-CN.json' with { type: 'json' };
 import { interpolate } from './interpolate.mjs';
 import { DEFAULT_LOCALE, LOCALE_COOKIE, resolveLocale } from './locales.mjs';
 

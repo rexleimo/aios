@@ -15,7 +15,9 @@
     "scripts/tests/tooling/plugins/plugin-demo.test.mjs",
     "scripts/tests/tooling/plugins/provider-adapter.test.mjs",
     "scripts/tests/tooling/plugins/registry-core.test.mjs",
+    "scripts/tests/tooling/shell/data/console-facts-request.test.mjs",
     "scripts/tests/tooling/shell/data/gateway-setup-guide.test.mjs",
+    "scripts/tests/tooling/shell/data/state-root.test.mjs",
     "scripts/tests/tooling/shell/desktop/desktop-release-version.test.mjs"
   ],
   "knownNotInCi": [
@@ -30,7 +32,9 @@
     "scripts/tests/tooling/plugins/plugin-demo.test.mjs",
     "scripts/tests/tooling/plugins/provider-adapter.test.mjs",
     "scripts/tests/tooling/plugins/registry-core.test.mjs",
+    "scripts/tests/tooling/shell/data/console-facts-request.test.mjs",
     "scripts/tests/tooling/shell/data/gateway-setup-guide.test.mjs",
+    "scripts/tests/tooling/shell/data/state-root.test.mjs",
     "scripts/tests/tooling/shell/desktop/desktop-release-version.test.mjs"
   ]
 }
