@@ -53,6 +53,10 @@ jobs:
         shell: bash
         run: node scripts/desktop-release-version.mjs "${GITHUB_REF_NAME}"
 
+      - name: Install Console UI dependencies
+        shell: bash
+        run: npm ci --prefix apps/shell/ui
+
       - name: Stage self-contained capability tree
         shell: bash
         run: node scripts/prepare-desktop-bundle.mjs
