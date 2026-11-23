@@ -8,6 +8,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [8.0.0] - 2026-11-21
 
 - feat(site): magpie-style official site with localized docs/blog and gateway workspace
+- feat(gui): Console UI source ships in the CLI archive; `aios-install.sh` / `.ps1` run `npm ci` + `next build` so a download-and-install gets a working `aios ui` and desktop shell. `apps/shell/ui/` is no longer declared not-shipped (ADR 0007 / ADR 0008).
+- docs: desktop installers are published from the separate `desktop-v8.0.0` tag (`.github/workflows/desktop-release.yml`); the CLI release is `v8.0.0`.
 
 ## [7.2.0] - 2026-11-07
 

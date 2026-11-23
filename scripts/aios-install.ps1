@@ -436,6 +436,22 @@ try {
     Write-Host ("[warn] missing root package.json; TUI dependencies may be unavailable: {0}" -f $rootPackageJson)
   }
 
+  # Console UI 随 CLI 包发布；装完根依赖后在这里把它变成可用的 GUI。
+  # AIOS_SKIP_UI=1 供无网络/纯 CLI 场景显式跳过；跳过时如实告知，不假装 GUI 可用。
+  $uiRoot = Join-Path $InstallDir "apps/shell/ui"
+  $uiPackage = Join-Path $uiRoot "package.json"
+  $uiLauncher = Join-Path $InstallDir "scripts/aios-ui.mjs"
+  if ((Test-Path -LiteralPath $uiPackage) -and (Test-Path -LiteralPath $uiLauncher)) {
+    if ($env:AIOS_SKIP_UI -eq "1") {
+      Write-Host "[info] AIOS_SKIP_UI=1; Console UI not built (aios ui will ask you to run ui:setup)"
+    } else {
+      Write-Host "+ install Console UI deps: npm ci --prefix $uiRoot"
+      Invoke-Checked -Command "npm" -Arguments @("ci", "--prefix", $uiRoot, "--engine-strict=false")
+      Write-Host "+ build Console UI: node scripts/aios-ui.mjs build"
+      Invoke-Checked -Command "node" -Arguments @($uiLauncher, "build", "--root", $InstallDir)
+    }
+  }
+
   $shellInstaller = Join-Path $InstallDir "scripts/install-contextdb-shell.ps1"
   if (Test-Path -LiteralPath $shellInstaller) {
     Write-Host "+ install PowerShell integration: $shellInstaller --mode $WrapMode --force"

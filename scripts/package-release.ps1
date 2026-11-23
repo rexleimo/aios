@@ -82,6 +82,8 @@ try {
     "mcp-server",
     "packages/debug-hub",
     "src",
+    "apps/shell/README.md",
+    "apps/shell/ui",
     ".claude/agents",
     ".codex/agents",
     ".opencode/agents",
@@ -152,6 +154,17 @@ try {
   $mcpDistArchive = Join-Path $extractDir "aios/mcp-server/dist"
   if (Test-Path -LiteralPath $mcpDistArchive) {
     Remove-Item -LiteralPath $mcpDistArchive -Recurse -Force
+  }
+
+  # Console UI build output is generated at install time, never shipped. The real
+  # worktree ignores it, but a fixture or a forced add can still put it in git.
+  $uiNextArchive = Join-Path $extractDir "aios/apps/shell/ui/.next"
+  if (Test-Path -LiteralPath $uiNextArchive) {
+    Remove-Item -LiteralPath $uiNextArchive -Recurse -Force
+  }
+  $uiTsbuildInfoArchive = Join-Path $extractDir "aios/apps/shell/ui/tsconfig.tsbuildinfo"
+  if (Test-Path -LiteralPath $uiTsbuildInfoArchive) {
+    Remove-Item -LiteralPath $uiTsbuildInfoArchive -Force
   }
 
   # Generated client projections and retired workflow code are materialized at install time.

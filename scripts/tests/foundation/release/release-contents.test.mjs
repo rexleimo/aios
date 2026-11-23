@@ -104,3 +104,18 @@ test('this repository declares every tree its contracts name but does not ship',
   const result = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8', cwd: REPO });
   assert.equal(result.status, 0, result.stderr);
 });
+
+test('the Console UI tree is shipped, not declared not-shipped', () => {
+  // A stale exclusion would hide a missing GUI from the gate: DESIGN.md names
+  // apps/shell/ui/**, so the archive has to carry it instead of declaring it
+  // repo-only. Pin the declaration so the two cannot drift apart again.
+  const declaration = JSON.parse(
+    fs.readFileSync(path.join(REPO, 'config', 'release-contents.json'), 'utf8'),
+  );
+  const excluded = [...(declaration.notShipped ?? []), ...(declaration.upstream ?? [])];
+  assert.equal(
+    excluded.some((entry) => typeof entry.prefix === 'string' && entry.prefix.startsWith('apps/')),
+    false,
+    'apps/ is now shipped in the CLI archive; remove its not-shipped declaration',
+  );
+});

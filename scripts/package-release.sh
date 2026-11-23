@@ -113,6 +113,10 @@ release_paths=(
   vendor
   client-sources agent-sources skill-sources rex-harness
   config scripts mcp-server src packages/debug-hub
+  # 中文注释：Console UI 源码随 CLI 包发布。安装器在装完根依赖后跑 npm ci + next build，
+  # 于是「下载即用」的用户拿到 GUI，而不是只拿到一个指向不存在目录的 aios ui 命令。
+  # src-tauri 桌面壳仍走独立的 desktop-v* 产物，不塞进 CLI 包。
+  apps/shell/README.md apps/shell/ui
 )
 
 # Client roots are local generated projections. Shipping them would reintroduce
@@ -160,6 +164,8 @@ mkdir -p "$tar_stage/aios"
     --exclude='.aios' \
     --exclude='*.pyc' \
     --exclude='.DS_Store' \
+    --exclude='apps/shell/ui/.next' \
+    --exclude='apps/shell/ui/tsconfig.tsbuildinfo' \
     "${existing_release_paths[@]}" | (cd "$tar_stage/aios" && tar -xf -)
 )
 if [[ ! -f "$tar_stage/aios/rex-harness/src/index.mjs" ]]; then
@@ -190,7 +196,7 @@ else
     cd "$tar_stage"
     "$ZIP_BIN" -r "$OUT_DIR/aios.zip" \
       aios \
-      -x '*.pyc' -x '*/__pycache__/*' -x '*/node_modules/*' -x '*/mcp-server/.npm-cache/*' -x '*/scripts/lib/tooling/components/superpowers' -x '*/scripts/lib/tooling/components/superpowers/*' -x '*/mcp-server/dist' -x '*/mcp-server/dist/*' -x '*/.git/*' -x '*/rex-harness/.git/*' -x '*/.aios/*' -x '*/.mypy_cache/*' -x '*/.DS_Store'
+      -x '*.pyc' -x '*/__pycache__/*' -x '*/node_modules/*' -x '*/mcp-server/.npm-cache/*' -x '*/scripts/lib/tooling/components/superpowers' -x '*/scripts/lib/tooling/components/superpowers/*' -x '*/mcp-server/dist' -x '*/mcp-server/dist/*' -x '*/.git/*' -x '*/rex-harness/.git/*' -x '*/.aios/*' -x '*/.mypy_cache/*' -x '*/.DS_Store' -x '*/apps/shell/ui/.next/*' -x '*/apps/shell/ui/tsconfig.tsbuildinfo'
   )
 fi
 if [[ ! -s "$OUT_DIR/aios.zip" ]]; then

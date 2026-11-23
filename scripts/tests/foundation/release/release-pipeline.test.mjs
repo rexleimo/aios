@@ -102,6 +102,14 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'packages/debug-hub/dist/cli.js', '#!/usr/bin/env node\n');
   await writeFixtureFile(rootDir, 'packages/debug-hub/dist/server.js', 'export const server = true;\n');
   await writeFixtureFile(rootDir, 'packages/debug-hub/dist/ui.html', '<!doctype html>\n');
+  // Console UI ships in the CLI archive so a downloaded install can build it.
+  await writeFixtureFile(rootDir, 'apps/shell/README.md', '# Console fixture\n');
+  await writeFixtureFile(rootDir, 'apps/shell/ui/package.json', '{"name":"fixture-shell-ui","private":true,"scripts":{"build":"node -e \\\"process.exit(0)\\\""}}\n');
+  await writeFixtureFile(rootDir, 'apps/shell/ui/package-lock.json', '{"name":"fixture-shell-ui","lockfileVersion":3,"packages":{}}\n');
+  await writeFixtureFile(rootDir, 'apps/shell/ui/src/app/page.tsx', 'export default function Page() { return null; }\n');
+  // Generated build output must never be shipped: installers build it on the user's machine.
+  await writeFixtureFile(rootDir, 'apps/shell/ui/.next/BUILD_ID', 'stale-fixture-build\n');
+  await writeFixtureFile(rootDir, 'apps/shell/ui/tsconfig.tsbuildinfo', '{}\n');
   await writeFixtureFile(rootDir, 'skill-sources/sample-skill/SKILL.md', '# canonical\n');
   await writeFixtureFile(rootDir, 'client-sources/native-base/gemini/project/AIOS.md', '# native gemini\n');
   // A stale ignored directory must never leak an obsolete workflow into a release archive.
@@ -238,6 +246,25 @@ test('package-release emits stable assets including the rex-harness planning ker
       `aios.tar.gz did not include ${relativePath}`
     );
   }
+  for (const relativePath of [
+    'apps/shell/README.md',
+    'apps/shell/ui/package.json',
+    'apps/shell/ui/package-lock.json',
+    'apps/shell/ui/src/app/page.tsx',
+  ]) {
+    await assertFileExists(
+      path.join(extractDir, 'aios', relativePath),
+      `aios.tar.gz did not include ${relativePath} (Console UI must ship for download-and-install)`
+    );
+  }
+  await assertFileMissing(
+    path.join(extractDir, 'aios', 'apps', 'shell', 'ui', '.next'),
+    'aios.tar.gz must not ship generated Console UI .next output'
+  );
+  await assertFileMissing(
+    path.join(extractDir, 'aios', 'apps', 'shell', 'ui', 'tsconfig.tsbuildinfo'),
+    'aios.tar.gz must not ship generated Console UI tsconfig.tsbuildinfo'
+  );
   await assertFileMissing(
     path.join(extractDir, 'aios', 'mcp-server', 'dist'),
     'aios.tar.gz must not include generated mcp-server/dist output'
@@ -304,6 +331,25 @@ test('package-release emits stable assets including the rex-harness planning ker
       `aios.zip did not include ${relativePath}`
     );
   }
+  for (const relativePath of [
+    'apps/shell/README.md',
+    'apps/shell/ui/package.json',
+    'apps/shell/ui/package-lock.json',
+    'apps/shell/ui/src/app/page.tsx',
+  ]) {
+    await assertFileExists(
+      path.join(zipExtractDir, 'aios', relativePath),
+      `aios.zip did not include ${relativePath} (Console UI must ship for download-and-install)`
+    );
+  }
+  await assertFileMissing(
+    path.join(zipExtractDir, 'aios', 'apps', 'shell', 'ui', '.next'),
+    'aios.zip must not ship generated Console UI .next output'
+  );
+  await assertFileMissing(
+    path.join(zipExtractDir, 'aios', 'apps', 'shell', 'ui', 'tsconfig.tsbuildinfo'),
+    'aios.zip must not ship generated Console UI tsconfig.tsbuildinfo'
+  );
   await assertFileMissing(
     path.join(zipExtractDir, 'aios', 'mcp-server', 'dist'),
     'aios.zip must not include generated mcp-server/dist output'
@@ -400,6 +446,13 @@ test('one-liner installers bootstrap root runtime dependencies for direct releas
   assert.match(installSh, /--client all --scope global/);
   assert.match(installPs1, /--client", "all", "--scope", "global"/);
   assert.match(installSh, /workflow_reconcile_args=\(--root "\$AIOS_INSTALL_DIR"\)/);
+  // Console UI is built at install time from the source the archive ships.
+  assert.match(installSh, /npm ci --prefix "\$ui_root"/);
+  assert.match(installSh, /node "\$ui_launcher" build --root "\$AIOS_INSTALL_DIR"/);
+  assert.match(installSh, /AIOS_SKIP_UI/);
+  assert.match(installPs1, /npm" -Arguments @\("ci", "--prefix", \$uiRoot/);
+  assert.match(installPs1, /\$uiLauncher, "build", "--root", \$InstallDir/);
+  assert.match(installPs1, /AIOS_SKIP_UI/);
   assert.doesNotMatch(installSh, /superpowers/iu);
   assert.doesNotMatch(installPs1, /superpowers/iu);
 });

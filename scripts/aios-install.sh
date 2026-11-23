@@ -226,6 +226,22 @@ else
   echo "[warn] missing root package.json; TUI dependencies may be unavailable: $root_package_json" >&2
 fi
 
+# Console UI 随 CLI 包发布；装完根依赖后在这里把它变成可用的 GUI。
+# AIOS_SKIP_UI=1 供无网络/纯 CLI 场景显式跳过；跳过时如实告知，不假装 GUI 可用。
+ui_root="$AIOS_INSTALL_DIR/apps/shell/ui"
+ui_package="$ui_root/package.json"
+ui_launcher="$AIOS_INSTALL_DIR/scripts/aios-ui.mjs"
+if [[ -f "$ui_package" && -f "$ui_launcher" ]]; then
+  if [[ "${AIOS_SKIP_UI:-0}" == "1" ]]; then
+    echo "[info] AIOS_SKIP_UI=1; Console UI not built (aios ui will ask you to run ui:setup)"
+  else
+    echo "+ install Console UI deps: npm ci --prefix $ui_root"
+    npm ci --prefix "$ui_root" --engine-strict=false
+    echo "+ build Console UI: node scripts/aios-ui.mjs build"
+    node "$ui_launcher" build --root "$AIOS_INSTALL_DIR"
+  fi
+fi
+
 shell_installer="$AIOS_INSTALL_DIR/scripts/install-contextdb-shell.sh"
 if [[ -f "$shell_installer" ]]; then
   echo "+ install shell integration (zsh): $shell_installer --mode $AIOS_WRAP_MODE --force"
