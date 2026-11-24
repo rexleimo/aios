@@ -306,7 +306,8 @@ async function hookHarness(body, document) {
   const source = fs.readFileSync(url, 'utf8')
     .replace(/import \{([^}]+)\} from 'react';/u, `const {$1} = globalThis[${JSON.stringify(key)}];`)
     .replaceAll("'../../../lib/config/model-routing.mjs'", JSON.stringify(new URL('src/lib/config/model-routing.mjs', ui).href))
-    .replaceAll("'../../../lib/config/routing-policy.mjs'", JSON.stringify(new URL('src/lib/config/routing-policy.mjs', ui).href));
+    .replaceAll("'../../../lib/config/routing-policy.mjs'", JSON.stringify(new URL('src/lib/config/routing-policy.mjs', ui).href))
+    .replaceAll("'../../../i18n/t.mjs'", JSON.stringify(new URL('src/i18n/t.mjs', ui).href));
   const { useRoutingConfig } = await import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(source, { sourceUrl: url.href })).toString('base64')}`);
   const render = () => { cursor = 0; return useRoutingConfig(); };
   const { toPolicyContext } = await loadPolicy();
