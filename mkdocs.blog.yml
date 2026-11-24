@@ -135,6 +135,7 @@ nav:
   - Docs Home: https://cli.rexai.top/
   - Blog Home: index.md
   - Posts:
+      - "v8.2.0 AIOS Plugins Now Install from GitHub with One Command": 2026-11-plugin-ecosystem.md
       - "v6.5.0 OpenCode 2.x Plugin Contract and the Config That Stopped Lying About Where AIOS Lives": 2026-10-v650-opencode2-contract-config-stops-lying.md
       - "v6.4.0 A Control Plane That Stops Guessing Ledgers Cannot Fork Refusals Are Features Gates Run Where They Claim": 2026-10-v640-control-plane-stops-guessing.md
       - "We Measured Our Own Token Compression: First A/B Numbers From the AIOS Token Bench": 2026-09-token-bench-first-ab-numbers.md

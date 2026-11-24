@@ -8,6 +8,7 @@ import { handleProviderRpc } from './builtin-provider.mjs';
 import { applyInstalledContributions, removeContributions } from './adapters/apply.mjs';
 import { dispatchContributions } from './core/dispatch.mjs';
 import { queryPluginProviders } from './adapters/provider.mjs';
+import { installGithubPlugin } from './sources/github.mjs';
 import { changePluginsRegistry, readPluginsRegistry, resolvePluginsRegistryPath, writePluginsRegistry } from './core/registry.mjs';
 import { attempt, attemptAsync } from './core/result.mjs';
 
@@ -32,7 +33,30 @@ const list = ({ rootDir, json, stdout }) => {
     .exhaustive();
 };
 
-const install = ({ rootDir, options, json, stdout }) => {
+const installGithub = async ({ rootDir, options, json, stdout }) => {
+  const result = await installGithubPlugin({
+    rootDir,
+    source: options.source,
+    id: options.id,
+    ref: options.ref,
+  });
+  return match(result)
+    .with({ ok: false }, ({ error }) => render(false, { error }, { json }, stdout))
+    .with({ ok: true }, ({ value }) => {
+      const applied = applyInstalledContributions({ rootDir });
+      return json
+        ? render(true, { ...value, applied }, { json }, stdout)
+        : text(stdout, [
+          `Installed plugin ${value.id} from ${value.source} at ${value.commit}.`,
+          `Manifest: ${value.manifest}`,
+          '重启 gateway / 刷新 console 让 contributions 生效。',
+        ]);
+    })
+    .exhaustive();
+};
+
+const install = async ({ rootDir, options, json, stdout }) => {
+  if (options.source) return installGithub({ rootDir, options, json, stdout });
   const id = String(options.id || '').trim();
   const dir = String(options.dir || options.manifest || '').trim();
   if (!id || !dir) return render(false, { error: 'install requires --id and --dir' }, { json }, stdout);
@@ -103,7 +127,7 @@ export async function runPluginCommand(options = {}, context = {}) {
 
   return match(action)
     .with('list', () => list(args))
-    .with('install', () => install(args))
+    .with('install', 'add', () => install(args))
     .with('providers', 'models', () => queryProviders(args))
     .with('remove', 'enable', 'disable', () => mutate(args))
     .otherwise(() => render(false, { error: `unknown plugin action ${JSON.stringify(action)}` }, { json }, stdout));

@@ -139,7 +139,7 @@ def ui(key, lang):
 DOC_GROUPS = [
     ("Getting Started", ["getting-started","windows-guide","troubleshooting","windows-ai-coding-agent-setup"]),
     ("Problem-First Guides", ["why-agents-forget-context","reduce-agent-token-cost","claude-code-vs-codex-vs-gemini","overnight-agent-runs","multi-agent-code-review","use-cases"]),
-    ("Capabilities", ["contextdb","token-compression","workflow-policy","model-router","codemap","team-ops","solo-harness","superpowers","integrations","perception"]),
+    ("Capabilities", ["contextdb","token-compression","workflow-policy","model-router","plugins","codemap","team-ops","solo-harness","superpowers","integrations","perception"]),
     ("Reference", ["architecture","route-concurrency-profiles","advanced-design-skills","hud-guide","debug-hub","cli-comparison","engineering-standards"]),
     ("Case Studies", ["case-library","case-auth-wall-browser","case-cross-cli-handoff","case-privacy-guard"]),
     ("Project", ["changelog","friends","skill-candidates"]),

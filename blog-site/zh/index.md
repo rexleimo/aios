@@ -21,6 +21,8 @@ description: "AIOS 工程与增长博客中文版：覆盖记忆系统、单 Age
 
 ## 最新文章
 
+- [v8.2.0：AIOS 插件现在可以用一条命令从 GitHub 安装](2026-11-plugin-ecosystem.md) — 把社区插件装进当前项目、固定到解析出的 commit、跳过仓库构建脚本，并通过 PR 提交列表
+
 - [v6.7.0：一条命令，所有客户端——'aios skill add' 给社区技能开了正门](2026-10-v670-external-skills-get-a-front-door.md) — 最好用的社区技能只活在一个客户端的全局技能目录里，其余九个看不见它；`aios skill add <source>` 把本地目录或 git URL 暂存进 canonical 外部注册处，再分发到每个客户端的用户级技能根——幂等、fail-closed 选择、防自毁守卫保住了 `clone-website` 原件
 
 - [v6.6.0：agent 的草稿空间漏进了你的项目列表](2026-10-v660-scratch-space-leaked-into-your-project-list.md) — 41 个沙箱目录（9.9 GB）长在工程父目录里，因为不带 `-p` 的 `mktemp -d` 会写进 `cwd`；`AGENTS.md` 把规则说出口，`scripts/aios-tmp-gc.mjs` 只按客观事实回收，读不出的一律保留

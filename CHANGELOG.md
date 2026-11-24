@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
 
+## [8.2.0] - 2026-11-24
+
+- feat(plugins): add `aios plugin install github:owner/repo[#ref]` and the `aios plugin add` alias. Public GitHub repositories are cloned into project-local `.aios/plugins/<id>`, validated with the existing manifest contract, pinned to the resolved commit in detached HEAD state, and registered in `config/plugins.json`. Repository build/install scripts never run.
+- docs(plugins): publish English, Chinese, Japanese, and Korean plugin guides covering GitHub/local install, lifecycle commands, manifest authoring, runtime trust boundaries, troubleshooting, and the Pull Request contribution path; link them from README, docs navigation, llms indexes, and the generated static site.
+- blog(plugins): publish the four-language “AIOS Plugins Now Install from GitHub with One Command” launch post and index it in every locale.
+- build(site): generate localized docs/blog HTML in GitHub Pages from Markdown, ignore the five generated landing directories, and remove 478 generated `index.html` files from the Git index while keeping handwritten landing inputs tracked.
+- Verified: focused GitHub install tests 9/9, real Windows CLI smoke `receipt:42d9663c-b355-4a59-84c6-4c0695f60eaf`, independent standards/spec review with zero findings in the bounded diff, site content tests 26/26, and strict MkDocs content builds with the social-card plugin disabled because the Windows environment lacks Cairo.
+
 ## [8.1.1] - 2026-11-24
 
 - fix(release): repair Console hydration and routing-hook test harnesses after the i18n migration — mount `I18nAppProvider`, serve the shipped brand/client icons from the loopback fixture, and rewrite the hook's `t.mjs` import to a file URL before data-URL execution.

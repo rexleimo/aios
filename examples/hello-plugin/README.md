@@ -63,3 +63,17 @@ node scripts/aios.mjs plugin remove  --id hello-plugin
 - 禁用或移除插件后，导航与路由随投影撤回。
 
 单次安装的 `contributes.onUsage` 用量行通过 `on-usage.mjs` 聚合，支持缓存命中率统计（无数据显示 0，不美化）。
+
+## 发布到 GitHub 后供他人安装
+
+把插件发布为独立仓库时，`manifest.json` 必须位于仓库根目录，并提交可直接加载的文件。AIOS 不会运行 `build`、`prepare` 或 `install` 脚本。
+
+```bash
+# 他人从项目根目录安装
+aios plugin install github:your-name/your-plugin#v1.0.0
+
+# 或使用 add 别名
+aios plugin add github:your-name/your-plugin#v1.0.0
+```
+
+安装会固定到解析出的 commit，源码落在 `.aios/plugins/<id>`。完整作者指南、权限说明和 PR 贡献路径见 [AIOS 插件指南](https://cli.rexai.top/zh/plugins/)。

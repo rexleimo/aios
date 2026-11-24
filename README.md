@@ -73,6 +73,19 @@ Token intelligence comes with the same command: AIOS detects and installs **RTK*
 - `.aios/context-db/index.json` exists in your project root
 - `aios memo search "anything"` answers without an error
 
+## Extend AIOS with plugins
+
+Install a community plugin directly from GitHub, pinned to the commit AIOS resolved:
+
+```bash
+aios plugin install github:owner/repo#v1.2.3
+# alias: aios plugin add github:owner/repo#v1.2.3
+```
+
+Plugins can add Console pages, integrations, model providers, gateway middleware, client connections, actions, and usage aggregation. AIOS stores the checkout under `.aios/plugins/<id>` and never runs repository build scripts.
+
+See the [Plugin Guide](https://cli.rexai.top/plugins/) for lifecycle commands, the manifest contract, trust boundaries, and the Pull Request contribution path.
+
 ## Where to go next
 
 You just installed AIOS, so this is the highest-value moment to leave the repo. Three doors, all outside GitHub:

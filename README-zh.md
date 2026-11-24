@@ -72,6 +72,19 @@ Token 智能随同一条命令装好：AIOS 会检测并安装 **RTK**（https:/
 - 项目根目录出现 `.aios/context-db/index.json`
 - `aios memo search "任意词"` 能正常返回
 
+## 用插件扩展 AIOS
+
+直接从 GitHub 安装社区插件，并固定到 AIOS 解析出的 commit：
+
+```bash
+aios plugin install github:owner/repo#v1.2.3
+# 别名：aios plugin add github:owner/repo#v1.2.3
+```
+
+插件可以增加 Console 页面、集成、模型供应商、网关 middleware、客户端连接、动作和用量聚合。AIOS 把 checkout 存在 `.aios/plugins/<id>`，绝不运行仓库构建脚本。
+
+生命周期命令、manifest 契约、信任边界与 Pull Request 贡献路径见[插件指南](https://cli.rexai.top/zh/plugins/)。
+
 ## 下一步去哪儿
 
 刚装完 AIOS，是离开 GitHub、走到站点上去的最佳时刻。三道门，都在 GitHub 外面：

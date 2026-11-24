@@ -23,6 +23,8 @@ AIOS를 처음 사용하시나요? 이 게시물들이 방향을 잡아줄 것�
 
 ## 최신 글
 
+- [v8.2.0: AIOS 플러그인을 GitHub에서 한 명령으로 설치할 수 있게 되다](2026-11-plugin-ecosystem.md) — 커뮤니티 플러그인을 현재 프로젝트에 설치하고 해석된 commit에 고정하며 저장소 빌드 스크립트를 건너뛰고 PR로 목록에 추가
+
 - [v6.7.0: 한 명령, 모든 클라이언트 — 'aios skill add'가 커뮤니티 스킬에 정문을 열어주다](2026-10-v670-external-skills-get-a-front-door.md) — 가장 쓸모 있는 커뮤니티 스킬이 한 클라이언트의 전역 스킬 디렉터리에만 머물고 나머지 아홉은 볼 수 없었다. `aios skill add <source>`가 로컬 디렉터리나 git URL을 canonical 외부 레지스트리에 스테이징하고 모든 클라이언트의 사용자 레벨 스킬 루트로 배포한다 — 멱등, fail-closed 선택, 자가복사 가드가 `clone-website` 원본을 지켰다
 
 - [v6.6.0: 에이전트 작업 공간이 프로젝트 목록에 새었다](2026-10-v660-scratch-space-leaked-into-your-project-list.md) — `-p` 없는 `mktemp -d` 가 `cwd` 에 써서 프로젝트 상위에 샌드박스 41 개 (9.9 GB) 가 자랐다. `AGENTS.md` 로 규칙을 명시하고 `scripts/aios-tmp-gc.mjs` 는 객관적 사실만으로 회수하며 읽을 수 없는 건 남긴다

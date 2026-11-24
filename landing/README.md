@@ -1,6 +1,6 @@
 # AIOS landing page (GitHub Pages)
 
-A zero-build static landing page that keeps the **visual language** of the
+A static landing page that keeps the **visual language** of the
 `usemagpie.ai/zh` reference page (layout, spacing, type scale, light/dark tokens,
 card/grid components, responsive breakpoints) but carries **AIOS's own content**:
 copy, product screenshots, brand mark, links and CLI examples.
@@ -14,6 +14,27 @@ copy, product screenshots, brand mark, links and CLI examples.
 | `assets/media/icons/*` | Third-party client logos used in the client list. |
 | `scripts/*.mjs` | Recon / download / build / verification tooling (re-runnable). |
 | `docs/research/components/*.spec.md` | 13 section specs (from the reference capture). |
+
+## Generated localized pages
+
+`docs-site/**/*.md` and `blog-site/**/*.md` are the tracked content sources.
+`landing/scripts/build-site.py` renders them into:
+
+- `landing/docs/` — English documentation
+- `landing/blog/` — English blog
+- `landing/zh/`, `landing/ja/`, `landing/ko/` — localized docs and blog
+
+Those five generated directories are ignored and must not be committed. Build
+them locally with:
+
+```bash
+python -m pip install Markdown==3.10.3 pymdown-extensions==10.21.3
+python landing/scripts/build-site.py
+```
+
+`landing/index.html`, `landing/assets/`, `landing/scripts/`,
+`landing/getting-started/`, and the reference files remain handwritten and
+tracked.
 
 ## What changed from the pixel clone
 
@@ -77,10 +98,14 @@ Or open `index.html` directly (the only console noise is the harmless
 
 ## GitHub Pages
 
-`.github/workflows/pages.yml` copies `index.html`, `assets/css/` and
-`assets/media/` into the `site/` artifact. Served at
-`https://cli.rexai.top/magpie-clone/`. To promote to the homepage, change the
-`site/magpie-clone` paths in that step to `site`.
+`.github/workflows/pages.yml` installs the pinned Markdown builder dependencies,
+runs `python landing/scripts/build-site.py`, then copies `landing/index.html`,
+`assets/`, the generated `docs/` and `blog/` trees, localized roots, and
+`getting-started/` into the `site/` artifact. Served at the site root so
+`/docs/`, `/blog/`, `/zh/`, `/ja/`, and `/ko/` remain valid.
+
+Generated localized HTML is intentionally absent from Git. A change to
+Markdown, the builder, or the workflow is enough to reproduce it in CI.
 
 > `.gitignore` has a scoped un-ignore for `landing/assets/media/**/*.png` —
 > without it the repo-wide `*.png` rule would silently drop every product image

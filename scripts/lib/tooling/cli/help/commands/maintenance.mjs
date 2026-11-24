@@ -1,4 +1,6 @@
 /* 中文注释：帮助文案显式暴露 interception doctor/proof，让用户能直接验证压缩链路。 */
+import { getPluginHelpText } from './plugin.mjs';
+
 export function getMaintenanceCommandHelpText(command) {
   switch (command) {
     case 'status':
@@ -164,6 +166,8 @@ Options:
   --json
   -h, --help
 `;
+    case 'plugin':
+      return getPluginHelpText();
     case 'integration':
       return `Usage:
   aios integration list [--json]

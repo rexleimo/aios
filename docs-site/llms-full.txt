@@ -14,6 +14,8 @@
 - Privacy Shield startup notices for wrapped Codex, Claude, Gemini, and OpenCode sessions
 - v1.50.0 unified AIOS search across memory, docs, plans, and code
 - v1.50.1 all-client turn compression compliance with pre_send/post_receive proof
+- Install AIOS plugins from GitHub with a pinned project-local checkout
+- Author and contribute AIOS plugins through manifests and Pull Requests
 - All-client native guidance projection for Codex, Claude, Gemini, Antigravity, OpenCode, and Crush
 - Grok Build is supported as a first-class client surface; current support should be checked in the Quick Start docs
 - v5.4.0 activation store write-ahead transactions: crash-safe Workflow/Activation projection writes with automatic roll-forward
@@ -35,6 +37,7 @@
 - https://cli.rexai.top/token-compression/#all-client-turn-compression-v1501
 - https://cli.rexai.top/troubleshooting/
 - https://cli.rexai.top/integrations/
+- https://cli.rexai.top/plugins/
 - https://cli.rexai.top/case-privacy-guard/
 
 ## Releases
@@ -43,6 +46,7 @@
 - https://github.com/rexleimo/aios/releases
 
 ## Blog
+- https://cli.rexai.top/blog/2026-11-plugin-ecosystem/ — v8.2.0: AIOS plugins now install from GitHub with one command
 - https://cli.rexai.top/blog/
 - https://cli.rexai.top/blog/2026-08-v581-stall-fix-llm-judged-grilling/ — aios-shell stall fix + LLM-judged requirements grilling
 - https://cli.rexai.top/blog/2026-08-v580-governed-self-evolution/ — governed self-evolution release

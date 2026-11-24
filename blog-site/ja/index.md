@@ -23,6 +23,8 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
+- [v8.2.0：AIOS プラグインを GitHub から 1 コマンドでインストール可能に](2026-11-plugin-ecosystem.md) — コミュニティプラグインを現在のプロジェクトに導入し、解決した commit に固定。リポジトリのビルドスクリプトをスキップし、PR で一覧に追加
+
 - [v6.7.0：一つのコマンドで全クライアントへ——「aios skill add」がコミュニティスキルの正門を開ける](2026-10-v670-external-skills-get-a-front-door.md) — 最良のコミュニティスキルが一つのクライアントのグローバルスキルディレクトリにしか存在せず、他の九つからは見えなかった。`aios skill add <source>` がローカルディレクトリや git URL を canonical 外部レジストリにステージし、全クライアントのユーザーレベルスキルルートへ配布——冪等、fail-closed な選択、自己コピー・ガードが `clone-website` の原本を守った
 
 - [v6.6.0: エージェントの作業スペースがプロジェクト一覧に漏れた](2026-10-v660-scratch-space-leaked-into-your-project-list.md) — `-p` なしの `mktemp -d` が `cwd` に書くため プロジェクト親にサンドボックス 41 個（9.9 GB）が生えた。`AGENTS.md` で規則を明文化し、`scripts/aios-tmp-gc.mjs` は客観的事実だけで回収、読めないものは残す

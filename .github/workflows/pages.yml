@@ -40,11 +40,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      # The published surface is the zero-build static site in landing/:
-      # home + localized docs/blog (en/zh/ja/ko), links rooted at "/".
-      # MkDocs sources are the content origin; landing/scripts/build-site.py
-      # renders them into this deployable tree. Deploy at the site root so
-      # /docs/, /blog/, /zh/... are all valid absolute paths.
+      # The published surface is built from Markdown sources in docs-site/ and
+      # blog-site/. landing/scripts/build-site.py renders localized HTML into
+      # landing/docs, landing/blog, and landing/{zh,ja,ko}; those generated
+      # directories stay out of Git. Deploy at the site root so /docs/, /blog/,
+      # /zh/... remain valid absolute paths.
+      - name: Build localized docs and blog
+        run: |
+          python -m pip install Markdown==3.10.3 pymdown-extensions==10.21.3
+          python landing/scripts/build-site.py
+
       - name: Assemble site from landing/
         run: |
           test -f landing/index.html

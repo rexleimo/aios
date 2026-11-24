@@ -45,3 +45,23 @@ test('docs-pages workflow submits published URLs to IndexNow after a deploy', ()
   assert.match(workflow, /run:\s+node scripts\/indexnow-submit\.mjs/);
   assert.match(workflow, /continue-on-error:\s+true\s+run:\s+node scripts\/indexnow-submit\.mjs/);
 });
+
+test('docs-pages workflow builds localized HTML from Markdown before assembling the artifact', () => {
+  const workflow = read('.github/workflows/pages.yml');
+
+  assert.match(workflow, /python -m pip install Markdown==[\d.]+\s+pymdown-extensions==[\d.]+/);
+  const buildIndex = workflow.indexOf('python landing/scripts/build-site.py');
+  const assembleIndex = workflow.indexOf('test -f landing/docs/index.html');
+  assert.ok(buildIndex >= 0, 'Pages must run the landing builder');
+  assert.ok(assembleIndex > buildIndex, 'Pages must build before checking generated indexes');
+});
+
+test('generated landing HTML directories are ignored while handwritten inputs stay visible', () => {
+  const ignore = read('.gitignore');
+
+  for (const directory of ['docs', 'blog', 'zh', 'ja', 'ko']) {
+    assert.match(ignore, new RegExp(`^/landing/${directory}/$`, 'mu'));
+  }
+  assert.doesNotMatch(ignore, /^\/landing\/assets\//mu);
+  assert.doesNotMatch(ignore, /^\/landing\/scripts\//mu);
+});

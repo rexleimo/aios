@@ -39,6 +39,7 @@ Commands:
   hud           Show ContextDB + dispatch HUD (CLI/TUI)
   learn-eval    Turn checkpoint telemetry into operator recommendations
   skill         Skill compliance dry-runs, health dashboard, and external skill install
+  plugin        Install and manage project-local plugins from GitHub or a local directory
   integration   Install and verify third-party vendor integrations (skill + docs MCP)
   mcp           List/install/uninstall MCP servers per client landing, with ownership guards
   judgment      Opt-in System One judgment gate (off until you enable it)
@@ -91,6 +92,8 @@ Examples:
   aios learn-eval --limit 5
   aios skill comply skill-sources/search-first/SKILL.md --client opencode --dry-run --json
   aios skill health --json
+  aios plugin install github:acme/demo
+  aios plugin list --json
   aios integration list
   aios integration add typesafe --dry-run
   aios integration doctor typesafe --json

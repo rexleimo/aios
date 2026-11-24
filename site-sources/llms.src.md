@@ -28,6 +28,9 @@ AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, 
 - TypeSafe System One Jev model integration for coding agents
 - install a third-party MCP server across all coding clients safely
 - how to verify a vendor agent skill before installing it
+- how to install an AIOS plugin from GitHub
+- how to write and contribute an AIOS plugin
+- AIOS plugin manifest permissions and trust boundary
 - local-first AI coding agent vs cloud agent
 - adaptive agent workflow policy direct guarded planned
 - agent harness vs bare coding CLI
@@ -55,6 +58,7 @@ AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, 
 - https://cli.rexai.top/token-compression/ — local token budget control
 - https://cli.rexai.top/troubleshooting/ — recovery procedures
 - https://cli.rexai.top/integrations/ — vendor integrations (TypeSafe / Jev) across all ten clients
+- https://cli.rexai.top/plugins/ — install plugins from GitHub, author manifests, and contribute by PR
 - https://cli.rexai.top/changelog/ — version history
 
 ## Problem-First Guides
