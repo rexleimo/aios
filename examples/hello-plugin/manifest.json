@@ -7,7 +7,7 @@
   "evidence": { "kind": "example", "note": "随仓库发布的示例插件，用于端到端演示声明式 contributions。" },
   "contributes": {
     "panels": [
-      { "id": "hello", "href": "/hello-plugin", "label": "示例插件", "title": "示例插件 · Hello" }
+      { "id": "hello", "href": "/hello-plugin", "label": "示例插件", "title": "示例插件 · Hello", "ui": { "entry": "panel.html" } }
     ],
     "integrations": [
       {

@@ -151,6 +151,12 @@ export interface FactPinnedBudget {
   truncated: boolean;
 }
 
+export interface PluginPanelUi {
+  kind: 'html';
+  html?: string;
+  error?: string;
+}
+
 export interface ConsoleFacts {
   kind: 'aios.console-facts.v1';
   rootDir: string;
@@ -161,7 +167,7 @@ export interface ConsoleFacts {
   degraded: Array<{ item: string; error: string }>;
   sources: Array<{ field: string; origin: string }>;
   /** 已启用插件贡献的导航页（声明式 panel）；服务端采集，界面合并进主导航。 */
-  pluginViews: Array<{ id: string; href: string; label: string; title: string; source: string }>;
+  pluginViews: Array<{ id: string; href: string; label: string; title: string; source: string; ui?: PluginPanelUi }>;
   /** 加载失败的插件（fail-open 记录），界面可如实展示。 */
   pluginFailures: Array<{ id: string; error: string }>;
   declaredClientCount: number;

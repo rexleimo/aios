@@ -4,7 +4,7 @@ import { t } from '../../i18n/t.mjs';
 import * as Tabs from '@radix-ui/react-tabs';
 import { useState } from 'react';
 import type { ConsoleFacts } from '../../lib/console-facts';
-import { McpWorkspace } from './mcp-workspace';
+import { McpWorkspace } from './resources/mcp-workspace';
 import { AgentsPanel } from './resources/agents-panel';
 import { SkillsPanel } from './resources/skills-panel';
 

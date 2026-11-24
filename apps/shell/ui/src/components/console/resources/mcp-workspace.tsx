@@ -1,12 +1,12 @@
 'use client';
 
-import { t } from '../../i18n/t.mjs';
+import { t } from '../../../i18n/t.mjs';
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Plug, Plus, ShieldCheck } from 'lucide-react';
 
-import { clientLabel, landingTokenLabel, LANDING_TOKEN_EXPLANATION, type ConsoleFacts, type FactServiceRow } from '../../lib/console-facts';
-import { Badge, Button, Empty, Heading, Panel, SmallTitle } from './console-ui';
-import { McpWizard, type McpPreset } from './flows/mcp-wizard';
+import { clientLabel, landingTokenLabel, LANDING_TOKEN_EXPLANATION, type ConsoleFacts, type FactServiceRow } from '../../../lib/console-facts';
+import { Badge, Button, Empty, Heading, Panel, SmallTitle } from '../console-ui';
+import { McpWizard, type McpPreset } from '../flows/mcp-wizard';
 
 const OWNERSHIP_LABELS: Record<string, string> = {
   owned: t("AIOS 登记并持有"),

@@ -34,10 +34,32 @@ node scripts/aios.mjs plugin remove  --id hello-plugin
 字段：`schemaVersion` / `id` / `version` / `permissions` / `lifecycle` / `evidence` / `contributes`。
 
 `contributes` 五类（本示例演示 panels + middleware）：
-- `panels`：贡献一个导航页（服务端读 manifest → 注入 `CONSOLE_VIEWS`，前端合并渲染）。
+- `panels`：贡献一个导航页（服务端读 manifest → 注入 `CONSOLE_VIEWS`，前端合并渲染）；可选 `ui.entry` 指向插件目录内的单个 HTML 文件，宿主用 sandboxed iframe 渲染真实 UI。
 - `integrations`：投影进 `config/integrations.json`，复用现有 pinned-commit/sha256 硬门；卸载按 `__origin` 精确移除。
 - `middleware`：网关请求链的 `onRequest`，Node `vm` 受限沙箱（禁 fetch/timer/Node API，250ms，改 model/stream 回滚，失败 fail-open）。
 - `providers`：联网插件（`auth.usage` / 额度 / 模型发现），在独立子进程跑，stdio JSON-RPC。
 - `clients`：声明支持把 AIOS 接入哪些客户端（复用现有 connect 系统，ADR 0010）。
+
+## 独立插件 UI 页
+
+```json
+{
+  "panels": [
+    {
+      "id": "hello",
+      "href": "/hello-plugin",
+      "label": "示例插件",
+      "title": "示例插件 · Hello",
+      "ui": { "entry": "panel.html" }
+    }
+  ]
+}
+```
+
+- `ui.entry` 必须是插件目录内的相对 `.html` 路径，大小写扩展名均可；第一版只支持单文件 HTML，上限 256 KiB。
+- HTML 可包含内联 CSS 与 JavaScript，在 `sandbox="allow-scripts"` iframe 中运行；不授予 `allow-same-origin`，不能直接访问宿主 DOM、Cookie 或同源 API。
+- 文件缺失、越界、扩展名非法或超限时，插件页显示错误，不影响宿主其他页面。
+- 不声明 `ui` 的旧 panel 保持兼容，继续显示声明式说明卡。
+- 禁用或移除插件后，导航与路由随投影撤回。
 
 单次安装的 `contributes.onUsage` 用量行通过 `on-usage.mjs` 聚合，支持缓存命中率统计（无数据显示 0，不美化）。

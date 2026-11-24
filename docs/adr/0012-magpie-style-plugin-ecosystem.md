@@ -139,3 +139,7 @@ scripts/lib/clients/plugins/
 - 网关腰部已存在（10 客户端就地接入）：`docs/adr/0010-magpie-inplace-client-connect.md`；`apps/shell/ui/src/components/console/model-routing/gateway-control.tsx`
 - auto+意图可用（意图目标须具体模型）：`scripts/lib/tooling/model-router/gateway/router.mjs:104`、`scripts/tests/learning/model/gateway/protocol/runtime/routing.test.mjs`、`~/.aios/gateway/decisions.jsonl` 真实记录
 - 质量基线：`rex-engineering-standards` §1 边界 / §4 文件粒度 / §7 ADD 契约
+
+## 2026-11-24 增补：独立插件 UI 页
+
+用户确认第一版只做独立插件页。`panel` 新增可选 `ui.entry`，由宿主读取单文件 HTML 并用 sandboxed iframe 渲染；具体安全边界与权衡见 ADR 0013。该增补不改变 D0 的声明式 contribution 方向，也不把现有页面注入或主题编辑器纳入范围。

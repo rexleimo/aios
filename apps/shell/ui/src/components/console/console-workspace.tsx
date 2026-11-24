@@ -28,13 +28,13 @@ import { MemoryWorkspace } from './memory-workspace';
 import { ResourcesWorkspace } from './resources-workspace';
 import { Button, Heading, Panel, Select } from './console-ui';
 import { GatewayWorkspace } from './gateway-workspace';
+import { PluginPanelView, type PluginPanelItem } from './plugin-panel-view';
 
 const ICONS: Record<string, typeof Home> = { home: Home, tools: Terminal, routing: Route, routingConfig: Route, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
 const BASE_NAV = PRIMARY_VIEWS.map(item => ({ ...item, icon: ICONS[item.id] as typeof Home }));
-type PluginView = { id: string; href: string; label: string; title: string; source: string };
 
 /** 主导航 = 内置视图 + 插件声明式贡献的 panel。插件 id 带 `plugin:` 前缀，不与内置冲突。 */
-function buildNav(pluginViews: PluginView[]) {
+function buildNav(pluginViews: PluginPanelItem[]) {
   const extra = (pluginViews || []).map((item) => ({
     id: item.id,
     href: item.href,
@@ -380,32 +380,6 @@ export function ConsoleWorkspace({
           </span>
         </footer>
       </div>
-    </div>
-  );
-}
-
-/** 插件声明式 panel 的通用渲染：展示来源插件、贡献内容与安装提示。 */
-function PluginPanelView({ item, active }: { item: PluginView; active: boolean }) {
-  const t = useT();
-  return (
-    <div hidden={!active}>
-      <Heading
-        eyebrow="PLUGIN PANEL"
-        title={item.title}
-        description={`${item.source}: ${t('shell.pluginPanel')}`}
-      />
-      <Panel className="max-w-2xl p-6">
-        <h2 className="text-sm font-semibold">{t('shell.pluginPanel')}</h2>
-        <p className="mt-2 text-xs leading-6 text-rex-text-muted">
-          {t('shell.pluginDeclared', { source: item.source, href: item.href })}
-        </p>
-        <div className="mt-4 rounded-xl border border-rex-border bg-rex-panel/40 p-4 text-xs leading-6">
-          <p className="font-medium">{t('shell.pluginContribution')}</p>
-          <p className="mt-1 text-rex-text-muted">
-            {t('shell.pluginEvidence')}
-          </p>
-        </div>
-      </Panel>
     </div>
   );
 }

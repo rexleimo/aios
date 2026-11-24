@@ -244,9 +244,9 @@
 
 ### 插件 manifest kind（client / integration / panel）
 
-**定义**：AIOS 的扩展契约按挂载侧分三类——`client`（把 AIOS 装进某客户端，今天在 `scripts/lib/clients/*` 里是代码）、`integration`（第三方 skill + MCP，已有 `config/integrations.json` 声明式注册表 + `aios integration` 四道门）、`panel`（给宿主加一屏，尚无实现）；共同字段 `schemaVersion`/`id`/`version`/`permissions`/`lifecycle`/`evidence`。
+**定义**：AIOS 的扩展契约按挂载侧分三类——`client`（把 AIOS 装进某客户端，今天在 `scripts/lib/clients/*` 里是代码）、`integration`（第三方 skill + MCP，已有 `config/integrations.json` 声明式注册表 + `aios integration` 四道门）、`panel`（给宿主加一屏）；共同字段 `schemaVersion`/`id`/`version`/`permissions`/`lifecycle`/`evidence`。`panel` 已有导航与动态路由投影；2026-11-24 用户裁定第一版继续收窄为**独立插件 UI 页**，插件携带真实 UI，宿主负责隔离与生命周期，见 `docs/plans/2026-11-24-plugin-independent-ui-page.md`。
 
-**为什么**：magpie 生态能长，是因为只有一个宿主、一个 ABI、一个分发通道；我们三个平面各自为政，所以问题不是「缺钩子」而是「缺共同宿主与共同契约」。
+**为什么**：magpie 生态能长，是因为只有一个宿主、一个 ABI、一个分发通道；我们三个平面各自为政，所以问题不是「缺钩子」而是「缺共同宿主与共同契约」。独立插件页是现有投影链上最小可验证的生态入口，先不扩到宿主现有页面注入或主题编辑器。
 
 ### 任务级路由 vs 请求级路由（task-level vs request-level routing）
 

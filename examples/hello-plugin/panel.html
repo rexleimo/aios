@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>示例插件 · Hello</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 32px; background: #f4f7fb; color: #172033; }
+    main { width: min(560px, 100%); padding: 28px; border: 1px solid #dbe3ef; border-radius: 20px; background: #fff; box-shadow: 0 18px 50px rgb(23 32 51 / 8%); }
+    .eyebrow { margin: 0 0 8px; color: #55709f; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(28px, 5vw, 42px); letter-spacing: -.04em; }
+    p { margin: 12px 0 24px; color: #64748b; line-height: 1.7; }
+    .card { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px; border-radius: 14px; background: #eef4ff; }
+    .count { font-size: 36px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    button { border: 0; border-radius: 999px; padding: 11px 18px; background: #2563eb; color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+    footer { margin-top: 20px; color: #94a3b8; font-size: 12px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f172a; color: #e2e8f0; }
+      main { border-color: #334155; background: #1e293b; box-shadow: none; }
+      p { color: #94a3b8; }
+      .card { background: #172554; }
+      .eyebrow { color: #93c5fd; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">AIOS Plugin Panel</p>
+    <h1>Hello，插件 UI。</h1>
+    <p>这个页面由插件自己的 HTML 提供，宿主只负责入口、隔离与生命周期。点击按钮验证 iframe 内脚本可以独立运行。</p>
+    <div class="card">
+      <div>
+        <div class="eyebrow">交互计数</div>
+        <div id="count" class="count" aria-live="polite">0</div>
+      </div>
+      <button id="increment" type="button">加一</button>
+    </div>
+    <footer>sandbox=allow-scripts · 无宿主 DOM / Cookie / API 访问</footer>
+  </main>
+  <script>
+    const count = document.querySelector('#count');
+    document.querySelector('#increment').addEventListener('click', () => {
+      count.textContent = String(Number(count.textContent) + 1);
+    });
+  </script>
+</body>
+</html>

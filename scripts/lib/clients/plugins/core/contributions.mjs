@@ -17,12 +17,20 @@ export function projectPanelContributions(views, panels, source = '') {
     if (!panel || typeof panel !== 'object') continue;
     const id = String(panel.id || '').trim();
     if (!id || Object.hasOwn(out, id) || !String(panel.href || '').startsWith('/')) continue;
+    const ui = panel.ui?.kind === 'html'
+      ? Object.freeze({
+          kind: 'html',
+          ...(typeof panel.ui.html === 'string' ? { html: panel.ui.html } : {}),
+          ...(typeof panel.ui.error === 'string' ? { error: panel.ui.error } : {}),
+        })
+      : undefined;
     out[`plugin:${id}`] = Object.freeze({
       id: `plugin:${id}`,
       href: String(panel.href),
       label: String(panel.label || id),
       title: String(panel.title || panel.label || id),
       source,
+      ...(ui ? { ui } : {}),
     });
   }
   return out;
