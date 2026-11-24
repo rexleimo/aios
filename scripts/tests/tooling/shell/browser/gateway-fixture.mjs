@@ -201,8 +201,26 @@ export async function gatewayFixture(browser, baseUrl, token, options = {}) {
 }
 
 export async function choose(page, label, option) {
-  await page.getByRole('combobox', { name: label, exact: true }).click();
+  const combobox = page.getByRole('combobox', { name: label, exact: true });
+  const inDialog = await combobox.evaluate(element => Boolean(element.closest('[role="dialog"]')));
+  await combobox.click();
   await page.getByRole('option', { name: option }).click();
+  if (inDialog) {
+    // Nested Radix hideOthers cleanup can leave the page aria-hidden while a
+    // controlled Select re-renders inside a Modal. Restore the outside tree so
+    // the still-open dialog remains testable; do not send Escape (it closes it).
+    await page.evaluate(() => {
+      for (const element of document.querySelectorAll('[aria-hidden="true"]')) {
+        if (!element.closest('[role="dialog"]')) element.removeAttribute('aria-hidden');
+      }
+    });
+  } else {
+    // Outside a Modal, focus the trigger by CSS (role lookup is hidden), then
+    // send Escape to the Select itself so cleanup does not close a parent Modal.
+    await page.locator(`[role="combobox"][aria-label=${JSON.stringify(label)}]`).focus();
+    await page.keyboard.press('Escape');
+  }
+  await page.getByRole('listbox').waitFor({ state: 'hidden' });
 }
 
 export async function visible(page, locator) {

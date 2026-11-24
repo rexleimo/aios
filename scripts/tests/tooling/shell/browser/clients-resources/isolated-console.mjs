@@ -62,7 +62,7 @@ export async function startIsolatedConsole(t) {
   const port = await freePort();
   assert.notEqual(port, 3126);
   const token = 'ab'.repeat(16);
-  const env = { PATH: `${path.dirname(process.execPath)}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: privateRoot, USERPROFILE: privateRoot,
+  const env = { PATH: [path.dirname(process.execPath), process.env.SystemRoot && path.join(process.env.SystemRoot, 'System32'), '/usr/bin', '/bin', '/usr/sbin', '/sbin'].filter(Boolean).join(path.delimiter), HOME: privateRoot, USERPROFILE: privateRoot,
     TMPDIR: privateRoot, TEMP: privateRoot, TMP: privateRoot, AIOS_HOME: path.join(privateRoot, 'aios'),
     AIOS_GATEWAY_STATE_DIR: path.join(privateRoot, 'gateway'), AIOS_CLI: '/usr/bin/false',
     AIOS_PROJECT_ROOT: sandbox, AIOS_UI_PORT: String(port), AIOS_UI_TOKEN: token, AIOS_UI_NO_WARM: '1',

@@ -238,7 +238,7 @@ export function IntentRoutingSection({
                           </span>
                           <span className="flex min-w-0 items-start gap-2 text-xs leading-6 text-rex-text-muted">
                             <ArrowRight aria-hidden="true" size={12} className={`mt-1.5 shrink-0 ${target || autoTarget ? '' : 'text-rex-orange'}`} />
-                            <span className="min-w-0 [overflow-wrap:anywhere]">{target ? modelLabel(target) : autoTarget ? t("自动选择（不指定固定目标）") : t("待选择目标模型")}</span>
+                            <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{target ? modelLabel(target) : autoTarget ? t("自动选择（不指定固定目标）") : t("待选择目标模型")}</span>
                           </span>
                         </span>
                         <span className="col-start-2 row-start-1 shrink-0 text-xs leading-6 text-rex-cyan sm:col-start-3">{t("编辑")}</span>

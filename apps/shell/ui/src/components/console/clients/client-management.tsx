@@ -171,6 +171,7 @@ export function ClientManagement({ facts, onDetails }: { facts: ConsoleFacts; on
       if (!updatePreviewSupported(update)) throw new Error(t("请重新获取有效更新预览。"));
       await state.act('/api/clients', { action: 'update', client: update.client.id, expectedRevision: update.revision, confirm: true });
       setNotice(t("更新命令已完成并重新读取版本；客户端不会自动重启。"));
-    })} />}
+      await state.reload();
+    }).finally(() => setUpdate(null))} />}
   </div>;
 }

@@ -152,7 +152,7 @@ export function AgentOverview({
       </Panel>
 
       {compact ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-rex-md border border-rex-border bg-rex-panel/40 px-4 py-3 text-xs">
+        <div className="flex min-h-24 flex-wrap items-center justify-between gap-2 rounded-rex-md border border-rex-border bg-rex-panel/40 px-4 py-3 text-xs">
           <span className="text-rex-text-muted">
             
             {t("最近请求涉及")} <span className="font-semibold text-rex-text">{visibleClients.length}</span>  {t("个客户端")}
