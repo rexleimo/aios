@@ -9,10 +9,14 @@ import { browserRuntime } from './gateway-fixture.mjs';
 import { isolatedConsoleFacts } from './clients-resources/console-facts.mjs';
 
 const ui = path.resolve(import.meta.dirname, '../../../../../apps/shell/ui');
+const publicDir = path.join(ui, 'public');
+const staticAsset = /^\/(?:aios-mark\.png|icons\/[a-z0-9-]+\.(?:svg|png))$/;
+const assetTypes = Object.freeze({ '.png': 'image/png', '.svg': 'image/svg+xml' });
 const ageSelector = '#root .lucide-clock';
 const harness = `
   import React, { StrictMode, useLayoutEffect } from 'react';
   import { ConsoleWorkspace } from './src/components/console/console-workspace';
+  import { I18nAppProvider } from './src/i18n/provider';
   function CommitProbe() {
     useLayoutEffect(() => {
       if (window.firstCommit) return;
@@ -21,7 +25,14 @@ const harness = `
     }, []);
     return null;
   }
-  const workspace = facts => <StrictMode><ConsoleWorkspace initialView="settings" facts={facts} /><CommitProbe /></StrictMode>;
+  const workspace = facts => (
+    <StrictMode>
+      <I18nAppProvider initialLocale="zh-CN">
+        <ConsoleWorkspace initialView="settings" facts={facts} />
+        <CommitProbe />
+      </I18nAppProvider>
+    </StrictMode>
+  );
 `;
 const options = {
   bundle: true, write: false, jsx: 'automatic', define: { 'process.env.NODE_ENV': '"development"' },
@@ -66,6 +77,17 @@ async function boundaryPage(t, name, initialAge, hydrationAge) {
   let snapshot;
   const server = http.createServer((request, response) => {
     if (request.url === '/favicon.ico') { response.writeHead(204).end(); return; }
+    if (staticAsset.test(request.url)) {
+      // The real workspace renders brand/client icons. Serve the shipped files so
+      // the no-unexpected-request assertion still catches anything else.
+      const asset = path.resolve(publicDir, `.${request.url}`);
+      if (!asset.startsWith(publicDir + path.sep)) { response.writeHead(400).end(); return; }
+      let body;
+      try { body = fs.readFileSync(asset); } catch { response.writeHead(404).end(); return; }
+      response.writeHead(200, { 'content-type': assetTypes[path.extname(asset)] ?? 'application/octet-stream' });
+      response.end(body);
+      return;
+    }
     assert.equal(request.url, '/');
     const startedAt = Date.now();
     const facts = { ...isolatedConsoleFacts('/fixture'), generatedAt: new Date(startedAt - initialAge).toISOString() };
@@ -85,7 +107,7 @@ async function boundaryPage(t, name, initialAge, hydrationAge) {
   page.on('console', message => { if (['error', 'warning'].includes(message.type())) consoleErrors.push(message.text()); });
   await context.route('**/*', route => {
     const url = new URL(route.request().url());
-    if (url.origin === baseUrl && ['/', '/favicon.ico'].includes(url.pathname)) return route.continue();
+    if (url.origin === baseUrl && (['/', '/favicon.ico'].includes(url.pathname) || staticAsset.test(url.pathname))) return route.continue();
     unexpectedRequests.push(route.request().url());
     return route.abort();
   });
