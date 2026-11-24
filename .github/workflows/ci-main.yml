@@ -61,6 +61,13 @@ jobs:
         working-directory: mcp-server
         run: npm ci
 
+      # Console browser/hydration tests bundle the real UI modules. Root deps do
+      # not include this separate package, so CI must materialize it explicitly
+      # (the release workflow already does the same).
+      - name: Install shell UI deps
+        working-directory: apps/shell/ui
+        run: npm ci
+
       - name: Audit mcp-server prod dependencies
         working-directory: mcp-server
         run: npm audit --omit=dev --audit-level=critical

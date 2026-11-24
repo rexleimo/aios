@@ -395,6 +395,17 @@ test('release scripts and CI require a materialized rex-harness submodule', asyn
   }
 });
 
+test('CI and release install the separate Console UI package before browser tests', async () => {
+  const workspaceRoot = process.cwd();
+  const ciWorkflow = await readFile(path.join(workspaceRoot, '.github', 'workflows', 'ci-main.yml'), 'utf8');
+  const releaseWorkflow = await readFile(path.join(workspaceRoot, '.github', 'workflows', 'release.yml'), 'utf8');
+
+  // Browser/hydration suites bundle the real UI. Root npm ci does not install
+  // this separate package; omitting it makes CI red while local runs stay green.
+  assert.match(ciWorkflow, /working-directory:\s+apps\/shell\/ui\s+run:\s+npm ci/u);
+  assert.match(releaseWorkflow, /npm ci --prefix apps\/shell\/ui/u);
+});
+
 test('release preflight names the Skill-training base and remedy in both shells', async () => {
   const workspaceRoot = process.cwd();
   const preflightShell = await readFile(path.join(workspaceRoot, 'scripts', 'release-preflight.sh'), 'utf8');
