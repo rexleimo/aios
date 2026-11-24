@@ -90,14 +90,24 @@ async function boundaryPage(t, name, initialAge, hydrationAge) {
     return route.abort();
   });
   t.after(async () => {
-    const client = await page.evaluate(() => ({ firstCommit: window.firstCommit, intervalEvents: window.intervalEvents }));
+    const deadline = (promise, ms, label) => Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms).unref()),
+    ]);
+    let client = {};
+    try {
+      client = await deadline(
+        page.evaluate(() => ({ firstCommit: window.firstCommit, intervalEvents: window.intervalEvents })),
+        5_000, 'hydration artifact read'
+      );
+    } catch { /* Best-effort artifact read; cleanup must still run. */ }
     if (process.env.AIOS_HYDRATION_ARTIFACT_DIR) {
       fs.mkdirSync(process.env.AIOS_HYDRATION_ARTIFACT_DIR, { recursive: true });
       fs.writeFileSync(path.join(process.env.AIOS_HYDRATION_ARTIFACT_DIR, `${name}.json`),
         JSON.stringify({ baseUrl, snapshot, ...client, samples, errors, consoleErrors, unexpectedRequests }, null, 2) + '\n');
     }
-    await context.close();
-    await new Promise(resolve => server.close(resolve));
+    try { await deadline(context.close(), 10_000, 'context.close'); } catch {}
+    try { await deadline(new Promise(resolve => server.close(resolve)), 5_000, 'server.close'); } catch {}
     assert.deepEqual(errors, [], 'the real workspace must hydrate without browser pageerrors');
     assert.deepEqual(consoleErrors, [], 'no hydration warning or console error may be ignored');
     assert.deepEqual(unexpectedRequests, [], 'only the disposable loopback document may be requested');
