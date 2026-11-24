@@ -117,7 +117,7 @@ export async function runAgentBrowserChecks(t, { fixture, baseUrl }) {
     assert.equal(state.gatewayActions.length, 0);
     await toggle(page, 'claude').click();
     await page.getByRole('dialog').getByRole('button', { name: '确认断开并还原', exact: true }).click();
-    await visible(page, panel(page, 'claude').getByText('未接入', { exact: true }));
+    await visible(page, panel(page, 'claude').getByText('未接入', { exact: true }).first());
     assert.deepEqual(state.gatewayActions, [{ action: 'disconnect', client: 'claude', confirm: true }]);
     assert.equal(state.gatewayStatus.running, true);
     assert.equal(await toggle(page, 'claude').getAttribute('aria-checked'), 'false');
@@ -145,6 +145,7 @@ export async function runAgentBrowserChecks(t, { fixture, baseUrl }) {
       await page.getByRole('dialog').getByRole('button', { name: '确认断开并还原', exact: true }).click();
       await page.getByRole('dialog').waitFor({ state: 'detached' });
       assert.deepEqual(state.gatewayActions, [{ action: 'disconnect', client: 'claude', confirm: true }]);
+      await page.waitForFunction(() => document.querySelector('button[role="switch"][aria-label="Claude Code 接入网关"]')?.getAttribute('aria-checked') === 'false');
       assert.equal(await toggle(page, 'claude').getAttribute('aria-checked'), 'false');
     });
   }

@@ -8,7 +8,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [8.1.1] - 2026-11-24
 
 - fix(release): repair Console hydration and routing-hook test harnesses after the i18n migration — mount `I18nAppProvider`, serve the shipped brand/client icons from the loopback fixture, and rewrite the hook's `t.mjs` import to a file URL before data-URL execution.
-- fix(ui): tolerate opaque-origin cookie denial in the i18n runtime, keep shared async states provider-independent, reserve routing-graph/agent-summary loading space, prevent intent target labels from being squeezed, and close/reload the client update dialog after confirm or failure.
+- fix(ui): tolerate opaque-origin cookie denial in the i18n runtime, keep shared async states provider-independent, restore app-root accessibility after modal close, reserve routing-graph/agent-summary loading space, prevent intent target labels from being squeezed, and close/reload the client update dialog after confirm or failure.
 - fix(ci): install the separate Console UI package before `scripts-tests`, matching the release workflow so browser suites resolve their real UI dependencies.
 - fix(test): pin the Console locale cookie, align Agent workspace selectors with desktop model controls and expanded detail rows, scope empty-model option assertions to the main panel, and use the platform path delimiter in the isolated Console launcher.
 - fix(test): bound browser cleanup waits so a stuck handle cannot overrun the test timeout.

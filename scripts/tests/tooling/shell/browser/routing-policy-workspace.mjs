@@ -7,7 +7,8 @@ import { choose, noPageOverflow, visible } from './gateway-fixture.mjs';
 export const assignmentRow = (page, task, client = '') => page.getByRole('listitem', { name: `${client ? `${client} ` : ''}${task}分配`, exact: true });
 
 export async function policyTask(page, name) {
-  await page.getByRole('navigation', { name: '模型分配任务' }).getByRole('button', { name, exact: true }).click();
+  const buttonName = name === '意图分流' ? /^意图分流/u : name;
+  await page.getByRole('navigation', { name: '模型分配任务' }).getByRole('button', { name: buttonName, exact: name !== '意图分流' }).click();
 }
 
 export async function assign(page, task, option, client = '') {

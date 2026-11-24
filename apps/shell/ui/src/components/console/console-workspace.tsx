@@ -144,7 +144,7 @@ export function ConsoleWorkspace({
   // 还没接线的视图：如实标注，不靠全局横幅把所有面板一起说成假的——首屏已经是真实数据。
   const navView = view === 'routingConfig' ? 'routing' : view;
   return (
-    <div className="min-h-dvh bg-rex-bg font-rex-body text-rex-text">
+    <div data-aios-app-root className="min-h-dvh bg-rex-bg font-rex-body text-rex-text">
       <a
         href="#console-content"
         className="fixed top-2 left-2 z-[60] -translate-y-20 rounded-lg bg-rex-cyan px-4 py-2 text-white focus:translate-y-0"

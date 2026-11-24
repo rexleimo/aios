@@ -112,7 +112,7 @@ test('routing groups work offline through the real routing panel, shared hook an
     return { page, writes, saved: () => structuredClone(saved), draft: () => page.evaluate(() => window.routing.editable) };
   }
 
-  const task = (page, name) => page.getByRole('navigation', { name: '模型分配任务' }).getByRole('button', { name, exact: true }).click();
+  const task = (page, name) => page.getByRole('navigation', { name: '模型分配任务' }).getByRole('button', { name: name === '意图分流' ? /^意图分流/u : name, exact: name !== '意图分流' }).click();
   const groupRow = (page, id) => page.getByRole('listitem', { name: `模型组 ${id}`, exact: true });
   async function commit(page) {
     await page.getByRole('dialog').getByRole('button', { name: '加入草稿', exact: true }).click();

@@ -94,6 +94,14 @@ export function Modal({
               event.preventDefault();
               target.focus();
             }
+            // Radix hideOthers can leave the app root aria-hidden after a
+            // controlled close re-render. Restore it once no dialog remains.
+            queueMicrotask(() => {
+              if (!document.querySelector('[role="dialog"]')) {
+                document.querySelectorAll('[data-aios-app-root][aria-hidden="true"]')
+                  .forEach(element => element.removeAttribute('aria-hidden'));
+              }
+            });
           }}
           className={`fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100%_-_32px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto scroll-pt-6 scroll-pb-24 rounded-2xl border border-rex-border bg-rex-bg p-6 shadow-xl ${wide ? 'max-w-[680px]' : 'max-w-[480px]'}`}
         >
