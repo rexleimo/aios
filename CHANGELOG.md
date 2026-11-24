@@ -8,6 +8,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [8.1.1] - 2026-11-24
 
 - fix(release): repair Console hydration and routing-hook test harnesses after the i18n migration — mount `I18nAppProvider`, serve the shipped brand/client icons from the loopback fixture, and rewrite the hook's `t.mjs` import to a file URL before data-URL execution.
+- fix(ui): tolerate opaque-origin cookie denial in the i18n runtime, keep shared async states provider-independent, and reserve routing-graph loading height so deferred reads do not shift the gateway overview.
+- fix(ci): install the separate Console UI package before `scripts-tests`, matching the release workflow so browser suites resolve their real UI dependencies.
+- fix(test): pin the Console locale cookie in browser fixtures and scope empty-model option assertions to the main panel, excluding the language switcher.
 - fix(test): bound browser cleanup waits so a stuck handle cannot overrun the test timeout.
 - docs(site): publish the v8.1.0 Console i18n release post in `landing/` and index it; the URL referenced by `llms.txt` now resolves.
 - chore(standards): exempt the generated `landing/blog` archive from the directory-entry budget; stable `/blog/<slug>/` URLs require one flat directory per post.

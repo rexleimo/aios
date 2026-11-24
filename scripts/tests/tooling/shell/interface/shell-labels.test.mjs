@@ -46,10 +46,10 @@ test('memory labels keep uncertainty, and the scope vocabulary matches the store
 
 test('the Console discloses real status and confirmed mutation boundaries', () => {
   const source = readFileSync(ui('components/console/console-workspace.tsx'), 'utf8');
-  assert.match(source, /工作区 <strong/u);
-  assert.match(source, /一次采集 '/u);
+  assert.match(source, /t\('shell\.workspace'\)[\s\S]*?<strong/u);
+  assert.match(source, /t\('shell\.oneCollection'\)/u);
   assert.match(source, /\{facts\.totalMs\}ms/u, '页头要说得出本次采集耗时，不是只写个“实时”');
-  assert.match(source, /配置写入、接入与程序更新均需明确确认/u);
+  assert.match(source, /t\('shell\.readOnlyHint'\)/u);
   assert.doesNotMatch(source, /此面板只读，写入尚未授权/u);
   assert.match(source, /mounted\.has\('tools'\)/u, 'client probes must be lazy mounted');
   assert.match(source, /<ResourcesWorkspace facts=\{facts\}/u);
@@ -98,7 +98,7 @@ test('the first screen is fed by real facts and never pays for the evidence audi
   // 首页实时数字的唯一出处是网关决策日志端点；配置默认必须标明是配置，不能冒充观测。
   const overview = readFileSync(ui('components/console/model-routing/agent-overview.tsx'), 'utf8');
   assert.match(overview, /\/api\/model-routing\/decisions/u, 'home live counters must read the gateway decision log');
-  assert.match(overview, /配置默认/u, 'untrafficked agents must be labelled as configured, not observed');
+  assert.match(overview, /t\("配置默认 · 实现角色"\)/u, 'untrafficked agents must be labelled as configured, not observed');
   // 接线完成：外壳不再需要那个临时适配器，也不得留着任何 fixture 导入。
   const shell = readFileSync(ui('components/console/console-workspace.tsx'), 'utf8');
   assert.doesNotMatch(shell, /demo-data|toPrototypeProject/u, 'the migration shim must be gone once every panel is wired');

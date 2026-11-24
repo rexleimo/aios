@@ -120,7 +120,7 @@ export async function runPolicyBrowserChecks(t, { fixture, baseUrl, chooseTheme 
     assert.match(await assignmentRow(page, '实现').innerText(), /未配置默认路由/u);
     assert.doesNotMatch(await page.locator('main').innerText(), modelReferences);
     assert.equal(await page.locator('main').getByRole('combobox').count(), 0);
-    assert.equal(await page.getByRole('option').count(), 0);
+    assert.equal(await page.locator('main').getByRole('option').count(), 0);
     for (const button of await page.getByRole('list', { name: '全局默认分配' }).getByRole('button', { name: '修改', exact: true }).all()) {
       assert.equal(await button.isDisabled(), true);
     }
@@ -133,7 +133,7 @@ export async function runPolicyBrowserChecks(t, { fixture, baseUrl, chooseTheme 
     assert.equal(await toggle.getAttribute('aria-checked'), 'false');
     assert.equal(await toggle.isDisabled(), true);
     assert.equal(await page.locator('main').getByRole('combobox').count(), 0);
-    assert.equal(await page.getByRole('option').count(), 0);
+    assert.equal(await page.locator('main').getByRole('option').count(), 0);
     assert.equal(await page.getByRole('textbox').count(), 0);
     assert.doesNotMatch(await page.locator('main').innerText(), modelReferences);
     assert.equal(await page.getByRole('button', { name: '保存全部修改', exact: true }).isDisabled(), true);

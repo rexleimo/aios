@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { toModelBindings, toModelCatalog } from '../../../../../apps/shell/ui/src/lib/config/model-routing.mjs';
+import { LOCALE_COOKIE } from '../../../../../apps/shell/ui/src/i18n/locales.mjs';
 import { clientResourceState, handleClientResourceRequest } from './clients-resources/api-fixture.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../../../..');
@@ -31,7 +32,10 @@ export async function gatewayFixture(browser, baseUrl, token, options = {}) {
   const { empty = false, configuration, clientResources, gatewayStatus = {}, connectionOverrides = {}, evidenceName, ...contextOptions } = options;
   const evidenceId = String(++fixtureSequence).padStart(3, '0');
   const context = await browser.newContext({ locale: 'zh-CN', viewport: { width: 1440, height: 1000 }, ...contextOptions });
-  await context.addCookies([{ name: 'aios_ui_token', value: token, url: baseUrl, httpOnly: true, sameSite: 'Strict' }]);
+  await context.addCookies([
+    { name: 'aios_ui_token', value: token, url: baseUrl, httpOnly: true, sameSite: 'Strict' },
+    { name: LOCALE_COOKIE, value: 'zh-CN', url: baseUrl, sameSite: 'Lax' },
+  ]);
   const page = await context.newPage();
   page.setDefaultTimeout(15_000);
   const errors = [];

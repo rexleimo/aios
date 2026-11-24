@@ -132,7 +132,7 @@ test('the development server serves the current Console through the token gate',
   //  docs/plans/2026-11-07-stage0-real-data-measurement.md）。
   // 页头说的是「哪个工作区 + 本次采集耗时」：选中项与数据必须同源，不能再出现
   // 「显示 10-27 但记忆是 11-07」那种两个面不同新鲜度的并排。
-  assert.match(page.body, /工作区 <strong/u, 'the header must name the workspace it collected for');
+  assert.match(page.body, /工作区(?:<!-- -->)?\s*<strong/u, 'the header must name the workspace it collected for');
   assert.match(page.body, /一次采集/u);
   // 首页是 magpie 路由总览：每个 agent 一行，行内如实标注本机有没有配置落点（真实事实，不是示例）。
   assert.match(page.body, /最近请求与配置默认，分开看清/u, 'home must render the read-only routing overview');

@@ -15,8 +15,10 @@ export const MESSAGES = Object.freeze({
 
 function initialLocale() {
   if (typeof document !== 'undefined') {
-    const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${LOCALE_COOKIE}=([^;]+)`));
-    if (match) return resolveLocale({ choice: decodeURIComponent(match[1]) });
+    try {
+      const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${LOCALE_COOKIE}=([^;]+)`));
+      if (match) return resolveLocale({ choice: decodeURIComponent(match[1]) });
+    } catch { /* Opaque origins (about:blank/sandboxed frames) deny cookie access. */ }
     const htmlLang = document.documentElement?.lang;
     if (htmlLang) return resolveLocale({ choice: htmlLang });
   }

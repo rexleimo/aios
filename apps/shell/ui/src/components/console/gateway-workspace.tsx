@@ -125,7 +125,9 @@ export function GatewayWorkspace({
             <ArrowRight size={14} />
           </Button>
         </div>
-        <RoutingGraph models={routing.models} />
+        <div className="min-h-[480px]">
+          <RoutingGraph models={routing.models} />
+        </div>
         <GatewayControl active={active && section === 'overview'} navigate={navigate} />
         <AgentOverview
           clients={facts.clients}

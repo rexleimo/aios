@@ -21,3 +21,18 @@ test('unknown or absent input falls back to the default locale', () => {
   assert.equal(resolveLocale(), DEFAULT_LOCALE);
   assert.equal(resolveLocale({ choice: 'fr', cookie: 'ko', acceptLanguage: 'de-DE' }), DEFAULT_LOCALE);
 });
+
+test('translation runtime tolerates opaque-origin cookie denial and uses the document language', async () => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: {
+    get cookie() { throw new Error('opaque origin'); },
+    documentElement: { lang: 'ja' },
+  } });
+  try {
+    const runtime = await import(`../src/i18n/t.mjs?opaque-origin=${Date.now()}`);
+    assert.equal(runtime.getLocale(), 'ja');
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'document', previous);
+    else delete globalThis.document;
+  }
+});
