@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
 
+## [8.1.1] - 2026-11-24
+
+- fix(release): repair Console hydration and routing-hook test harnesses after the i18n migration — mount `I18nAppProvider`, serve the shipped brand/client icons from the loopback fixture, and rewrite the hook's `t.mjs` import to a file URL before data-URL execution.
+- fix(test): bound browser cleanup waits so a stuck handle cannot overrun the test timeout.
+- docs(site): publish the v8.1.0 Console i18n release post in `landing/` and index it; the URL referenced by `llms.txt` now resolves.
+- chore(standards): exempt the generated `landing/blog` archive from the directory-entry budget; stable `/blog/<slug>/` URLs require one flat directory per post.
+- Verified: console hydration 2/2, i18n 8/8, model-routing policy 39/39, UI typecheck, and `directoryEntries` blocking=0.
+
 ## [8.1.0] - 2026-11-23
 
 - feat(ui): full Console internationalization — every UI-authored string in the gateway, model-routing, resources, flows and clients panels now resolves through `t()` in `zh-CN` / `en` / `ja`. Catalogs grew from 83 to 1100 identical keys per locale; a new source guard test fails on any remaining hard-coded source-language literal with zero allowlist.

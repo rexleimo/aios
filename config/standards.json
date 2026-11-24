@@ -290,6 +290,10 @@
         "reason": "generated site partials"
       },
       {
+        "path": "landing/blog",
+        "reason": "published blog archive: one flat directory per post preserves stable /blog/<slug>/ URLs; generated content, not a code module"
+      },
+      {
         "path": "docs/superpowers/plans",
         "reason": "imported snapshot, not hand-maintained structure"
       },
